@@ -1,0 +1,350 @@
+@model YamanCam.Web.Models.AppJournalVoucherEditViewModel
+@{
+    var isNew = Model.RecId == 0;
+    var entityLabel = ViewData["EntityLabel"] as string ?? "Fiş";
+    var voucherType = ViewData["VoucherType"] as string ?? "Mahsup";
+    var requiresCashBank = ViewData["RequiresCashBankAccount"] as bool? ?? false;
+    var isTahsilat = voucherType == "Tahsilat";
+    var amountFieldName = isTahsilat ? "CreditAmount" : "DebitAmount";
+    ViewData["Title"] = isNew ? $"Yeni {entityLabel}" : $"{entityLabel} Düzenle";
+    var accountOptionsJson = System.Text.Json.JsonSerializer.Serialize(
+        Model.AccountOptions.Select(o => new { value = o.Value, text = o.Text }));
+}
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <form asp-action="@(isNew ? "Create" : "Edit")" method="post">
+            @Html.AntiForgeryToken()
+            <input asp-for="RecId" type="hidden" />
+
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <h1 class="h4 mb-0">@ViewData["Title"]</h1>
+            </div>
+
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <h2 class="h6 text-muted mb-3">Fiş Bilgileri</h2>
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label asp-for="VoucherNo" class="form-label"></label>
+                    <input asp-for="VoucherNo" class="form-control" />
+                    <span asp-validation-for="VoucherNo" class="text-danger"></span>
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="VoucherDate" class="form-label"></label>
+                    <input asp-for="VoucherDate" type="date" class="form-control" asp-format="{0:yyyy-MM-dd}" />
+                    <span asp-validation-for="VoucherDate" class="text-danger"></span>
+                </div>
+                <div class="col-md-2">
+                    <label asp-for="CurrencyCode" class="form-label"></label>
+                    <select asp-for="CurrencyCode" class="form-select">
+                        <option value="TRY">TRY</option>
+                        <option value="USD">USD</option>
+                        <option value="EUR">EUR</option>
+                        <option value="GBP">GBP</option>
+                    </select>
+                    <span asp-validation-for="CurrencyCode" class="text-danger"></span>
+                </div>
+                @if (requiresCashBank)
+                {
+                    <div class="col-md-4">
+                        <label asp-for="CashBankAccountId" class="form-label"></label>
+                        <select asp-for="CashBankAccountId" asp-items="Model.AccountOptions" class="form-select">
+                            <option value="">Seçiniz</option>
+                        </select>
+                        <span asp-validation-for="CashBankAccountId" class="text-danger"></span>
+                    </div>
+                }
+                <div class="col-md-4">
+                    <label asp-for="CompanyId" class="form-label"></label>
+                    <select asp-for="CompanyId" asp-items="Model.CompanyOptions" class="form-select">
+                        <option value="">Seçiniz</option>
+                    </select>
+                    <span asp-validation-for="CompanyId" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="WorkPlaceId" class="form-label"></label>
+                    <select asp-for="WorkPlaceId" asp-items="Model.WorkPlaceOptions" class="form-select">
+                        <option value="">Seçiniz</option>
+                    </select>
+                    <span asp-validation-for="WorkPlaceId" class="text-danger"></span>
+                </div>
+                <div class="col-md-8">
+                    <label asp-for="Description" class="form-label"></label>
+                    <input asp-for="Description" class="form-control" />
+                    <span asp-validation-for="Description" class="text-danger"></span>
+                </div>
+            </div>
+
+            @if (requiresCashBank)
+            {
+                <h2 class="h6 text-muted mt-4 mb-3">Karşı Hesap Satırları</h2>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-2" id="linesTable">
+                        <thead>
+                            <tr>
+                                <th style="min-width:260px;">Karşı Hesap</th>
+                                <th>Açıklama</th>
+                                <th style="width:160px;" class="text-end">Tutar</th>
+                                <th style="width:50px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="linesBody">
+                            @for (var i = 0; i < Model.Lines.Count; i++)
+                            {
+                                <tr class="line-row">
+                                    <td>
+                                        <input type="hidden" name="Lines[@i].RecId" value="@Model.Lines[i].RecId" />
+                                        <select name="Lines[@i].AccountId" class="form-select form-select-sm line-account">
+                                            <option value="0">Seçiniz</option>
+                                            @foreach (var opt in Model.AccountOptions)
+                                            {
+                                                <option value="@opt.Value" selected="@(opt.Value == Model.Lines[i].AccountId.ToString() ? "selected" : null)">@opt.Text</option>
+                                            }
+                                        </select>
+                                    </td>
+                                    <td><input type="text" name="Lines[@i].Description" class="form-control form-control-sm" value="@Model.Lines[i].Description" /></td>
+                                    <td><input type="number" step="0.01" min="0" name="Lines[@i].@amountFieldName" class="form-control form-control-sm text-end line-amount" value="@(isTahsilat ? Model.Lines[i].CreditAmount : Model.Lines[i].DebitAmount)" /></td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-sm btn-outline-danger line-remove">&times;</button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <th class="text-end">Toplam</th>
+                                <th></th>
+                                <th class="text-end" id="totalAmountCell">0,00</th>
+                                <th></th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-secondary mb-4" id="addLineBtn">+ Satır Ekle</button>
+            }
+            else
+            {
+                <h2 class="h6 text-muted mt-4 mb-3">Borç / Alacak Satırları</h2>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-2" id="linesTable">
+                        <thead>
+                            <tr>
+                                <th style="min-width:260px;">Hesap</th>
+                                <th>Açıklama</th>
+                                <th style="width:140px;" class="text-end">Borç</th>
+                                <th style="width:140px;" class="text-end">Alacak</th>
+                                <th style="width:50px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="linesBody">
+                            @for (var i = 0; i < Model.Lines.Count; i++)
+                            {
+                                <tr class="line-row">
+                                    <td>
+                                        <input type="hidden" name="Lines[@i].RecId" value="@Model.Lines[i].RecId" />
+                                        <select name="Lines[@i].AccountId" class="form-select form-select-sm line-account">
+                                            <option value="0">Seçiniz</option>
+                                            @foreach (var opt in Model.AccountOptions)
+                                            {
+                                                <option value="@opt.Value" selected="@(opt.Value == Model.Lines[i].AccountId.ToString() ? "selected" : null)">@opt.Text</option>
+                                            }
+                                        </select>
+                                    </td>
+                                    <td><input type="text" name="Lines[@i].Description" class="form-control form-control-sm" value="@Model.Lines[i].Description" /></td>
+                                    <td><input type="number" step="0.01" min="0" name="Lines[@i].DebitAmount" class="form-control form-control-sm text-end line-debit" value="@Model.Lines[i].DebitAmount" /></td>
+                                    <td><input type="number" step="0.01" min="0" name="Lines[@i].CreditAmount" class="form-control form-control-sm text-end line-credit" value="@Model.Lines[i].CreditAmount" /></td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-sm btn-outline-danger line-remove">&times;</button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <th colspan="2" class="text-end">Toplam</th>
+                                <th class="text-end" id="totalDebitCell">0,00</th>
+                                <th class="text-end" id="totalCreditCell">0,00</th>
+                                <th></th>
+                            </tr>
+                            <tr id="balanceWarningRow" class="d-none">
+                                <td colspan="5" class="text-danger small">Fiş dengede değil, borç ve alacak toplamları eşit olmalıdır.</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-secondary mb-4" id="addLineBtn">+ Satır Ekle</button>
+            }
+
+            <div class="d-flex flex-wrap gap-2 mt-2">
+                <button type="submit" class="btn btn-primary">Kaydet</button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Vazgeç</a>
+            </div>
+        </form>
+
+        @if (!isNew)
+        {
+            <form asp-action="Delete" asp-route-id="@Model.RecId" method="post" class="mt-3 pt-3 border-top">
+                @Html.AntiForgeryToken()
+                <button type="submit"
+                        class="btn btn-outline-danger"
+                        onclick="return confirm('Bu kaydı silmek istediğinize emin misiniz?');">
+                    @entityLabel Sil
+                </button>
+            </form>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    @if (requiresCashBank)
+    {
+        <script>
+            (function () {
+                var linesBody = document.getElementById('linesBody');
+                var addBtn = document.getElementById('addLineBtn');
+                var totalAmountCell = document.getElementById('totalAmountCell');
+                var accountOptions = @Html.Raw(accountOptionsJson);
+                var amountFieldName = '@amountFieldName';
+
+                function formatAmount(value) {
+                    return value.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                }
+
+                function buildAccountOptionsHtml() {
+                    var html = '<option value="0">Seçiniz</option>';
+                    accountOptions.forEach(function (opt) {
+                        html += '<option value="' + opt.value + '">' + opt.text + '</option>';
+                    });
+                    return html;
+                }
+
+                function reindex() {
+                    var rows = linesBody.querySelectorAll('tr.line-row');
+                    rows.forEach(function (row, idx) {
+                        row.querySelectorAll('[name]').forEach(function (el) {
+                            el.name = el.name.replace(/Lines\[\d+\]/, 'Lines[' + idx + ']');
+                        });
+                    });
+                }
+
+                function recalcTotal() {
+                    var total = 0;
+                    linesBody.querySelectorAll('tr.line-row').forEach(function (row) {
+                        total += parseFloat(row.querySelector('.line-amount').value) || 0;
+                    });
+                    totalAmountCell.textContent = formatAmount(total);
+                }
+
+                function bindRowEvents(row) {
+                    row.querySelector('.line-amount').addEventListener('input', recalcTotal);
+                    row.querySelector('.line-remove').addEventListener('click', function () {
+                        if (linesBody.querySelectorAll('tr.line-row').length <= 1) return;
+                        row.remove();
+                        reindex();
+                        recalcTotal();
+                    });
+                }
+
+                function addRow() {
+                    var idx = linesBody.querySelectorAll('tr.line-row').length;
+                    var tr = document.createElement('tr');
+                    tr.className = 'line-row';
+                    tr.innerHTML =
+                        '<td><input type="hidden" name="Lines[' + idx + '].RecId" value="0" />' +
+                        '<select name="Lines[' + idx + '].AccountId" class="form-select form-select-sm line-account">' + buildAccountOptionsHtml() + '</select></td>' +
+                        '<td><input type="text" name="Lines[' + idx + '].Description" class="form-control form-control-sm" /></td>' +
+                        '<td><input type="number" step="0.01" min="0" name="Lines[' + idx + '].' + amountFieldName + '" class="form-control form-control-sm text-end line-amount" value="0" /></td>' +
+                        '<td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger line-remove">&times;</button></td>';
+                    linesBody.appendChild(tr);
+                    bindRowEvents(tr);
+                    recalcTotal();
+                }
+
+                linesBody.querySelectorAll('tr.line-row').forEach(bindRowEvents);
+                addBtn.addEventListener('click', addRow);
+                recalcTotal();
+            })();
+        </script>
+    }
+    else
+    {
+        <script>
+            (function () {
+                var linesBody = document.getElementById('linesBody');
+                var addBtn = document.getElementById('addLineBtn');
+                var totalDebitCell = document.getElementById('totalDebitCell');
+                var totalCreditCell = document.getElementById('totalCreditCell');
+                var balanceWarningRow = document.getElementById('balanceWarningRow');
+                var accountOptions = @Html.Raw(accountOptionsJson);
+
+                function formatAmount(value) {
+                    return value.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                }
+
+                function buildAccountOptionsHtml() {
+                    var html = '<option value="0">Seçiniz</option>';
+                    accountOptions.forEach(function (opt) {
+                        html += '<option value="' + opt.value + '">' + opt.text + '</option>';
+                    });
+                    return html;
+                }
+
+                function reindex() {
+                    var rows = linesBody.querySelectorAll('tr.line-row');
+                    rows.forEach(function (row, idx) {
+                        row.querySelectorAll('[name]').forEach(function (el) {
+                            el.name = el.name.replace(/Lines\[\d+\]/, 'Lines[' + idx + ']');
+                        });
+                    });
+                }
+
+                function recalcTotals() {
+                    var totalDebit = 0, totalCredit = 0;
+                    linesBody.querySelectorAll('tr.line-row').forEach(function (row) {
+                        var d = parseFloat(row.querySelector('.line-debit').value) || 0;
+                        var c = parseFloat(row.querySelector('.line-credit').value) || 0;
+                        totalDebit += d;
+                        totalCredit += c;
+                    });
+                    totalDebitCell.textContent = formatAmount(totalDebit);
+                    totalCreditCell.textContent = formatAmount(totalCredit);
+                    var balanced = Math.abs(totalDebit - totalCredit) < 0.005;
+                    balanceWarningRow.classList.toggle('d-none', balanced);
+                }
+
+                function bindRowEvents(row) {
+                    row.querySelector('.line-debit').addEventListener('input', recalcTotals);
+                    row.querySelector('.line-credit').addEventListener('input', recalcTotals);
+                    row.querySelector('.line-remove').addEventListener('click', function () {
+                        if (linesBody.querySelectorAll('tr.line-row').length <= 1) return;
+                        row.remove();
+                        reindex();
+                        recalcTotals();
+                    });
+                }
+
+                function addRow() {
+                    var idx = linesBody.querySelectorAll('tr.line-row').length;
+                    var tr = document.createElement('tr');
+                    tr.className = 'line-row';
+                    tr.innerHTML =
+                        '<td><input type="hidden" name="Lines[' + idx + '].RecId" value="0" />' +
+                        '<select name="Lines[' + idx + '].AccountId" class="form-select form-select-sm line-account">' + buildAccountOptionsHtml() + '</select></td>' +
+                        '<td><input type="text" name="Lines[' + idx + '].Description" class="form-control form-control-sm" /></td>' +
+                        '<td><input type="number" step="0.01" min="0" name="Lines[' + idx + '].DebitAmount" class="form-control form-control-sm text-end line-debit" value="0" /></td>' +
+                        '<td><input type="number" step="0.01" min="0" name="Lines[' + idx + '].CreditAmount" class="form-control form-control-sm text-end line-credit" value="0" /></td>' +
+                        '<td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger line-remove">&times;</button></td>';
+                    linesBody.appendChild(tr);
+                    bindRowEvents(tr);
+                    recalcTotals();
+                }
+
+                linesBody.querySelectorAll('tr.line-row').forEach(bindRowEvents);
+                addBtn.addEventListener('click', addRow);
+                recalcTotals();
+            })();
+        </script>
+    }
+}

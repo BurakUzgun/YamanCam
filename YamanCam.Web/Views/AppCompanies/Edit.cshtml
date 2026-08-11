@@ -1,0 +1,76 @@
+@model YamanCam.Web.Models.AppCompanyEditViewModel
+@{
+    var isNew = Model.RecId == 0;
+    ViewData["Title"] = isNew ? "Yeni Şirket" : "Şirket Düzenle";
+}
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <h1 class="h4 mb-3">@ViewData["Title"]</h1>
+
+        <form asp-action="@(isNew ? "Create" : "Edit")" method="post">
+            @Html.AntiForgeryToken()
+            <input asp-for="RecId" type="hidden" />
+
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label asp-for="CompanyCode" class="form-label"></label>
+                    <input asp-for="CompanyCode" class="form-control" />
+                    <span asp-validation-for="CompanyCode" class="text-danger"></span>
+                </div>
+                <div class="col-md-8">
+                    <label asp-for="CompanyName" class="form-label"></label>
+                    <input asp-for="CompanyName" class="form-control" />
+                    <span asp-validation-for="CompanyName" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="TaxNumber" class="form-label"></label>
+                    <input asp-for="TaxNumber" class="form-control" />
+                    <span asp-validation-for="TaxNumber" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="TaxOffice" class="form-label"></label>
+                    <input asp-for="TaxOffice" class="form-control" />
+                    <span asp-validation-for="TaxOffice" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="City" class="form-label"></label>
+                    <input asp-for="City" class="form-control" />
+                    <span asp-validation-for="City" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Address" class="form-label"></label>
+                    <input asp-for="Address" class="form-control" />
+                    <span asp-validation-for="Address" class="text-danger"></span>
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="Phone" class="form-label"></label>
+                    <input asp-for="Phone" class="form-control" />
+                    <span asp-validation-for="Phone" class="text-danger"></span>
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="Email" class="form-label"></label>
+                    <input asp-for="Email" class="form-control" />
+                    <span asp-validation-for="Email" class="text-danger"></span>
+                </div>
+                <div class="col-12">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="IsActive" name="IsActive" value="true" @(Model.IsActive ? "checked" : "") />
+                        <label asp-for="IsActive" class="form-check-label"></label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2 mt-4">
+                <button type="submit" class="btn btn-primary">Kaydet</button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Vazgeç</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

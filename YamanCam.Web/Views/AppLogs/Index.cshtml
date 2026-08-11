@@ -1,0 +1,268 @@
+@model YamanCam.Web.Models.AppLogListViewModel
+@using System.Text.Json
+
+@{
+    ViewData["Title"] = "Log Kayıt İzleme";
+    var logsJson = JsonSerializer.Serialize(Model.Logs, new JsonSerializerOptions
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    });
+}
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <h1 class="h4 mb-3">Log Kayıt İzleme</h1>
+        <p class="text-muted mb-0">Filtreye göre son 500 log kaydı listeleniyor. Uygulama ve sistem loglarını ayrı filtreleyebilirsiniz.</p>
+
+        <form method="get" class="row g-2 mb-3 mt-2">
+            <div class="col-md-2">
+                <label class="form-label mb-1">Başlangıç (UTC)</label>
+                <input type="datetime-local" class="form-control form-control-sm" name="fromUtc" value="@Model.FromUtc?.ToString("yyyy-MM-ddTHH:mm")" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label mb-1">Bitiş (UTC)</label>
+                <input type="datetime-local" class="form-control form-control-sm" name="toUtc" value="@Model.ToUtc?.ToString("yyyy-MM-ddTHH:mm")" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label mb-1">Seviye</label>
+                <select class="form-select form-select-sm" name="level">
+                    <option value="">Hepsi</option>
+                    @if (Model.Level == "Info")
+                    {
+                        <option value="Info" selected>Info</option>
+                    }
+                    else
+                    {
+                        <option value="Info">Info</option>
+                    }
+                    @if (Model.Level == "Error")
+                    {
+                        <option value="Error" selected>Error</option>
+                    }
+                    else
+                    {
+                        <option value="Error">Error</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label mb-1">Log Türü</label>
+                <select class="form-select form-select-sm" name="logType">
+                    @if (string.IsNullOrWhiteSpace(Model.LogType))
+                    {
+                        <option value="" selected>Hepsi</option>
+                    }
+                    else
+                    {
+                        <option value="">Hepsi</option>
+                    }
+                    @if (string.Equals(Model.LogType, "application", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <option value="application" selected>Uygulama</option>
+                    }
+                    else
+                    {
+                        <option value="application">Uygulama</option>
+                    }
+                    @if (string.Equals(Model.LogType, "system", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <option value="system" selected>Sistem</option>
+                    }
+                    else
+                    {
+                        <option value="system">Sistem</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label mb-1">Kullanıcı</label>
+                <input type="text" class="form-control form-control-sm" name="userName" value="@Model.UserName" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label mb-1">Metin Ara</label>
+                <input type="text" class="form-control form-control-sm" name="searchText" value="@Model.SearchText" placeholder="Kategori, olay, yol veya mesaj" />
+            </div>
+            <div class="col-12 d-flex gap-2">
+                <button type="submit" class="btn btn-sm btn-primary">Filtrele</button>
+                <button type="submit" class="btn btn-sm btn-outline-primary" name="logType" value="application">Uygulama Log</button>
+                <button type="submit" class="btn btn-sm btn-outline-dark" name="logType" value="system">Sistem Log</button>
+                <a class="btn btn-sm btn-outline-secondary" asp-action="Index">Temizle</a>
+                <a class="btn btn-sm btn-outline-success"
+                   asp-action="ExportCsv"
+                   asp-route-fromUtc="@Model.FromUtc?.ToString("o")"
+                   asp-route-toUtc="@Model.ToUtc?.ToString("o")"
+                   asp-route-level="@Model.Level"
+                   asp-route-logType="@Model.LogType"
+                   asp-route-userName="@Model.UserName"
+                   asp-route-searchText="@Model.SearchText">CSV Indir</a>
+            </div>
+        </form>
+
+        <div class="table-responsive log-grid-wrap">
+            <table class="table table-sm table-hover align-middle mb-0" id="logGridTable">
+                <thead>
+                    <tr>
+                        <th>Tarih</th>
+                        <th>Seviye</th>
+                        <th>Kategori</th>
+                        <th>Olay</th>
+                        <th>Kullanıcı</th>
+                        <th>Yöntem</th>
+                        <th>Yol</th>
+                        <th>Durum Kodu</th>
+                        <th>Süre (ms)</th>
+                        <th>Mesaj</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Logs.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="10" class="text-center text-muted">Log kaydı bulunamadı.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        for (var i = 0; i < Model.Logs.Count; i++)
+                        {
+                            var log = Model.Logs[i];
+                            <tr class="log-row" data-log-index="@i" role="button" tabindex="0">
+                                <td>@log.LogDateUtc.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                <td>
+                                    <span class="badge @(log.Level == "Error" ? "text-bg-danger" : "text-bg-secondary")">@log.Level</span>
+                                </td>
+                                <td>@log.Category</td>
+                                <td>@log.EventName</td>
+                                <td>@(log.UserName ?? "-")</td>
+                                <td>@(log.Method ?? "-")</td>
+                                <td class="log-cell-truncate" title="@log.Path">@log.Path</td>
+                                <td>@(log.StatusCode?.ToString() ?? "-")</td>
+                                <td>@(log.DurationMs?.ToString() ?? "-")</td>
+                                <td class="log-cell-truncate" title="@log.Message">@log.Message</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div id="logDetailPanel" class="log-detail-panel mt-3 d-none">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h2 class="h6 mb-0">Log Detayı</h2>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="logDetailClose">Kapat</button>
+            </div>
+            <div id="logDetailSummary" class="log-detail-summary mb-2"></div>
+            <dl class="row log-detail-dl mb-0" id="logDetailContent"></dl>
+        </div>
+    </div>
+</div>
+
+<script type="application/json" id="app-logs-data">@Html.Raw(logsJson)</script>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var dataEl = document.getElementById('app-logs-data');
+            var panel = document.getElementById('logDetailPanel');
+            var content = document.getElementById('logDetailContent');
+            var summary = document.getElementById('logDetailSummary');
+            var closeBtn = document.getElementById('logDetailClose');
+            if (!dataEl || !panel || !content || !summary) return;
+
+            var logs = [];
+            try {
+                logs = JSON.parse(dataEl.textContent || '[]');
+            } catch (e) {
+                return;
+            }
+
+            function escapeHtml(text) {
+                var div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            function displayValue(value) {
+                if (value === null || value === undefined || value === '') return '-';
+                return String(value);
+            }
+
+            function formatDate(value) {
+                if (!value) return '-';
+                var d = new Date(value);
+                if (isNaN(d.getTime())) return displayValue(value);
+                return d.toISOString().replace('T', ' ').substring(0, 19);
+            }
+
+            function showDetail(log) {
+                var badgeClass = log.level === 'Error' ? 'text-bg-danger' : 'text-bg-secondary';
+                summary.innerHTML = '<span class="badge ' + badgeClass + '">' + escapeHtml(displayValue(log.level)) + '</span>' +
+                    '<span class="ms-2"><strong>Kategori:</strong> ' + escapeHtml(displayValue(log.category)) + '</span>' +
+                    '<span class="ms-2"><strong>Olay:</strong> ' + escapeHtml(displayValue(log.eventName)) + '</span>';
+
+                var fields = [
+                    ['Kayıt No', log.recId],
+                    ['Tarih (UTC)', formatDate(log.logDateUtc)],
+                    ['Seviye', log.level],
+                    ['Kategori', log.category],
+                    ['Olay', log.eventName],
+                    ['Kullanıcı', log.userName],
+                    ['Kullanıcı Id', log.userId],
+                    ['IP Adresi', log.ipAddress],
+                    ['Yöntem', log.method],
+                    ['Yol', log.path],
+                    ['Sorgu Metni', log.queryString],
+                    ['Durum Kodu', log.statusCode],
+                    ['Süre (ms)', log.durationMs],
+                    ['Önceki Değer', log.oldValue],
+                    ['Yeni Değer', log.newValue],
+                    ['Mesaj', log.message]
+                ];
+
+                content.innerHTML = fields.map(function (f) {
+                    var val = f[0] === 'Tarih (UTC)' ? formatDate(f[1]) : displayValue(f[1]);
+                    var isWide = f[0] === 'Mesaj' || f[0] === 'Yol' || f[0] === 'Sorgu Metni' || f[0] === 'Önceki Değer' || f[0] === 'Yeni Değer';
+                    return '<dt class="col-sm-3 col-md-2">' + escapeHtml(f[0]) + '</dt>' +
+                        '<dd class="col-sm-9 col-md-10' + (isWide ? ' log-detail-wide' : '') + '">' + escapeHtml(val) + '</dd>';
+                }).join('');
+
+                panel.classList.remove('d-none');
+                panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+
+            function selectRow(row) {
+                document.querySelectorAll('.log-row.selected').forEach(function (r) {
+                    r.classList.remove('selected');
+                });
+                row.classList.add('selected');
+                var idx = parseInt(row.getAttribute('data-log-index'), 10);
+                if (!isNaN(idx) && logs[idx]) {
+                    showDetail(logs[idx]);
+                }
+            }
+
+            document.querySelectorAll('.log-row').forEach(function (row) {
+                row.addEventListener('click', function () {
+                    selectRow(row);
+                });
+                row.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        selectRow(row);
+                    }
+                });
+            });
+
+            if (closeBtn) {
+                closeBtn.addEventListener('click', function () {
+                    panel.classList.add('d-none');
+                    summary.innerHTML = '';
+                    content.innerHTML = '';
+                    document.querySelectorAll('.log-row.selected').forEach(function (r) {
+                        r.classList.remove('selected');
+                    });
+                });
+            }
+        });
+    </script>
+}

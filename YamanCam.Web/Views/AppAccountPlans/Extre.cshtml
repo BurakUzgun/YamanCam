@@ -1,0 +1,204 @@
+@model YamanCam.Web.Models.AppAccountStatementViewModel
+@{
+    ViewData["Title"] = $"{Model.AccountCode} Ekstre";
+}
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h1 class="h4 mb-1">Hesap Ekstresi</h1>
+                <p class="text-muted mb-0">@Model.AccountCode - @Model.AccountName</p>
+                @if (Model.IsGroupAccount)
+                {
+                    <p class="text-muted small mb-0">Bu bir üst hesap olduğu için altındaki tüm alt hesapların hareketleri birlikte listeleniyor.</p>
+                }
+            </div>
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Hesap Planına Dön</a>
+        </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-md-3">
+                <div class="border rounded p-2 text-center">
+                    <div class="text-muted small">Toplam Borç</div>
+                    <div class="fw-semibold">@Model.TotalDebit.ToString("N2")</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="border rounded p-2 text-center">
+                    <div class="text-muted small">Toplam Alacak</div>
+                    <div class="fw-semibold">@Model.TotalCredit.ToString("N2")</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="border rounded p-2 text-center">
+                    <div class="text-muted small">Bakiye</div>
+                    <div class="fw-semibold">
+                        @if (Model.ClosingBalance == 0)
+                        {
+                            @:0,00
+                        }
+                        else if (Model.ClosingBalance > 0)
+                        {
+                            @($"{Model.ClosingBalance.ToString("N2")} B")
+                        }
+                        else
+                        {
+                            @($"{Math.Abs(Model.ClosingBalance).ToString("N2")} A")
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="border rounded overflow-hidden">
+            <div class="d-flex justify-content-end p-2 border-bottom bg-light">
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="statementClearFilters">Filtreleri Temizle</button>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle mb-0" id="statementGrid">
+                    <thead>
+                        <tr>
+                            <th class="stmt-col-date">Tarih</th>
+                            <th>Fiş No</th>
+                            <th>Fiş Tipi</th>
+                            <th>Hesap</th>
+                            <th>Şirket</th>
+                            <th>Şube</th>
+                            <th class="stmt-col-desc">Açıklama</th>
+                            <th class="text-end">Borç</th>
+                            <th class="text-end">Alacak</th>
+                            <th class="text-end">Bakiye</th>
+                            <th></th>
+                        </tr>
+                        <tr class="table-light">
+                            <th><input type="text" class="form-control form-control-sm column-filter" data-col="0" placeholder="Ara..." /></th>
+                            <th><input type="text" class="form-control form-control-sm column-filter" data-col="1" placeholder="Ara..." /></th>
+                            <th><input type="text" class="form-control form-control-sm column-filter" data-col="2" placeholder="Ara..." /></th>
+                            <th><input type="text" class="form-control form-control-sm column-filter" data-col="3" placeholder="Ara..." /></th>
+                            <th><input type="text" class="form-control form-control-sm column-filter" data-col="4" placeholder="Ara..." /></th>
+                            <th><input type="text" class="form-control form-control-sm column-filter" data-col="5" placeholder="Ara..." /></th>
+                            <th><input type="text" class="form-control form-control-sm column-filter" data-col="6" placeholder="Ara..." /></th>
+                            <th><input type="text" class="form-control form-control-sm column-filter" data-col="7" placeholder="Ara..." /></th>
+                            <th><input type="text" class="form-control form-control-sm column-filter" data-col="8" placeholder="Ara..." /></th>
+                            <th><input type="text" class="form-control form-control-sm column-filter" data-col="9" placeholder="Ara..." /></th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Items.Count == 0)
+                        {
+                            <tr class="empty-data-row">
+                                <td colspan="11" class="text-center text-muted">Kayıt bulunamadı.</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var item in Model.Items)
+                            {
+                                <tr class="data-row">
+                                    <td class="stmt-col-date">@item.VoucherDate.ToString("dd.MM.yyyy")</td>
+                                    <td>@item.VoucherNo</td>
+                                    <td>@item.VoucherTypeLabel</td>
+                                    <td>@item.AccountCode - @item.AccountName</td>
+                                    <td>@(item.CompanyName ?? "-")</td>
+                                    <td>@(item.WorkPlaceName ?? "-")</td>
+                                    <td class="stmt-col-desc">@(item.Description ?? "-")</td>
+                                    <td class="text-end">@(item.DebitAmount == 0 ? "-" : item.DebitAmount.ToString("N2"))</td>
+                                    <td class="text-end">@(item.CreditAmount == 0 ? "-" : item.CreditAmount.ToString("N2"))</td>
+                                    <td class="text-end">
+                                        @if (item.RunningBalance == 0)
+                                        {
+                                            @:0,00
+                                        }
+                                        else if (item.RunningBalance > 0)
+                                        {
+                                            @($"{item.RunningBalance.ToString("N2")} B")
+                                        }
+                                        else
+                                        {
+                                            @($"{Math.Abs(item.RunningBalance).ToString("N2")} A")
+                                        }
+                                    </td>
+                                    <td class="text-end text-nowrap">
+                                        <a asp-controller="@item.VoucherControllerName" asp-action="Edit" asp-route-id="@item.VoucherRecId" class="btn btn-sm btn-outline-primary">Fişi Aç</a>
+                                    </td>
+                                </tr>
+                            }
+                            <tr id="statementNoFilterResults" class="d-none">
+                                <td colspan="11" class="text-center text-muted">Filtreye uygun kayıt bulunamadı.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    #statementGrid .stmt-col-date {
+        min-width: 110px;
+        width: 10%;
+    }
+
+    #statementGrid .stmt-col-desc {
+        min-width: 220px;
+        width: 22%;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        (function () {
+            var grid = document.getElementById('statementGrid');
+            if (!grid) return;
+
+            var filters = grid.querySelectorAll('.column-filter');
+            var dataRows = grid.querySelectorAll('tbody tr.data-row');
+            var noResultsRow = document.getElementById('statementNoFilterResults');
+            var clearButton = document.getElementById('statementClearFilters');
+
+            function applyFilters() {
+                var visibleCount = 0;
+
+                dataRows.forEach(function (row) {
+                    var visible = true;
+
+                    filters.forEach(function (input) {
+                        var query = (input.value || '').toLowerCase().trim();
+                        if (!query) return;
+
+                        var colIndex = parseInt(input.getAttribute('data-col'), 10);
+                        var cell = row.cells[colIndex];
+                        var text = (cell ? cell.textContent : '').toLowerCase();
+                        if (text.indexOf(query) === -1) {
+                            visible = false;
+                        }
+                    });
+
+                    row.classList.toggle('d-none', !visible);
+                    if (visible) visibleCount++;
+                });
+
+                if (noResultsRow) {
+                    noResultsRow.classList.toggle('d-none', visibleCount > 0);
+                }
+            }
+
+            filters.forEach(function (input) {
+                input.addEventListener('input', applyFilters);
+            });
+
+            if (clearButton) {
+                clearButton.addEventListener('click', function () {
+                    filters.forEach(function (input) {
+                        input.value = '';
+                    });
+                    applyFilters();
+                });
+            }
+        })();
+    </script>
+}

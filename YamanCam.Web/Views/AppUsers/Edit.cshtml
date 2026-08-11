@@ -1,0 +1,185 @@
+@model YamanCam.Web.Models.AppUserEditViewModel
+@{
+    var isNew = Model.RecId == 0;
+    ViewData["Title"] = isNew ? "Yeni Kullanıcı" : "Kullanıcı Düzenle";
+}
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <h1 class="h4 mb-3">@ViewData["Title"]</h1>
+
+        <form asp-action="@(isNew ? "Create" : "Edit")" method="post">
+            @Html.AntiForgeryToken()
+            <input asp-for="RecId" type="hidden" />
+
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label asp-for="Code" class="form-label"></label>
+                    <input asp-for="Code" class="form-control" />
+                    <span asp-validation-for="Code" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="NameSurname" class="form-label"></label>
+                    <input asp-for="NameSurname" class="form-control" />
+                    <span asp-validation-for="NameSurname" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Password" class="form-label"></label>
+                    <input asp-for="Password" class="form-control" autocomplete="new-password" />
+                    @if (!isNew)
+                    {
+                        <div class="form-text">Boş bırakırsanız mevcut parola korunur.</div>
+                    }
+                    <span asp-validation-for="Password" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Email" class="form-label"></label>
+                    <input asp-for="Email" class="form-control" />
+                    <span asp-validation-for="Email" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Phone" class="form-label"></label>
+                    <input asp-for="Phone" class="form-control" />
+                    <span asp-validation-for="Phone" class="text-danger"></span>
+                </div>
+                <div class="col-md-4 d-flex align-items-end gap-3">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="IsRight" name="IsRight" value="true" @(Model.IsRight ? "checked" : "") />
+                        <label asp-for="IsRight" class="form-check-label"></label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="IsActive" name="IsActive" value="true" @(Model.IsActive ? "checked" : "") />
+                        <label asp-for="IsActive" class="form-check-label"></label>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="my-4" />
+
+            <h2 class="h6 mb-2">Şube Yetkileri</h2>
+            <p class="text-muted small mb-3">Kullanıcının erişebileceği şubeleri seçin. Varsayılan şube, giriş sonrası öncelikli şubedir.</p>
+
+            @if (Model.WorkPlaceOptions.Count == 0)
+            {
+                <div class="alert alert-warning mb-0">
+                    Aktif şube tanımı bulunamadı. Önce <strong>Şirket Tanımları</strong>, ardından <strong>Şube Tanımları</strong> ekranından kayıt ekleyin.
+                </div>
+            }
+            else
+            {
+                <input type="text" class="form-control form-control-sm mb-2" id="WorkPlaceSearchInput" placeholder="Şube ara..." />
+                <div class="d-flex gap-2 mb-2">
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="SelectAllWorkPlacesButton">Tümünü Seç</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="ClearWorkPlacesButton">Seçimi Temizle</button>
+                </div>
+
+                <div class="border rounded p-2 user-workplace-list" id="WorkPlaceCheckboxList">
+                    @foreach (var wp in Model.WorkPlaceOptions)
+                    {
+                        var label = string.IsNullOrWhiteSpace(wp.WorkPlaceName)
+                            ? wp.WorkPlaceCode
+                            : $"{wp.WorkPlaceCode} - {wp.WorkPlaceName}";
+                        <div class="form-check workplace-item" data-search-text="@label?.ToLowerInvariant()">
+                            <input class="form-check-input workplace-checkbox"
+                                   type="checkbox"
+                                   id="wp_@wp.WorkPlaceId"
+                                   name="SelectedWorkPlaceIds"
+                                   value="@wp.WorkPlaceId"
+                                   @(wp.IsSelected ? "checked" : "") />
+                            <label class="form-check-label" for="wp_@wp.WorkPlaceId">@label</label>
+                        </div>
+                    }
+                </div>
+
+                <div class="row g-2 mt-3">
+                    <div class="col-md-4">
+                        <label asp-for="DefaultWorkPlaceId" class="form-label"></label>
+                        <select class="form-select" id="DefaultWorkPlaceId" name="DefaultWorkPlaceId">
+                            <option value="">Seçiniz</option>
+                            @foreach (var wp in Model.WorkPlaceOptions.Where(x => x.IsSelected))
+                            {
+                                var text = string.IsNullOrWhiteSpace(wp.WorkPlaceName) ? wp.WorkPlaceCode : $"{wp.WorkPlaceCode} - {wp.WorkPlaceName}";
+                                if (Model.DefaultWorkPlaceId == wp.WorkPlaceId)
+                                {
+                                    <option value="@wp.WorkPlaceId" selected="selected">@text</option>
+                                }
+                                else
+                                {
+                                    <option value="@wp.WorkPlaceId">@text</option>
+                                }
+                            }
+                        </select>
+                        <span asp-validation-for="DefaultWorkPlaceId" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-8 d-flex align-items-end">
+                        <div class="form-text"><span id="WorkPlaceSelectedCount">0</span> şube seçili.</div>
+                    </div>
+                </div>
+            }
+
+            <div class="d-flex flex-wrap gap-2 mt-4">
+                <button type="submit" class="btn btn-primary">Kaydet</button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Vazgeç</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var searchInput = document.getElementById('WorkPlaceSearchInput');
+            var selectAllButton = document.getElementById('SelectAllWorkPlacesButton');
+            var clearButton = document.getElementById('ClearWorkPlacesButton');
+            var checkboxList = document.getElementById('WorkPlaceCheckboxList');
+            var defaultSelect = document.getElementById('DefaultWorkPlaceId');
+            var selectedCount = document.getElementById('WorkPlaceSelectedCount');
+            if (!checkboxList) return;
+
+            var checkboxes = Array.from(document.querySelectorAll('.workplace-checkbox'));
+
+            function rebuildDefaultOptions() {
+                if (!defaultSelect) return;
+                var current = defaultSelect.value;
+                defaultSelect.innerHTML = '<option value="">Seçiniz</option>';
+                checkboxes.filter(function (cb) { return cb.checked; }).forEach(function (cb) {
+                    var label = document.querySelector('label[for="' + cb.id + '"]');
+                    var option = document.createElement('option');
+                    option.value = cb.value;
+                    option.textContent = label ? label.textContent : cb.value;
+                    if (cb.value === current) option.selected = true;
+                    defaultSelect.appendChild(option);
+                });
+            }
+
+            function syncSelection() {
+                var count = checkboxes.filter(function (cb) { return cb.checked; }).length;
+                if (selectedCount) selectedCount.textContent = String(count);
+                rebuildDefaultOptions();
+            }
+
+            function filterItems() {
+                var query = (searchInput && searchInput.value ? searchInput.value : '').toLowerCase().trim();
+                Array.from(checkboxList.querySelectorAll('.workplace-item')).forEach(function (item) {
+                    var text = item.getAttribute('data-search-text') || '';
+                    item.style.display = !query || text.indexOf(query) >= 0 ? '' : 'none';
+                });
+            }
+
+            if (searchInput) searchInput.addEventListener('input', filterItems);
+            if (selectAllButton) selectAllButton.addEventListener('click', function () {
+                checkboxes.forEach(function (cb) { cb.checked = true; });
+                syncSelection();
+            });
+            if (clearButton) clearButton.addEventListener('click', function () {
+                checkboxes.forEach(function (cb) { cb.checked = false; });
+                syncSelection();
+            });
+            checkboxes.forEach(function (cb) { cb.addEventListener('change', syncSelection); });
+            syncSelection();
+        });
+    </script>
+}

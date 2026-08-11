@@ -1,0 +1,360 @@
+@model YamanCam.Web.Models.AppCustomsFreightInvoiceEditViewModel
+@{
+    var isNew = Model.RecId == 0;
+    ViewData["Title"] = isNew ? "Yeni Gümrük Nakliye Faturası" : "Gümrük Nakliye Faturası Düzenle";
+    var expenseAccountMetaJson = System.Text.Json.JsonSerializer.Serialize(ViewData["ExpenseAccountMeta"]);
+    var initialLinesJson = System.Text.Json.JsonSerializer.Serialize(
+        Model.Lines.Select(l => new
+        {
+            recId = l.RecId,
+            accountId = l.AccountId,
+            amount = l.Amount,
+            vatRate = l.VatRate,
+            withholdingRate = l.WithholdingRate
+        }));
+}
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <form asp-action="@(isNew ? "Create" : "Edit")" method="post" id="freightInvoiceForm">
+            @Html.AntiForgeryToken()
+            <input asp-for="RecId" type="hidden" />
+
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <h1 class="h4 mb-0">@ViewData["Title"]</h1>
+            </div>
+
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="row g-2">
+                        <div class="col-12">
+                            <label asp-for="InvoiceDate" class="form-label"></label>
+                            <input asp-for="InvoiceDate" type="date" class="form-control" asp-format="{0:yyyy-MM-dd}" />
+                            <span asp-validation-for="InvoiceDate" class="text-danger"></span>
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="WorkPlaceId" class="form-label"></label>
+                            <select asp-for="WorkPlaceId" asp-items="Model.WorkPlaceOptions" class="form-select">
+                                <option value="">Seçiniz</option>
+                            </select>
+                            <span asp-validation-for="WorkPlaceId" class="text-danger"></span>
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="InvoiceKind" class="form-label"></label>
+                            <input asp-for="InvoiceKind" class="form-control" placeholder="Gümrük, Nakliye, Diğer..." />
+                            <span asp-validation-for="InvoiceKind" class="text-danger"></span>
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="AccountId" class="form-label"></label>
+                            <select asp-for="AccountId" asp-items="Model.CariAccountOptions" class="form-select">
+                                <option value="">Seçiniz</option>
+                            </select>
+                            <span asp-validation-for="AccountId" class="text-danger"></span>
+                            <div class="form-text">Hesap tipi "Cari" olan muhasebe hesap kartları listelenir.</div>
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="InvoiceNo" class="form-label"></label>
+                            <input asp-for="InvoiceNo" class="form-control" />
+                            <span asp-validation-for="InvoiceNo" class="text-danger"></span>
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="SpecialCode" class="form-label"></label>
+                            <input asp-for="SpecialCode" class="form-control" />
+                            <span asp-validation-for="SpecialCode" class="text-danger"></span>
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="LinkedPurchaseInvoiceId" class="form-label"></label>
+                            <select asp-for="LinkedPurchaseInvoiceId" asp-items="Model.PurchaseInvoiceOptions" class="form-select">
+                                <option value="">Bağlı değil</option>
+                            </select>
+                            <span asp-validation-for="LinkedPurchaseInvoiceId" class="text-danger"></span>
+                            <div class="form-text">Bu gideri ilişkilendireceğiniz alış faturasını seçin.</div>
+                        </div>
+
+                        <div class="col-12"><hr class="my-2" /></div>
+
+                        <div class="col-12">
+                            <label class="form-label">Matrah</label>
+                            <input id="totalNetDisplay" type="text" class="form-control text-end" readonly value="@Model.NetAmount.ToString("N2")" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">KDV Tutar</label>
+                            <input id="totalVatDisplay" type="text" class="form-control text-end" readonly value="@Model.VatAmount.ToString("N2")" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Tevkifat Tutar</label>
+                            <input id="totalWithholdingDisplay" type="text" class="form-control text-end" readonly value="@Model.WithholdingAmount.ToString("N2")" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">NET KDV Tutar</label>
+                            <input id="totalNetVatDisplay" type="text" class="form-control text-end" readonly value="@Model.NetVatAmount.ToString("N2")" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Genel Tutar</label>
+                            <input id="totalGrossDisplay" type="text" class="form-control text-end fw-bold" readonly value="@Model.TotalAmount.ToString("N2")" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Döviz Tutar</label>
+                            <input id="totalCurrencyDisplay" type="text" class="form-control text-end" readonly value="@Model.CurrencyAmount.ToString("N2")" />
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="ExchangeRate" class="form-label"></label>
+                            <input asp-for="ExchangeRate" id="exchangeRateInput" type="number" step="0.000001" min="0.000001" class="form-control" />
+                            <span asp-validation-for="ExchangeRate" class="text-danger"></span>
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="CurrencyCode" class="form-label"></label>
+                            <select asp-for="CurrencyCode" id="currencyCodeSelect" class="form-select">
+                                <option value="TRY">TRY</option>
+                                <option value="USD">USD</option>
+                                <option value="EUR">EUR</option>
+                                <option value="GBP">GBP</option>
+                            </select>
+                            <span asp-validation-for="CurrencyCode" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-12 d-flex flex-wrap gap-2 mt-2">
+                            <button type="submit" class="btn btn-primary">Kaydet</button>
+                            <a asp-action="Index" class="btn btn-outline-secondary">Vazgeç</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-8">
+                    <h2 class="h6 text-muted mb-3">Hesap Satırı Ekle</h2>
+                    <div class="row g-2 align-items-end">
+                        <div class="col-md-3">
+                            <label class="form-label">Hesap Kodu</label>
+                            <select id="lineAccountSelect" class="form-select form-select-sm">
+                                <option value="">Seçiniz</option>
+                                @foreach (var opt in Model.ExpenseAccountOptions)
+                                {
+                                    <option value="@opt.Value">@opt.Text</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Hesap Adı</label>
+                            <input id="lineAccountNameDisplay" type="text" class="form-control form-control-sm" readonly />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Tutar</label>
+                            <input id="lineAmountInput" type="number" step="0.01" min="0" class="form-control form-control-sm text-end" value="0" />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Kdv</label>
+                            <input id="lineVatRateInput" type="number" step="0.01" min="0" class="form-control form-control-sm text-end" value="0" />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Kdv İnd. Oran</label>
+                            <input id="lineWithholdingRateInput" type="number" step="0.01" min="0" max="100" class="form-control form-control-sm text-end" value="0" />
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2 mt-2 mb-3">
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="addLineBtn">Satır Ekle</button>
+                        <button type="button" class="btn btn-sm btn-outline-danger" id="removeLineBtn" disabled>Satır Sil</button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover align-middle" id="freightLinesTable">
+                            <thead>
+                                <tr>
+                                    <th>Hesap Kodu</th>
+                                    <th>Hesap Adı</th>
+                                    <th class="text-end">Kdv Oran</th>
+                                    <th class="text-end">Tev Oran</th>
+                                    <th class="text-end">Matrah</th>
+                                    <th class="text-end">KDV Tutar</th>
+                                    <th class="text-end">KDV İndirim</th>
+                                    <th class="text-end">Net KDV</th>
+                                    <th class="text-end">Toplam</th>
+                                </tr>
+                            </thead>
+                            <tbody id="freightLinesBody"></tbody>
+                        </table>
+                    </div>
+                    <div id="hiddenLineInputs"></div>
+                </div>
+            </div>
+        </form>
+
+        @if (!isNew)
+        {
+            <form asp-action="Delete" asp-route-id="@Model.RecId" method="post" class="mt-3 pt-3 border-top">
+                @Html.AntiForgeryToken()
+                <button type="submit"
+                        class="btn btn-outline-danger"
+                        onclick="return confirm('Bu faturayı silmek istediğinize emin misiniz?');">
+                    Faturayı Sil
+                </button>
+            </form>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            var expenseAccountMeta = @Html.Raw(expenseAccountMetaJson);
+            var accountMetaById = {};
+            expenseAccountMeta.forEach(function (a) { accountMetaById[a.id] = a; });
+
+            var linesData = @Html.Raw(initialLinesJson);
+            var selectedLineIndex = -1;
+
+            var accountSelect = document.getElementById('lineAccountSelect');
+            var accountNameDisplay = document.getElementById('lineAccountNameDisplay');
+            var amountInput = document.getElementById('lineAmountInput');
+            var vatRateInput = document.getElementById('lineVatRateInput');
+            var withholdingRateInput = document.getElementById('lineWithholdingRateInput');
+            var addBtn = document.getElementById('addLineBtn');
+            var removeBtn = document.getElementById('removeLineBtn');
+            var linesBody = document.getElementById('freightLinesBody');
+            var hiddenInputsContainer = document.getElementById('hiddenLineInputs');
+            var currencySelect = document.getElementById('currencyCodeSelect');
+            var exchangeRateInput = document.getElementById('exchangeRateInput');
+
+            function formatAmount(value) {
+                return value.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+
+            function computeLine(line) {
+                var vatAmount = line.amount * line.vatRate / 100;
+                var withholdingAmount = vatAmount * line.withholdingRate / 100;
+                var netVatAmount = vatAmount - withholdingAmount;
+                var totalAmount = line.amount + netVatAmount;
+                return { vatAmount: vatAmount, withholdingAmount: withholdingAmount, netVatAmount: netVatAmount, totalAmount: totalAmount };
+            }
+
+            function appendHidden(name, value) {
+                var input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = name;
+                input.value = value;
+                hiddenInputsContainer.appendChild(input);
+            }
+
+            function renderLines() {
+                linesBody.innerHTML = '';
+                hiddenInputsContainer.innerHTML = '';
+
+                var totalNet = 0, totalVat = 0, totalWithholding = 0, totalNetVat = 0, totalGross = 0;
+
+                linesData.forEach(function (line, idx) {
+                    var calc = computeLine(line);
+                    totalNet += line.amount;
+                    totalVat += calc.vatAmount;
+                    totalWithholding += calc.withholdingAmount;
+                    totalNetVat += calc.netVatAmount;
+                    totalGross += calc.totalAmount;
+
+                    var meta = accountMetaById[line.accountId] || { code: '', name: '' };
+
+                    var tr = document.createElement('tr');
+                    tr.className = 'line-row' + (idx === selectedLineIndex ? ' table-active' : '');
+                    tr.style.cursor = 'pointer';
+                    tr.innerHTML =
+                        '<td>' + meta.code + '</td>' +
+                        '<td>' + meta.name + '</td>' +
+                        '<td class="text-end">' + line.vatRate.toFixed(2) + '</td>' +
+                        '<td class="text-end">' + line.withholdingRate.toFixed(2) + '</td>' +
+                        '<td class="text-end">' + formatAmount(line.amount) + '</td>' +
+                        '<td class="text-end">' + formatAmount(calc.vatAmount) + '</td>' +
+                        '<td class="text-end">' + formatAmount(calc.withholdingAmount) + '</td>' +
+                        '<td class="text-end">' + formatAmount(calc.netVatAmount) + '</td>' +
+                        '<td class="text-end">' + formatAmount(calc.totalAmount) + '</td>';
+                    tr.addEventListener('click', function () { selectLine(idx); });
+                    linesBody.appendChild(tr);
+
+                    appendHidden('Lines[' + idx + '].RecId', line.recId || 0);
+                    appendHidden('Lines[' + idx + '].AccountId', line.accountId);
+                    appendHidden('Lines[' + idx + '].Amount', line.amount);
+                    appendHidden('Lines[' + idx + '].VatRate', line.vatRate);
+                    appendHidden('Lines[' + idx + '].WithholdingRate', line.withholdingRate);
+                });
+
+                if (linesData.length === 0) {
+                    var emptyRow = document.createElement('tr');
+                    emptyRow.innerHTML = '<td colspan="9" class="text-center text-muted">Satır eklenmedi.</td>';
+                    linesBody.appendChild(emptyRow);
+                }
+
+                document.getElementById('totalNetDisplay').value = formatAmount(totalNet);
+                document.getElementById('totalVatDisplay').value = formatAmount(totalVat);
+                document.getElementById('totalWithholdingDisplay').value = formatAmount(totalWithholding);
+                document.getElementById('totalNetVatDisplay').value = formatAmount(totalNetVat);
+                document.getElementById('totalGrossDisplay').value = formatAmount(totalGross);
+
+                var rate = parseFloat(exchangeRateInput.value) || 0;
+                var currencyAmount = rate > 0 ? totalGross / rate : 0;
+                document.getElementById('totalCurrencyDisplay').value = formatAmount(currencyAmount);
+
+                removeBtn.disabled = selectedLineIndex < 0;
+            }
+
+            function selectLine(idx) {
+                selectedLineIndex = (selectedLineIndex === idx) ? -1 : idx;
+                renderLines();
+            }
+
+            function syncAccountName() {
+                var meta = accountMetaById[accountSelect.value];
+                accountNameDisplay.value = meta ? meta.name : '';
+            }
+
+            addBtn.addEventListener('click', function () {
+                var accountId = parseInt(accountSelect.value, 10) || 0;
+                var amount = parseFloat(amountInput.value) || 0;
+                var vatRate = parseFloat(vatRateInput.value) || 0;
+                var withholdingRate = parseFloat(withholdingRateInput.value) || 0;
+
+                if (!accountId) {
+                    alert('Hesap seçiniz.');
+                    return;
+                }
+                if (amount <= 0) {
+                    alert('Tutar sıfırdan büyük olmalıdır.');
+                    return;
+                }
+
+                linesData.push({ recId: 0, accountId: accountId, amount: amount, vatRate: vatRate, withholdingRate: withholdingRate });
+
+                accountSelect.value = '';
+                accountNameDisplay.value = '';
+                amountInput.value = '0';
+                vatRateInput.value = '0';
+                withholdingRateInput.value = '0';
+
+                renderLines();
+            });
+
+            removeBtn.addEventListener('click', function () {
+                if (selectedLineIndex < 0) return;
+                linesData.splice(selectedLineIndex, 1);
+                selectedLineIndex = -1;
+                renderLines();
+            });
+
+            accountSelect.addEventListener('change', syncAccountName);
+
+            function syncCurrency() {
+                if (currencySelect.value === 'TRY') {
+                    exchangeRateInput.value = 1;
+                    exchangeRateInput.readOnly = true;
+                } else {
+                    exchangeRateInput.readOnly = false;
+                }
+                renderLines();
+            }
+
+            currencySelect.addEventListener('change', syncCurrency);
+            exchangeRateInput.addEventListener('input', renderLines);
+
+            syncCurrency();
+            renderLines();
+        })();
+    </script>
+}

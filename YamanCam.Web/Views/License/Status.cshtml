@@ -1,0 +1,69 @@
+@model YamanCam.Web.Models.LicenseRequestViewModel
+@{
+    ViewData["Title"] = "Lisans";
+    var status = ViewBag.LicenseStatus as YamanCam.Web.Models.LicenseStatusSnapshot;
+}
+
+<section class="setup-card">
+    <h1 class="h3 setup-title">Lisans Kontrol</h1>
+    <p class="setup-subtitle">Lisans aktif degilse talep formunu doldurun ve Lisans Al ile merkeze gonderin.</p>
+
+    @if (TempData["SuccessMessage"] is string successMessage)
+    {
+        <div class="alert alert-success">@successMessage</div>
+    }
+    @if (TempData["ErrorMessage"] is string errorMessage)
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+
+    @if (status is not null)
+    {
+        <div class="alert @(status.IsActive ? "alert-success" : "alert-warning")">
+            <div><strong>Durum:</strong> @(status.IsActive ? "Aktif" : "Pasif / Beklemede")</div>
+            <div><strong>Talep No:</strong> @(status.RequestId?.ToString() ?? "-")</div>
+            <div><strong>Son Kontrol:</strong> @(status.LastCheckedUtc?.ToLocalTime().ToString("dd.MM.yyyy HH:mm") ?? "-")</div>
+            <div><strong>Mesaj:</strong> @status.Message</div>
+        </div>
+
+        @if (status.HasRequest && !status.IsActive)
+        {
+            <form asp-action="Approve" method="post" class="mb-3">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-success w-100 setup-primary-btn">Onay Al</button>
+            </form>
+        }
+    }
+
+    @if (status is null || !status.HasRequest)
+    {
+        <form asp-action="Submit" method="post">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="mb-3">
+                <label asp-for="HotelName" class="form-label"></label>
+                <input asp-for="HotelName" class="form-control" />
+                <span asp-validation-for="HotelName" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="CompanyName" class="form-label"></label>
+                <input asp-for="CompanyName" class="form-control" />
+                <span asp-validation-for="CompanyName" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="LicenceUser" class="form-label"></label>
+                <input asp-for="LicenceUser" class="form-control" />
+                <span asp-validation-for="LicenceUser" class="text-danger"></span>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 setup-primary-btn">Lisans Al</button>
+        </form>
+    }
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

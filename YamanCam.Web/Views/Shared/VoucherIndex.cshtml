@@ -1,0 +1,198 @@
+@model YamanCam.Web.Models.AppJournalVoucherListViewModel
+@{
+    var entityLabel = ViewData["EntityLabel"] as string ?? "Fiş";
+    var entityLabelPlural = ViewData["EntityLabelPlural"] as string ?? "Fişler";
+    ViewData["Title"] = entityLabelPlural;
+}
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h1 class="h4 mb-1">@entityLabelPlural</h1>
+                <p class="text-muted mb-0">@(entityLabel) kayıtlarını bu ekrandan yönetebilirsiniz.</p>
+            </div>
+            <a asp-action="Create" class="btn btn-primary btn-sm">Yeni @entityLabel</a>
+        </div>
+
+        @if (TempData["SuccessMessage"] is string successMessage)
+        {
+            <div class="alert alert-success">@successMessage</div>
+        }
+        @if (TempData["ErrorMessage"] is string errorMessage)
+        {
+            <div class="alert alert-danger">@errorMessage</div>
+        }
+
+        <form method="get" class="mb-2">
+            <div class="form-check">
+                <input type="checkbox"
+                       class="form-check-input"
+                       id="showDeleted"
+                       name="showDeleted"
+                       value="true"
+                       @(Model.ShowDeleted ? "checked" : "")
+                       onchange="this.form.submit()" />
+                <label class="form-check-label" for="showDeleted">Silinenler</label>
+            </div>
+        </form>
+
+        <div class="border rounded overflow-hidden">
+            <div class="d-flex justify-content-end p-2 border-bottom bg-light">
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="journalVoucherClearFilters">Filtreleri Temizle</button>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle mb-0" id="journalVoucherGrid">
+                    <thead>
+                        <tr>
+                            <th class="jv-col-no">Fiş No</th>
+                            <th class="jv-col-date">Fiş Tarihi</th>
+                            <th>Şirket</th>
+                            <th>Şube</th>
+                            <th class="jv-col-desc">Açıklama</th>
+                            <th class="text-end">Toplam Borç</th>
+                            <th class="text-end">Toplam Alacak</th>
+                            <th>Döviz</th>
+                            <th></th>
+                        </tr>
+                        <tr class="table-light">
+                            <th><input type="text" class="form-control form-control-sm column-filter" data-col="0" placeholder="Ara..." /></th>
+                            <th><input type="text" class="form-control form-control-sm column-filter" data-col="1" placeholder="Ara..." /></th>
+                            <th><input type="text" class="form-control form-control-sm column-filter" data-col="2" placeholder="Ara..." /></th>
+                            <th><input type="text" class="form-control form-control-sm column-filter" data-col="3" placeholder="Ara..." /></th>
+                            <th><input type="text" class="form-control form-control-sm column-filter" data-col="4" placeholder="Ara..." /></th>
+                            <th><input type="text" class="form-control form-control-sm column-filter" data-col="5" placeholder="Ara..." /></th>
+                            <th><input type="text" class="form-control form-control-sm column-filter" data-col="6" placeholder="Ara..." /></th>
+                            <th><input type="text" class="form-control form-control-sm column-filter" data-col="7" placeholder="Ara..." /></th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Items.Count == 0)
+                        {
+                            <tr class="empty-data-row">
+                                <td colspan="9" class="text-center text-muted">Kayıt bulunamadı.</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var item in Model.Items)
+                            {
+                                <tr class="data-row">
+                                    <td class="jv-col-no">@item.VoucherNo</td>
+                                    <td class="jv-col-date">@item.VoucherDate.ToString("dd.MM.yyyy")</td>
+                                    <td>@(item.CompanyName ?? "-")</td>
+                                    <td>@(item.WorkPlaceName ?? "-")</td>
+                                    <td class="jv-col-desc">@(item.Description ?? "-")</td>
+                                    <td class="text-end">@item.TotalDebit.ToString("N2")</td>
+                                    <td class="text-end">@item.TotalCredit.ToString("N2")</td>
+                                    <td>@item.CurrencyCode</td>
+                                    <td class="text-end text-nowrap">
+                                        @if (Model.ShowDeleted)
+                                        {
+                                            <form asp-action="Restore" asp-route-id="@item.RecId" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit"
+                                                        class="btn btn-sm btn-outline-success"
+                                                        onclick="return confirm('Bu kaydı geri yüklemek istediğinize emin misiniz?');">
+                                                    Geri Yükle
+                                                </button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <a asp-action="Edit" asp-route-id="@item.RecId" class="btn btn-sm btn-outline-primary">Düzenle</a>
+                                            <form asp-action="Delete" asp-route-id="@item.RecId" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit"
+                                                        class="btn btn-sm btn-outline-danger"
+                                                        onclick="return confirm('Bu kaydı silmek istediğinize emin misiniz?');">
+                                                    Sil
+                                                </button>
+                                            </form>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                            <tr id="journalVoucherNoFilterResults" class="d-none">
+                                <td colspan="9" class="text-center text-muted">Filtreye uygun kayıt bulunamadı.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    #journalVoucherGrid .jv-col-no {
+        min-width: 120px;
+        width: 12%;
+    }
+
+    #journalVoucherGrid .jv-col-date {
+        min-width: 110px;
+        width: 10%;
+    }
+
+    #journalVoucherGrid .jv-col-desc {
+        min-width: 220px;
+        width: 24%;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        (function () {
+            var grid = document.getElementById('journalVoucherGrid');
+            if (!grid) return;
+
+            var filters = grid.querySelectorAll('.column-filter');
+            var dataRows = grid.querySelectorAll('tbody tr.data-row');
+            var noResultsRow = document.getElementById('journalVoucherNoFilterResults');
+            var clearButton = document.getElementById('journalVoucherClearFilters');
+
+            function applyFilters() {
+                var visibleCount = 0;
+
+                dataRows.forEach(function (row) {
+                    var visible = true;
+
+                    filters.forEach(function (input) {
+                        var query = (input.value || '').toLowerCase().trim();
+                        if (!query) return;
+
+                        var colIndex = parseInt(input.getAttribute('data-col'), 10);
+                        var cell = row.cells[colIndex];
+                        var text = (cell ? cell.textContent : '').toLowerCase();
+                        if (text.indexOf(query) === -1) {
+                            visible = false;
+                        }
+                    });
+
+                    row.classList.toggle('d-none', !visible);
+                    if (visible) visibleCount++;
+                });
+
+                if (noResultsRow) {
+                    noResultsRow.classList.toggle('d-none', visibleCount > 0);
+                }
+            }
+
+            filters.forEach(function (input) {
+                input.addEventListener('input', applyFilters);
+            });
+
+            if (clearButton) {
+                clearButton.addEventListener('click', function () {
+                    filters.forEach(function (input) {
+                        input.value = '';
+                    });
+                    applyFilters();
+                });
+            }
+        })();
+    </script>
+}

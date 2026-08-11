@@ -1,0 +1,161 @@
+@* AnaMenu.dfm — sol agac menusu (yalnizca yapi, icerik henuz baglanmadi) *@
+
+<nav class="app-menu-tree" aria-label="Ana menu">
+    <a class="app-menu-link app-menu-link-root" asp-controller="Home" asp-action="Index">Ana Sayfa</a>
+
+  <div class="app-menu-group">
+    <button class="app-menu-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#menuSistem" aria-expanded="false">
+      Sistem
+    </button>
+    <ul class="collapse app-menu-sub" id="menuSistem">
+      <li><a class="app-menu-link" asp-controller="Account" asp-action="ChangePassword">Sifre Degistir</a></li>
+      <li><a class="app-menu-link" asp-controller="AppUsers" asp-action="Index">Kullanıcı Tanımları</a></li>
+      <li><a class="app-menu-link" asp-controller="AppLogs" asp-action="Index">Log Kayıt İzleme</a></li>
+      <li class="app-menu-group">
+        <button class="app-menu-toggle app-menu-toggle-sub" type="button" data-bs-toggle="collapse" data-bs-target="#menuSistemTanimlar" aria-expanded="false">
+          Tanimlar
+        </button>
+        <ul class="collapse app-menu-sub" id="menuSistemTanimlar">
+          <li><a class="app-menu-link" asp-controller="AppCompanies" asp-action="Index">Şirket Tanımları</a></li>
+          <li><a class="app-menu-link" asp-controller="AppWorkPlaces" asp-action="Index">Şube Tanımları</a></li>
+          <li><a class="app-menu-link" asp-controller="AppVatDefinitions" asp-action="Index">Kdv Tanimlari</a></li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+
+  <div class="app-menu-group">
+    <button class="app-menu-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#menuStok" aria-expanded="false">
+      Stok
+    </button>
+    <ul class="collapse app-menu-sub" id="menuStok">
+      <li><a class="app-menu-link" asp-controller="AppStocks" asp-action="Index">Stoklar</a></li>
+      <li class="app-menu-group">
+        <button class="app-menu-toggle app-menu-toggle-sub" type="button" data-bs-toggle="collapse" data-bs-target="#menuStokTanimlar" aria-expanded="false">
+          Stok Tanimlar
+        </button>
+        <ul class="collapse app-menu-sub" id="menuStokTanimlar">
+          <li><a class="app-menu-link" asp-controller="AppStockGroups" asp-action="Index">Stok Gruplari</a></li>
+          <li><a class="app-menu-link" href="#">Stok Ek Bilgiler</a></li>
+          <li><a class="app-menu-link" asp-controller="AppStockUnits" asp-action="Index">Stok Birimleri</a></li>
+          <li><a class="app-menu-link" href="#">Uretim Tanimlari</a></li>
+        </ul>
+      </li>
+      <li class="app-menu-group">
+        <button class="app-menu-toggle app-menu-toggle-sub" type="button" data-bs-toggle="collapse" data-bs-target="#menuStokIslemler" aria-expanded="false">
+          Stok Islemleri
+        </button>
+        <ul class="collapse app-menu-sub" id="menuStokIslemler">
+          <li><a class="app-menu-link" href="#">Acilis Fisleri</a></li>
+          <li><a class="app-menu-link" href="#">Subeler Arasi Transfer Fisleri</a></li>
+          <li><a class="app-menu-link" href="#">Cikis Fisleri</a></li>
+          <li><a class="app-menu-link" href="#">Uretim</a></li>
+          <li><a class="app-menu-link" href="#">Sayim Islemleri</a></li>
+          <li><a class="app-menu-link" href="#">Yonetim Gideri Stok Dagitimi</a></li>
+          <li><a class="app-menu-link" href="#">Stoklari Birlestir</a></li>
+          <li><a class="app-menu-link" href="#">Subeler Arasi Transfer Farkli Urun</a></li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+
+  <div class="app-menu-group">
+    <button class="app-menu-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#menuMuhasebe" aria-expanded="false">
+      Muhasebe
+    </button>
+    <ul class="collapse app-menu-sub" id="menuMuhasebe">
+      <li><a class="app-menu-link" asp-controller="AppAccountPlans" asp-action="Index">Hesap Plani</a></li>
+      <li class="app-menu-group">
+        <button class="app-menu-toggle app-menu-toggle-sub" type="button" data-bs-toggle="collapse" data-bs-target="#menuMuhasebeFaturalar" aria-expanded="false">
+          Faturalar
+        </button>
+        <ul class="collapse app-menu-sub" id="menuMuhasebeFaturalar">
+          <li><a class="app-menu-link" asp-controller="AppPurchaseInvoices" asp-action="Index">Alis Faturalari</a></li>
+          <li><a class="app-menu-link" asp-controller="AppSalesInvoices" asp-action="Index">Satis Faturalari</a></li>
+          <li><a class="app-menu-link" asp-controller="AppCustomsFreightInvoices" asp-action="Index">Gumruk Nakliye Faturalari</a></li>
+        </ul>
+      </li>
+      <li class="app-menu-group">
+        <button class="app-menu-toggle app-menu-toggle-sub" type="button" data-bs-toggle="collapse" data-bs-target="#menuMuhasebeIslemler" aria-expanded="false">
+          Muhasebe Islemleri
+        </button>
+        <ul class="collapse app-menu-sub" id="menuMuhasebeIslemler">
+          <li><a class="app-menu-link" asp-controller="AppPaymentVouchers" asp-action="Index">Tediye Fisi</a></li>
+          <li><a class="app-menu-link" asp-controller="AppReceiptVouchers" asp-action="Index">Tahsilat Fisi</a></li>
+          <li><a class="app-menu-link" asp-controller="AppJournalVouchers" asp-action="Index">Mahsup Fisi</a></li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+
+  <div class="app-menu-group">
+    <button class="app-menu-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#menuRaporlar" aria-expanded="false">
+      Raporlar
+    </button>
+    <ul class="collapse app-menu-sub" id="menuRaporlar">
+      <li class="app-menu-group">
+        <button class="app-menu-toggle app-menu-toggle-sub" type="button" data-bs-toggle="collapse" data-bs-target="#menuRaporStok" aria-expanded="false">
+          Stok Raporlari
+        </button>
+        <ul class="collapse app-menu-sub" id="menuRaporStok">
+          <li><a class="app-menu-link" href="#">Stok Hareketleri</a></li>
+          <li><a class="app-menu-link" href="#">Donem Sonu Raporu Birim</a></li>
+          <li><a class="app-menu-link" href="#">Donem Sonu Raporu Birim Eksiler</a></li>
+          <li><a class="app-menu-link" href="#">Donem Sonu Birim Uretim Maliyet</a></li>
+          <li><a class="app-menu-link" href="#">Donem Sonu Birim Uretim Maliyet Tumu</a></li>
+        </ul>
+      </li>
+      <li class="app-menu-group">
+        <button class="app-menu-toggle app-menu-toggle-sub" type="button" data-bs-toggle="collapse" data-bs-target="#menuRaporCari" aria-expanded="false">
+          Cari Raporlar
+        </button>
+        <ul class="collapse app-menu-sub" id="menuRaporCari">
+          <li><a class="app-menu-link" href="#">Cari Extre</a></li>
+        </ul>
+      </li>
+      <li class="app-menu-group">
+        <button class="app-menu-toggle app-menu-toggle-sub" type="button" data-bs-toggle="collapse" data-bs-target="#menuRaporMuhasebe" aria-expanded="false">
+          Muhasebe Raporlari
+        </button>
+        <ul class="collapse app-menu-sub" id="menuRaporMuhasebe">
+          <li class="app-menu-group">
+            <button class="app-menu-toggle app-menu-toggle-sub" type="button" data-bs-toggle="collapse" data-bs-target="#menuRaporMuhasebeFis" aria-expanded="false">
+              Muhasebe Fisleri
+            </button>
+            <ul class="collapse app-menu-sub" id="menuRaporMuhasebeFis">
+              <li><a class="app-menu-link" href="#">Mahsup Fisleri</a></li>
+              <li><a class="app-menu-link" href="#">Tahsilat Fisleri</a></li>
+              <li><a class="app-menu-link" href="#">Tediye Fisleri</a></li>
+            </ul>
+          </li>
+          <li class="app-menu-group">
+            <button class="app-menu-toggle app-menu-toggle-sub" type="button" data-bs-toggle="collapse" data-bs-target="#menuRaporFatura" aria-expanded="false">
+              Fatura Raporlari
+            </button>
+            <ul class="collapse app-menu-sub" id="menuRaporFatura">
+              <li><a class="app-menu-link" href="#">Alis Faturalari</a></li>
+              <li><a class="app-menu-link" href="#">Satis Faturalari</a></li>
+              <li><a class="app-menu-link" href="#">Gumruk Nakliye Faturalari</a></li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+      <li class="app-menu-group">
+        <button class="app-menu-toggle app-menu-toggle-sub" type="button" data-bs-toggle="collapse" data-bs-target="#menuRaporMizan" aria-expanded="false">
+          Mizan Raporlari
+        </button>
+        <ul class="collapse app-menu-sub" id="menuRaporMizan">
+          <li><a class="app-menu-link" href="#">Mizan</a></li>
+        </ul>
+      </li>
+      <li class="app-menu-group">
+        <button class="app-menu-toggle app-menu-toggle-sub" type="button" data-bs-toggle="collapse" data-bs-target="#menuRaporDonemSonu" aria-expanded="false">
+          Donem Sonu Raporlari
+        </button>
+        <ul class="collapse app-menu-sub" id="menuRaporDonemSonu">
+          <li><a class="app-menu-link" href="#">Stok Durum</a></li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+</nav>

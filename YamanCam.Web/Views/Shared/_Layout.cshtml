@@ -1,0 +1,78 @@
+﻿<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - YamanCam</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/YamanCam.Web.styles.css" asp-append-version="true" />
+</head>
+@{
+    var path = Context.Request.Path.Value ?? string.Empty;
+    var isSetupScreen = path.StartsWith("/SqlConnection", StringComparison.OrdinalIgnoreCase)
+        || path.StartsWith("/Account/Login", StringComparison.OrdinalIgnoreCase)
+        || path.StartsWith("/License", StringComparison.OrdinalIgnoreCase);
+}
+<body class="@(isSetupScreen ? "setup-body" : "app-body")">
+    @if (!isSetupScreen)
+    {
+        <div class="app-shell">
+            <aside class="app-sidebar collapse d-md-flex" id="appSidebar">
+                <div class="app-logo">Yaman Cam</div>
+                <div class="app-menu-scroll">
+                    <partial name="_SidebarMenu" />
+                </div>
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <div class="app-menu-footer">
+                        <form asp-controller="Account" asp-action="Logout" method="post" class="app-menu-logout m-0">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-outline-secondary btn-sm w-100">Cikis Yap</button>
+                        </form>
+                    </div>
+                }
+            </aside>
+            <div class="app-content">
+                <header class="app-topbar d-flex flex-wrap align-items-center justify-content-between gap-2">
+                    <div class="d-flex align-items-center gap-2 min-w-0">
+                        <button class="btn btn-sm btn-outline-secondary d-md-none flex-shrink-0" type="button" data-bs-toggle="collapse" data-bs-target="#appSidebar" aria-expanded="false" aria-controls="appSidebar">Menu</button>
+                        <span class="app-topbar-title text-truncate">@ViewData["Title"]</span>
+                    </div>
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <form asp-controller="Account" asp-action="Logout" method="post" class="m-0 flex-shrink-0">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-sm btn-outline-secondary">Cikis Yap</button>
+                        </form>
+                    }
+                </header>
+                <div class="app-main p-3">
+                    <main role="main">
+                        @RenderBody()
+                    </main>
+                </div>
+            </div>
+        </div>
+    }
+    @if (isSetupScreen)
+    {
+    <div class="setup-container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+    }
+
+    @if (!isSetupScreen)
+    {
+    <footer class="border-top footer text-muted px-3 app-footer">
+        &copy; 2026 - YamanCam
+    </footer>
+    }
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

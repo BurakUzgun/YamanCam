@@ -1,0 +1,54 @@
+@model YamanCam.Web.Models.SqlConnectionViewModel
+
+@{
+    ViewData["Title"] = "SQL Connection";
+}
+
+<section class="setup-card">
+    <h1 class="h3 setup-title">SQL Connection Ayarlari</h1>
+    <p class="setup-subtitle">Uygulama devam etmeden once SQL Server baglantisini tanimlayin.</p>
+
+    <form asp-action="Index" method="post">
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+        <div class="mb-3">
+            <label asp-for="Server" class="form-label"></label>
+            <input asp-for="Server" class="form-control" placeholder="ORNEK-SERVER\\SQLEXPRESS veya 10.0.0.15" />
+            <span asp-validation-for="Server" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Database" class="form-label"></label>
+            <input asp-for="Database" class="form-control" />
+            <span asp-validation-for="Database" class="text-danger"></span>
+        </div>
+
+        <div class="form-check mb-3">
+            <input asp-for="UseTrustedConnection" class="form-check-input" />
+            <label asp-for="UseTrustedConnection" class="form-check-label"></label>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="UserId" class="form-label"></label>
+            <input asp-for="UserId" class="form-control" />
+            <span asp-validation-for="UserId" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Password" class="form-label"></label>
+            <input asp-for="Password" class="form-control" />
+            <span asp-validation-for="Password" class="text-danger"></span>
+        </div>
+
+        <div class="form-check mb-3">
+            <input asp-for="TrustServerCertificate" class="form-check-input" />
+            <label asp-for="TrustServerCertificate" class="form-check-label"></label>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100 setup-primary-btn">Kaydet ve Baglan</button>
+    </form>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

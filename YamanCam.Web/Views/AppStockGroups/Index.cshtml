@@ -1,0 +1,165 @@
+@model YamanCam.Web.Models.AppStockGroupListViewModel
+@{
+    ViewData["Title"] = "Stok Grupları";
+}
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h1 class="h4 mb-1">Stok Grupları</h1>
+                <p class="text-muted mb-0">Stok grup tanımlarını bu ekrandan yönetebilirsiniz.</p>
+            </div>
+            <a asp-action="Create" class="btn btn-primary btn-sm">Yeni Stok Grubu</a>
+        </div>
+
+        @if (TempData["SuccessMessage"] is string successMessage)
+        {
+            <div class="alert alert-success">@successMessage</div>
+        }
+        @if (TempData["ErrorMessage"] is string errorMessage)
+        {
+            <div class="alert alert-danger">@errorMessage</div>
+        }
+
+        <form method="get" class="mb-2">
+            <div class="form-check">
+                <input type="checkbox"
+                       class="form-check-input"
+                       id="showPassive"
+                       name="showPassive"
+                       value="true"
+                       @(Model.ShowPassive ? "checked" : "")
+                       onchange="this.form.submit()" />
+                <label class="form-check-label" for="showPassive">Pasifler</label>
+            </div>
+        </form>
+
+        <div class="border rounded overflow-hidden">
+            <div class="d-flex justify-content-end p-2 border-bottom bg-light">
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="stockGroupClearFilters">Filtreleri Temizle</button>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle mb-0" id="stockGroupGrid">
+                    <thead>
+                        <tr>
+                            <th class="stock-group-col-code">Stok Grup Kodu</th>
+                            <th class="stock-group-col-name">Stok Grup Adı</th>
+                            <th>Alış Muhasebe Kodu</th>
+                            <th>Satış Muhasebe Kodu</th>
+                            <th></th>
+                        </tr>
+                        <tr class="table-light">
+                            <th><input type="text" class="form-control form-control-sm column-filter" data-col="0" placeholder="Ara..." /></th>
+                            <th><input type="text" class="form-control form-control-sm column-filter" data-col="1" placeholder="Ara..." /></th>
+                            <th><input type="text" class="form-control form-control-sm column-filter" data-col="2" placeholder="Ara..." /></th>
+                            <th><input type="text" class="form-control form-control-sm column-filter" data-col="3" placeholder="Ara..." /></th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Items.Count == 0)
+                        {
+                            <tr class="empty-data-row">
+                                <td colspan="5" class="text-center text-muted">Kayıt bulunamadı.</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var item in Model.Items)
+                            {
+                                <tr class="data-row @(item.IsActive ? "" : "text-muted")">
+                                    <td class="stock-group-col-code">@item.GroupCode</td>
+                                    <td class="stock-group-col-name">@item.GroupName</td>
+                                    <td>@(item.PurchaseAccountCode ?? "-")</td>
+                                    <td>@(item.SalesAccountCode ?? "-")</td>
+                                    <td class="text-end text-nowrap">
+                                        <a asp-action="Edit" asp-route-id="@item.RecId" class="btn btn-sm btn-outline-primary">Düzenle</a>
+                                        <form asp-action="Delete" asp-route-id="@item.RecId" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit"
+                                                    class="btn btn-sm btn-outline-danger"
+                                                    onclick="return confirm('Bu stok grubunu silmek istediğinize emin misiniz?');">
+                                                Sil
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                            <tr id="stockGroupNoFilterResults" class="d-none">
+                                <td colspan="5" class="text-center text-muted">Filtreye uygun kayıt bulunamadı.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    #stockGroupGrid .stock-group-col-code {
+        min-width: 140px;
+        width: 18%;
+    }
+
+    #stockGroupGrid .stock-group-col-name {
+        min-width: 320px;
+        width: 42%;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        (function () {
+            var grid = document.getElementById('stockGroupGrid');
+            if (!grid) return;
+
+            var filters = grid.querySelectorAll('.column-filter');
+            var dataRows = grid.querySelectorAll('tbody tr.data-row');
+            var noResultsRow = document.getElementById('stockGroupNoFilterResults');
+            var clearButton = document.getElementById('stockGroupClearFilters');
+
+            function applyFilters() {
+                var visibleCount = 0;
+
+                dataRows.forEach(function (row) {
+                    var visible = true;
+
+                    filters.forEach(function (input) {
+                        var query = (input.value || '').toLowerCase().trim();
+                        if (!query) return;
+
+                        var colIndex = parseInt(input.getAttribute('data-col'), 10);
+                        var cell = row.cells[colIndex];
+                        var text = (cell ? cell.textContent : '').toLowerCase();
+                        if (text.indexOf(query) === -1) {
+                            visible = false;
+                        }
+                    });
+
+                    row.classList.toggle('d-none', !visible);
+                    if (visible) visibleCount++;
+                });
+
+                if (noResultsRow) {
+                    noResultsRow.classList.toggle('d-none', visibleCount > 0);
+                }
+            }
+
+            filters.forEach(function (input) {
+                input.addEventListener('input', applyFilters);
+            });
+
+            if (clearButton) {
+                clearButton.addEventListener('click', function () {
+                    filters.forEach(function (input) {
+                        input.value = '';
+                    });
+                    applyFilters();
+                });
+            }
+        })();
+    </script>
+}

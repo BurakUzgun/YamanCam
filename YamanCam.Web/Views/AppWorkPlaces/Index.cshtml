@@ -1,0 +1,94 @@
+@model YamanCam.Web.Models.AppWorkPlaceListViewModel
+@{
+    ViewData["Title"] = "Şube Tanımları";
+}
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h1 class="h4 mb-1">Şube Tanımları</h1>
+                <p class="text-muted mb-0">Şubeler şirketlere bağlı olarak tanımlanır.</p>
+            </div>
+            <a asp-action="Create" asp-route-companyId="@Model.CompanyId" class="btn btn-primary btn-sm">Yeni Şube</a>
+        </div>
+
+        @if (TempData["SuccessMessage"] is string successMessage)
+        {
+            <div class="alert alert-success">@successMessage</div>
+        }
+
+        @if (Model.CompanyOptions.Count == 0)
+        {
+            <div class="alert alert-warning">
+                Şube tanımlamadan önce <a asp-controller="AppCompanies" asp-action="Index">Şirket Tanımları</a> ekranından en az bir şirket ekleyin.
+            </div>
+        }
+        else
+        {
+            <form method="get" class="row g-2 mb-3">
+                <div class="col-md-4">
+                    <label class="form-label mb-1">Şirket</label>
+                    <select class="form-select form-select-sm" name="companyId">
+                        <option value="">Tümü</option>
+                        @foreach (var company in Model.CompanyOptions)
+                        {
+                            if (Model.CompanyId == company.CompanyId)
+                            {
+                                <option value="@company.CompanyId" selected="selected">@company.DisplayName</option>
+                            }
+                            else
+                            {
+                                <option value="@company.CompanyId">@company.DisplayName</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-sm btn-outline-primary">Filtrele</button>
+                </div>
+            </form>
+        }
+
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Şirket</th>
+                        <th>Şube Kodu</th>
+                        <th>Şube Adı</th>
+                        <th>Şehir</th>
+                        <th>Varsayılan</th>
+                        <th>Aktif</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Items.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center text-muted">Kayıt bulunamadı.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var item in Model.Items)
+                        {
+                            <tr>
+                                <td>@item.CompanyName</td>
+                                <td>@item.WorkPlaceCode</td>
+                                <td>@item.WorkPlaceName</td>
+                                <td>@(item.City ?? "-")</td>
+                                <td>@(item.IsDefault == true ? "Evet" : "Hayır")</td>
+                                <td>@(item.IsActive == true ? "Evet" : "Hayır")</td>
+                                <td class="text-end">
+                                    <a asp-action="Edit" asp-route-id="@item.RecId" class="btn btn-sm btn-outline-primary">Düzenle</a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

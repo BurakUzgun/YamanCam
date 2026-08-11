@@ -1,0 +1,144 @@
+@model YamanCam.Web.Models.AppAccountPlanEditViewModel
+@{
+    var isNew = Model.RecId == 0;
+    ViewData["Title"] = isNew ? "Yeni Hesap" : "Hesap Düzenle";
+}
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <form asp-action="@(isNew ? "Create" : "Edit")" method="post">
+            @Html.AntiForgeryToken()
+            <input asp-for="RecId" type="hidden" />
+
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <h1 class="h4 mb-0">@ViewData["Title"]</h1>
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="IsActive" name="IsActive" value="true" @(Model.IsActive ? "checked" : "") />
+                    <label asp-for="IsActive" class="form-check-label"></label>
+                </div>
+            </div>
+
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <h2 class="h6 text-muted mb-3">Hesap Bilgileri</h2>
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label asp-for="AccountCode" class="form-label"></label>
+                    <input asp-for="AccountCode" class="form-control" placeholder="100 veya 100.01" />
+                    <span asp-validation-for="AccountCode" class="text-danger"></span>
+                    <div class="form-text">Seviye ve üst hesap kod yapısından otomatik hesaplanır.</div>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="AccountName" class="form-label"></label>
+                    <input asp-for="AccountName" class="form-control" />
+                    <span asp-validation-for="AccountName" class="text-danger"></span>
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="CurrencyCode" class="form-label"></label>
+                    <select asp-for="CurrencyCode" class="form-select">
+                        <option value="TRY">TRY</option>
+                        <option value="USD">USD</option>
+                        <option value="EUR">EUR</option>
+                        <option value="GBP">GBP</option>
+                    </select>
+                    <span asp-validation-for="CurrencyCode" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="AccountType" class="form-label"></label>
+                    <input asp-for="AccountType" class="form-control" placeholder="Aktif, Pasif, Gelir, Cari..." />
+                    <div class="form-text">Alış faturası carisi olarak seçilebilmesi için "Cari" yazılmalıdır.</div>
+                    <span asp-validation-for="AccountType" class="text-danger"></span>
+                </div>
+                <div class="col-md-2">
+                    <label asp-for="BalanceType" class="form-label"></label>
+                    <select asp-for="BalanceType" class="form-select">
+                        <option value="">-</option>
+                        <option value="B">B (Borç)</option>
+                        <option value="A">A (Alacak)</option>
+                    </select>
+                    <span asp-validation-for="BalanceType" class="text-danger"></span>
+                </div>
+                <div class="col-md-2">
+                    <label asp-for="SpecialCode" class="form-label"></label>
+                    <input asp-for="SpecialCode" class="form-control" />
+                    <span asp-validation-for="SpecialCode" class="text-danger"></span>
+                </div>
+            </div>
+
+            <h2 class="h6 text-muted mt-4 mb-3">Vergi ve İletişim</h2>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label asp-for="Tax" class="form-label"></label>
+                    <input asp-for="Tax" class="form-control" />
+                    <span asp-validation-for="Tax" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="TaxNo" class="form-label"></label>
+                    <input asp-for="TaxNo" class="form-control" />
+                    <span asp-validation-for="TaxNo" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Person" class="form-label"></label>
+                    <input asp-for="Person" class="form-control" />
+                    <span asp-validation-for="Person" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Address" class="form-label"></label>
+                    <input asp-for="Address" class="form-control" />
+                    <span asp-validation-for="Address" class="text-danger"></span>
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="City" class="form-label"></label>
+                    <input asp-for="City" class="form-control" />
+                    <span asp-validation-for="City" class="text-danger"></span>
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="Country" class="form-label"></label>
+                    <input asp-for="Country" class="form-control" />
+                    <span asp-validation-for="Country" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="EMail" class="form-label"></label>
+                    <input asp-for="EMail" class="form-control" type="email" />
+                    <span asp-validation-for="EMail" class="text-danger"></span>
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="Tel" class="form-label"></label>
+                    <input asp-for="Tel" class="form-control" />
+                    <span asp-validation-for="Tel" class="text-danger"></span>
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="Fax" class="form-label"></label>
+                    <input asp-for="Fax" class="form-control" />
+                    <span asp-validation-for="Fax" class="text-danger"></span>
+                </div>
+                <div class="col-md-2">
+                    <label asp-for="Gsm" class="form-label"></label>
+                    <input asp-for="Gsm" class="form-control" />
+                    <span asp-validation-for="Gsm" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2 mt-4">
+                <button type="submit" class="btn btn-primary">Kaydet</button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Vazgeç</a>
+            </div>
+        </form>
+
+        @if (!isNew)
+        {
+            <form asp-action="Delete" asp-route-id="@Model.RecId" method="post" class="mt-3 pt-3 border-top">
+                @Html.AntiForgeryToken()
+                <button type="submit"
+                        class="btn btn-outline-danger"
+                        onclick="return confirm('Bu hesabı silmek istediğinize emin misiniz?');">
+                    Hesabı Sil
+                </button>
+            </form>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

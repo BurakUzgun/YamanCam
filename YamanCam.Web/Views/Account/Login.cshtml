@@ -1,0 +1,60 @@
+@model YamanCam.Web.Models.LoginViewModel
+@using System.Text.Json
+
+@{
+    ViewData["Title"] = "Login";
+}
+
+<section class="setup-card">
+    <h1 class="h3 setup-title">Kullanici Girisi</h1>
+    <p class="setup-subtitle">Devam etmek icin kullanici bilgilerinizle giris yapin.</p>
+
+    <form asp-action="Login" method="post">
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+        <div class="mb-3">
+            <label asp-for="Username" class="form-label">Kullanici</label>
+            <input asp-for="Username" class="form-control" />
+            <span asp-validation-for="Username" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Password" class="form-label">Sifre</label>
+            <input type="password"
+                   name="Password"
+                   id="Password"
+                   class="form-control"
+                   autocomplete="current-password"
+                   value="@Model.Password" />
+            <span asp-validation-for="Password" class="text-danger"></span>
+        </div>
+
+        <div class="form-check mb-3">
+            <input asp-for="RememberMe" class="form-check-input" />
+            <label asp-for="RememberMe" class="form-check-label">Beni Hatirla</label>
+        </div>
+
+        <div class="form-check mb-3">
+            <input asp-for="RememberPassword" class="form-check-input" />
+            <label asp-for="RememberPassword" class="form-check-label">Sifremi Hatirla</label>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100 setup-primary-btn">Giris Yap</button>
+    </form>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    @if (Model.RememberPassword && !string.IsNullOrEmpty(Model.Password))
+    {
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                var el = document.getElementById('Password');
+                var remembered = @Html.Raw(JsonSerializer.Serialize(Model.Password));
+                if (el && typeof remembered === 'string' && remembered.length && !el.value) {
+                    el.value = remembered;
+                }
+            });
+        </script>
+    }
+}

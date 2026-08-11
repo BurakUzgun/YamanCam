@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "yamancam-web",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "YamanCam.Web/YamanCam.Web.csproj", "--urls", "http://localhost:1926"],
+      "port": 1926
+    }
+  ]
+}

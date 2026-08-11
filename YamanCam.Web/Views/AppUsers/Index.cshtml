@@ -1,0 +1,60 @@
+@model IReadOnlyList<YamanCam.Web.Models.AppUserListItemViewModel>
+@{
+    ViewData["Title"] = "Kullanıcı Tanımları";
+}
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h1 class="h4 mb-1">Kullanıcı Tanımları</h1>
+                <p class="text-muted mb-0">Kullanıcı bilgileri ve şube yetkilerini bu ekrandan yönetebilirsiniz.</p>
+            </div>
+            <a asp-action="Create" class="btn btn-primary btn-sm">Yeni Kullanıcı</a>
+        </div>
+
+        @if (TempData["SuccessMessage"] is string successMessage)
+        {
+            <div class="alert alert-success">@successMessage</div>
+        }
+
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Kod</th>
+                        <th>Ad Soyad</th>
+                        <th>Şubeler</th>
+                        <th>Yönetici</th>
+                        <th>Aktif</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">Kayıt bulunamadı.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>@item.Code</td>
+                                <td>@item.NameSurname</td>
+                                <td class="log-cell-truncate" title="@item.WorkPlaceSummary">@item.WorkPlaceSummary</td>
+                                <td>@(item.IsRight == true ? "Evet" : "Hayır")</td>
+                                <td>@(item.IsActive == true ? "Evet" : "Hayır")</td>
+                                <td class="text-end">
+                                    <a asp-action="Edit" asp-route-id="@item.RecId" class="btn btn-sm btn-outline-primary">Düzenle</a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
