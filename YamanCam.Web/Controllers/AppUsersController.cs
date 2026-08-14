@@ -11,17 +11,19 @@ public class AppUsersController : Controller
 {
     private readonly ApplicationDbContext _context;
     private readonly IAppLogService _appLogService;
+    private readonly IUserRightService _userRightService;
 
-    public AppUsersController(ApplicationDbContext context, IAppLogService appLogService)
+    public AppUsersController(ApplicationDbContext context, IAppLogService appLogService, IUserRightService userRightService)
     {
         _context = context;
         _appLogService = appLogService;
+        _userRightService = userRightService;
     }
 
     [HttpGet]
     public async Task<IActionResult> Index()
     {
-        var denied = EnsureAdmin();
+        var denied = await EnsureAdmin();
         if (denied is not null)
         {
             return denied;
@@ -67,7 +69,7 @@ public class AppUsersController : Controller
     [HttpGet]
     public async Task<IActionResult> Create()
     {
-        var denied = EnsureAdmin();
+        var denied = await EnsureAdmin();
         if (denied is not null)
         {
             return denied;
@@ -81,7 +83,7 @@ public class AppUsersController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(AppUserEditViewModel vm)
     {
-        var denied = EnsureAdmin();
+        var denied = await EnsureAdmin();
         if (denied is not null)
         {
             return denied;
@@ -90,6 +92,9 @@ public class AppUsersController : Controller
         vm.RecId = 0;
         vm.SelectedWorkPlaceIds = ParseSelectedWorkPlaceIds();
         NormalizeCheckboxes(vm);
+
+        var screenRightSelections = ParseSelectedScreenRights();
+        vm.SelectedScreenRightKeys = screenRightSelections.Select(x => $"{x.WorkPlaceId}_{x.RightCode}").ToList();
 
         if (string.IsNullOrWhiteSpace(vm.Password))
         {
@@ -119,6 +124,7 @@ public class AppUsersController : Controller
         await _context.SaveChangesAsync();
 
         await SyncUserWorkPlacesAsync(user.RecId, vm.SelectedWorkPlaceIds, vm.DefaultWorkPlaceId);
+        await SyncUserScreenRightsAsync(user.RecId, screenRightSelections, vm.SelectedWorkPlaceIds);
         await _context.SaveChangesAsync();
 
         await _appLogService.WriteInfoAsync(
@@ -134,7 +140,7 @@ public class AppUsersController : Controller
     [HttpGet]
     public async Task<IActionResult> Edit(int id)
     {
-        var denied = EnsureAdmin();
+        var denied = await EnsureAdmin();
         if (denied is not null)
         {
             return denied;
@@ -148,7 +154,7 @@ public class AppUsersController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, AppUserEditViewModel vm)
     {
-        var denied = EnsureAdmin();
+        var denied = await EnsureAdmin();
         if (denied is not null)
         {
             return denied;
@@ -161,6 +167,9 @@ public class AppUsersController : Controller
 
         vm.SelectedWorkPlaceIds = ParseSelectedWorkPlaceIds();
         NormalizeCheckboxes(vm);
+
+        var screenRightSelections = ParseSelectedScreenRights();
+        vm.SelectedScreenRightKeys = screenRightSelections.Select(x => $"{x.WorkPlaceId}_{x.RightCode}").ToList();
 
         var user = await _context.AppUsers.FirstOrDefaultAsync(x => x.RecId == id);
         if (user is null)
@@ -193,6 +202,7 @@ public class AppUsersController : Controller
         user.IsActive = vm.IsActive;
 
         await SyncUserWorkPlacesAsync(user.RecId, vm.SelectedWorkPlaceIds, vm.DefaultWorkPlaceId);
+        await SyncUserScreenRightsAsync(user.RecId, screenRightSelections, vm.SelectedWorkPlaceIds);
         await _context.SaveChangesAsync();
 
         await _appLogService.WriteInfoAsync(
@@ -206,14 +216,11 @@ public class AppUsersController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    private IActionResult? EnsureAdmin()
+    private async Task<IActionResult?> EnsureAdmin()
     {
-        if (!string.Equals(User.FindFirst("IsRight")?.Value, "true", StringComparison.Ordinal))
-        {
-            return RedirectToAction("Index", "Home");
-        }
-
-        return null;
+        var action = AppScreenRights.ResolveAction(ControllerContext.ActionDescriptor.ActionName);
+        var allowed = await _userRightService.HasScreenAccessAsync(User, ControllerContext.ActionDescriptor.ControllerName, action);
+        return allowed ? null : RedirectToAction("Index", "Home");
     }
 
     private List<int> ParseSelectedWorkPlaceIds()
@@ -260,12 +267,14 @@ public class AppUsersController : Controller
         }
 
         vm.WorkPlaceOptions = await LoadWorkPlaceOptionsAsync(vm.SelectedWorkPlaceIds);
+        vm.ScreenCatalog = BuildScreenCatalog();
     }
 
     private async Task<AppUserEditViewModel?> BuildEditViewModelAsync(int? userId)
     {
         AppUser? user = null;
         List<int> selectedIds = [];
+        List<string> screenRightKeys = [];
 
         if (userId.HasValue)
         {
@@ -276,6 +285,7 @@ public class AppUsersController : Controller
             }
 
             selectedIds = await GetSelectedWorkPlaceIdsAsync(user.RecId);
+            screenRightKeys = await GetSelectedScreenRightKeysAsync(user.RecId);
         }
 
         var defaultWorkPlaceId = user is null
@@ -293,8 +303,17 @@ public class AppUsersController : Controller
             IsActive = user?.IsActive != false,
             DefaultWorkPlaceId = defaultWorkPlaceId ?? selectedIds.FirstOrDefault(),
             SelectedWorkPlaceIds = selectedIds,
-            WorkPlaceOptions = await LoadWorkPlaceOptionsAsync(selectedIds)
+            WorkPlaceOptions = await LoadWorkPlaceOptionsAsync(selectedIds),
+            ScreenCatalog = BuildScreenCatalog(),
+            SelectedScreenRightKeys = screenRightKeys
         };
+    }
+
+    private static List<ScreenRightCatalogItem> BuildScreenCatalog()
+    {
+        return AppScreenRights.All
+            .Select(x => new ScreenRightCatalogItem { Code = x.Code, Name = x.Name, HasDelete = x.HasDelete })
+            .ToList();
     }
 
     private async Task<List<UserWorkPlaceOptionViewModel>> LoadWorkPlaceOptionsAsync(IReadOnlyCollection<int> selectedIds)
@@ -330,6 +349,105 @@ public class AppUsersController : Controller
             .Where(x => x.UserId == userId && x.IsActive == true && x.IsDefault == true)
             .Select(x => (int?)x.WorkPlaceId)
             .FirstOrDefaultAsync();
+    }
+
+    private async Task<List<string>> GetSelectedScreenRightKeysAsync(int userId)
+    {
+        var rows = await _context.AppUserRights
+            .AsNoTracking()
+            .Where(x => x.UserId == userId && x.WorkPlaceId != null && x.IsActive == true && x.IsAllowed == true)
+            .Select(x => new { x.WorkPlaceId, x.RightCode })
+            .ToListAsync();
+
+        return rows.Select(x => $"{x.WorkPlaceId}_{x.RightCode}").ToList();
+    }
+
+    private List<(int WorkPlaceId, string RightCode)> ParseSelectedScreenRights()
+    {
+        const string prefix = "ScreenRight_";
+        var result = new List<(int WorkPlaceId, string RightCode)>();
+
+        foreach (var key in Request.Form.Keys)
+        {
+            if (key is null || !key.StartsWith(prefix, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            var rest = key[prefix.Length..];
+            var separatorIndex = rest.IndexOf('_');
+            if (separatorIndex <= 0)
+            {
+                continue;
+            }
+
+            var workPlacePart = rest[..separatorIndex];
+            var rightCode = rest[(separatorIndex + 1)..];
+            if (int.TryParse(workPlacePart, out var workPlaceId) && workPlaceId > 0 && !string.IsNullOrWhiteSpace(rightCode))
+            {
+                result.Add((workPlaceId, rightCode));
+            }
+        }
+
+        return result;
+    }
+
+    private static Dictionary<string, string> BuildRightCodeNameLookup()
+    {
+        var lookup = new Dictionary<string, string>();
+        foreach (var screen in AppScreenRights.All)
+        {
+            foreach (var action in AppScreenRights.AllActions)
+            {
+                if (action == ScreenActionType.Delete && !screen.HasDelete)
+                {
+                    continue;
+                }
+
+                lookup[AppScreenRights.BuildRightCode(screen.Code, action)] = $"{screen.Name} - {AppScreenRights.ActionLabel(action)}";
+            }
+        }
+
+        return lookup;
+    }
+
+    private async Task SyncUserScreenRightsAsync(int userId, IReadOnlyList<(int WorkPlaceId, string RightCode)> selections, IReadOnlyList<int> allowedWorkPlaceIds)
+    {
+        var catalogNames = BuildRightCodeNameLookup();
+        var allowedWorkPlaceSet = allowedWorkPlaceIds.ToHashSet();
+        var selectedSet = selections
+            .Where(x => allowedWorkPlaceSet.Contains(x.WorkPlaceId) && catalogNames.ContainsKey(x.RightCode))
+            .Distinct()
+            .ToHashSet();
+
+        var existing = await _context.AppUserRights
+            .Where(x => x.UserId == userId && x.WorkPlaceId != null)
+            .ToListAsync();
+
+        foreach (var right in existing.Where(x => !selectedSet.Contains((x.WorkPlaceId!.Value, x.RightCode))))
+        {
+            _context.AppUserRights.Remove(right);
+        }
+
+        foreach (var (workPlaceId, rightCode) in selectedSet)
+        {
+            var right = existing.FirstOrDefault(x => x.WorkPlaceId == workPlaceId && x.RightCode == rightCode);
+            if (right is null)
+            {
+                right = new AppUserRight
+                {
+                    UserId = userId,
+                    WorkPlaceId = workPlaceId,
+                    RightCode = rightCode,
+                    RightName = catalogNames.GetValueOrDefault(rightCode),
+                    CreatedDate = DateTime.UtcNow
+                };
+                _context.AppUserRights.Add(right);
+            }
+
+            right.IsAllowed = true;
+            right.IsActive = true;
+        }
     }
 
     private async Task SyncUserWorkPlacesAsync(int userId, IReadOnlyList<int> selectedWorkPlaceIds, int? defaultWorkPlaceId)

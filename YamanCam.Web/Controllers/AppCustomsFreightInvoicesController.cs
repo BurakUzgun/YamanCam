@@ -24,17 +24,19 @@ public class AppCustomsFreightInvoicesController : Controller
 
     private readonly ApplicationDbContext _context;
     private readonly IAppLogService _appLogService;
+    private readonly IUserRightService _userRightService;
 
-    public AppCustomsFreightInvoicesController(ApplicationDbContext context, IAppLogService appLogService)
+    public AppCustomsFreightInvoicesController(ApplicationDbContext context, IAppLogService appLogService, IUserRightService userRightService)
     {
         _context = context;
         _appLogService = appLogService;
+        _userRightService = userRightService;
     }
 
     [HttpGet]
     public async Task<IActionResult> Index(bool showDeleted = false)
     {
-        var denied = EnsureAdmin();
+        var denied = await EnsureAdmin();
         if (denied is not null)
         {
             return denied;
@@ -78,7 +80,7 @@ public class AppCustomsFreightInvoicesController : Controller
     [HttpGet]
     public async Task<IActionResult> Create()
     {
-        var denied = EnsureAdmin();
+        var denied = await EnsureAdmin();
         if (denied is not null)
         {
             return denied;
@@ -93,7 +95,7 @@ public class AppCustomsFreightInvoicesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(AppCustomsFreightInvoiceEditViewModel vm)
     {
-        var denied = EnsureAdmin();
+        var denied = await EnsureAdmin();
         if (denied is not null)
         {
             return denied;
@@ -129,7 +131,7 @@ public class AppCustomsFreightInvoicesController : Controller
     [HttpGet]
     public async Task<IActionResult> Edit(int id)
     {
-        var denied = EnsureAdmin();
+        var denied = await EnsureAdmin();
         if (denied is not null)
         {
             return denied;
@@ -154,7 +156,7 @@ public class AppCustomsFreightInvoicesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, AppCustomsFreightInvoiceEditViewModel vm)
     {
-        var denied = EnsureAdmin();
+        var denied = await EnsureAdmin();
         if (denied is not null)
         {
             return denied;
@@ -205,7 +207,7 @@ public class AppCustomsFreightInvoicesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(int id)
     {
-        var denied = EnsureAdmin();
+        var denied = await EnsureAdmin();
         if (denied is not null)
         {
             return denied;
@@ -239,7 +241,7 @@ public class AppCustomsFreightInvoicesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Restore(int id)
     {
-        var denied = EnsureAdmin();
+        var denied = await EnsureAdmin();
         if (denied is not null)
         {
             return denied;
@@ -269,14 +271,11 @@ public class AppCustomsFreightInvoicesController : Controller
         return RedirectToAction(nameof(Index), new { showDeleted = true });
     }
 
-    private IActionResult? EnsureAdmin()
+    private async Task<IActionResult?> EnsureAdmin()
     {
-        if (!string.Equals(User.FindFirst("IsRight")?.Value, "true", StringComparison.Ordinal))
-        {
-            return RedirectToAction("Index", "Home");
-        }
-
-        return null;
+        var action = AppScreenRights.ResolveAction(ControllerContext.ActionDescriptor.ActionName);
+        var allowed = await _userRightService.HasScreenAccessAsync(User, ControllerContext.ActionDescriptor.ControllerName, action);
+        return allowed ? null : RedirectToAction("Index", "Home");
     }
 
     private async Task PopulateSelectListsAsync(AppCustomsFreightInvoiceEditViewModel vm)

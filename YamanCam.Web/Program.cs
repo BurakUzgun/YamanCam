@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.WebHost.UseUrls("http://0.0.0.0:1926");
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddDistributedMemoryCache();
@@ -31,6 +32,7 @@ builder.Services.AddSingleton<IDatabaseBootstrapService, DatabaseBootstrapServic
 builder.Services.AddSingleton<ICenterLicenseConnectionService, CenterLicenseConnectionService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IAppLogService, AppLogService>();
+builder.Services.AddScoped<IUserRightService, UserRightService>();
 builder.Services.AddHostedService<LicenseDailyCheckHostedService>();
 builder.Services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>
 {
@@ -72,8 +74,6 @@ app.Use(async (context, next) =>
         || path.StartsWith("/favicon", StringComparison.OrdinalIgnoreCase);
     var sqlConfigured = sqlSettingsService.HasValidConfiguration();
     var isLoggedIn = context.User.Identity?.IsAuthenticated == true;
-    var hasRight = string.Equals(context.User.FindFirst("IsRight")?.Value, "true", StringComparison.Ordinal);
-    context.Items["HasRight"] = hasRight;
 
     if (!sqlConfigured && !isSqlConnectionPath && !isStaticPath)
     {
@@ -121,31 +121,14 @@ app.Use(async (context, next) =>
         }
 
         var dbContext = context.RequestServices.GetRequiredService<ApplicationDbContext>();
-        var appUser = await dbContext.AppUsers
+        var appUserExists = await dbContext.AppUsers
             .AsNoTracking()
-            .Where(x => x.IsActive == true && (x.Code == username || x.NameSurname == username))
-            .Select(x => new { x.IsRight })
-            .FirstOrDefaultAsync(context.RequestAborted);
+            .AnyAsync(x => x.IsActive == true && (x.Code == username || x.NameSurname == username), context.RequestAborted);
 
-        if (appUser is null)
+        if (!appUserExists)
         {
             await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             context.Response.Redirect("/Account/Login");
-            return;
-        }
-
-        hasRight = appUser.IsRight == true;
-        context.Items["HasRight"] = hasRight;
-    }
-
-    if (sqlConfigured && isLoggedIn && licenseStatus.IsActive && !hasRight && !isLogoutPath && !isStaticPath)
-    {
-        var isHomePath = path.StartsWith("/Home", StringComparison.OrdinalIgnoreCase);
-        var isChangePasswordPath = path.StartsWith("/Account/ChangePassword", StringComparison.OrdinalIgnoreCase);
-        var isAppLogsPath = path.StartsWith("/AppLogs", StringComparison.OrdinalIgnoreCase);
-        if (!isHomePath && !isChangePasswordPath && !isAppLogsPath)
-        {
-            context.Response.Redirect("/Home/Index");
             return;
         }
     }

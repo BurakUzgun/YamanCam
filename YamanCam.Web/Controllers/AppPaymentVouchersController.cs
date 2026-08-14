@@ -6,8 +6,8 @@ namespace YamanCam.Web.Controllers;
 
 public class AppPaymentVouchersController : AppVoucherControllerBase
 {
-    public AppPaymentVouchersController(ApplicationDbContext context, IAppLogService appLogService)
-        : base(context, appLogService)
+    public AppPaymentVouchersController(ApplicationDbContext context, IAppLogService appLogService, IUserRightService userRightService)
+        : base(context, appLogService, userRightService)
     {
     }
 

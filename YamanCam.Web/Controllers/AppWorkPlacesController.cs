@@ -11,17 +11,19 @@ public class AppWorkPlacesController : Controller
 {
     private readonly ApplicationDbContext _context;
     private readonly IAppLogService _appLogService;
+    private readonly IUserRightService _userRightService;
 
-    public AppWorkPlacesController(ApplicationDbContext context, IAppLogService appLogService)
+    public AppWorkPlacesController(ApplicationDbContext context, IAppLogService appLogService, IUserRightService userRightService)
     {
         _context = context;
         _appLogService = appLogService;
+        _userRightService = userRightService;
     }
 
     [HttpGet]
     public async Task<IActionResult> Index(int? companyId)
     {
-        var denied = EnsureAdmin();
+        var denied = await EnsureAdmin();
         if (denied is not null)
         {
             return denied;
@@ -65,7 +67,7 @@ public class AppWorkPlacesController : Controller
     [HttpGet]
     public async Task<IActionResult> Create(int? companyId)
     {
-        var denied = EnsureAdmin();
+        var denied = await EnsureAdmin();
         if (denied is not null)
         {
             return denied;
@@ -89,7 +91,7 @@ public class AppWorkPlacesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(AppWorkPlaceEditViewModel vm)
     {
-        var denied = EnsureAdmin();
+        var denied = await EnsureAdmin();
         if (denied is not null)
         {
             return denied;
@@ -129,7 +131,7 @@ public class AppWorkPlacesController : Controller
     [HttpGet]
     public async Task<IActionResult> Edit(int id)
     {
-        var denied = EnsureAdmin();
+        var denied = await EnsureAdmin();
         if (denied is not null)
         {
             return denied;
@@ -150,7 +152,7 @@ public class AppWorkPlacesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, AppWorkPlaceEditViewModel vm)
     {
-        var denied = EnsureAdmin();
+        var denied = await EnsureAdmin();
         if (denied is not null)
         {
             return denied;
@@ -197,14 +199,11 @@ public class AppWorkPlacesController : Controller
         return RedirectToAction(nameof(Index), new { companyId = workPlace.CompanyId });
     }
 
-    private IActionResult? EnsureAdmin()
+    private async Task<IActionResult?> EnsureAdmin()
     {
-        if (!string.Equals(User.FindFirst("IsRight")?.Value, "true", StringComparison.Ordinal))
-        {
-            return RedirectToAction("Index", "Home");
-        }
-
-        return null;
+        var action = AppScreenRights.ResolveAction(ControllerContext.ActionDescriptor.ActionName);
+        var allowed = await _userRightService.HasScreenAccessAsync(User, ControllerContext.ActionDescriptor.ControllerName, action);
+        return allowed ? null : RedirectToAction("Index", "Home");
     }
 
     private void NormalizeCheckboxes(AppWorkPlaceEditViewModel vm)

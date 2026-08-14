@@ -11,17 +11,19 @@ public class AppCompaniesController : Controller
 {
     private readonly ApplicationDbContext _context;
     private readonly IAppLogService _appLogService;
+    private readonly IUserRightService _userRightService;
 
-    public AppCompaniesController(ApplicationDbContext context, IAppLogService appLogService)
+    public AppCompaniesController(ApplicationDbContext context, IAppLogService appLogService, IUserRightService userRightService)
     {
         _context = context;
         _appLogService = appLogService;
+        _userRightService = userRightService;
     }
 
     [HttpGet]
     public async Task<IActionResult> Index()
     {
-        var denied = EnsureAdmin();
+        var denied = await EnsureAdmin();
         if (denied is not null)
         {
             return denied;
@@ -48,9 +50,9 @@ public class AppCompaniesController : Controller
     }
 
     [HttpGet]
-    public IActionResult Create()
+    public async Task<IActionResult> Create()
     {
-        var denied = EnsureAdmin();
+        var denied = await EnsureAdmin();
         if (denied is not null)
         {
             return denied;
@@ -63,7 +65,7 @@ public class AppCompaniesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(AppCompanyEditViewModel vm)
     {
-        var denied = EnsureAdmin();
+        var denied = await EnsureAdmin();
         if (denied is not null)
         {
             return denied;
@@ -96,7 +98,7 @@ public class AppCompaniesController : Controller
     [HttpGet]
     public async Task<IActionResult> Edit(int id)
     {
-        var denied = EnsureAdmin();
+        var denied = await EnsureAdmin();
         if (denied is not null)
         {
             return denied;
@@ -115,7 +117,7 @@ public class AppCompaniesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, AppCompanyEditViewModel vm)
     {
-        var denied = EnsureAdmin();
+        var denied = await EnsureAdmin();
         if (denied is not null)
         {
             return denied;
@@ -155,14 +157,11 @@ public class AppCompaniesController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    private IActionResult? EnsureAdmin()
+    private async Task<IActionResult?> EnsureAdmin()
     {
-        if (!string.Equals(User.FindFirst("IsRight")?.Value, "true", StringComparison.Ordinal))
-        {
-            return RedirectToAction("Index", "Home");
-        }
-
-        return null;
+        var action = AppScreenRights.ResolveAction(ControllerContext.ActionDescriptor.ActionName);
+        var allowed = await _userRightService.HasScreenAccessAsync(User, ControllerContext.ActionDescriptor.ControllerName, action);
+        return allowed ? null : RedirectToAction("Index", "Home");
     }
 
     private void NormalizeCheckboxes(AppCompanyEditViewModel vm)

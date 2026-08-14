@@ -1,7 +1,9 @@
 @model YamanCam.Web.Models.AppUserEditViewModel
+@using YamanCam.Web.Models
 @{
     var isNew = Model.RecId == 0;
     ViewData["Title"] = isNew ? "Yeni Kullanıcı" : "Kullanıcı Düzenle";
+    var screenActions = AppScreenRights.AllActions;
 }
 
 <div class="card border-0 shadow-sm">
@@ -119,6 +121,80 @@
                 </div>
             }
 
+            <hr class="my-4" />
+
+            <h2 class="h6 mb-2">Ekran Yetkileri</h2>
+            <p class="text-muted small mb-3">Yönetici olmayan kullanıcının, seçili olduğu her şubede her ekran için Görüntüleme, Kayıt, Düzeltme ve Silme yetkilerini ayrı ayrı belirleyin. "Yönetici Yetkisi" işaretliyse bu tablo dikkate alınmaz, kullanıcı tüm ekranlara ve işlemlere erişir.</p>
+
+            @if (Model.WorkPlaceOptions.Count == 0)
+            {
+                <div class="alert alert-warning mb-0">
+                    Ekran yetkisi tanımlamak için önce en az bir şube seçilmelidir.
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive" id="ScreenRightsWrapper">
+                    <table class="table table-sm table-bordered align-middle" id="ScreenRightsTable">
+                        <thead>
+                            <tr>
+                                <th rowspan="2" style="min-width:180px;">Ekran</th>
+                                @foreach (var wp in Model.WorkPlaceOptions)
+                                {
+                                    var wpLabel = string.IsNullOrWhiteSpace(wp.WorkPlaceName)
+                                        ? wp.WorkPlaceCode
+                                        : $"{wp.WorkPlaceCode} - {wp.WorkPlaceName}";
+                                    <th colspan="@screenActions.Count" class="screenright-col text-center" data-workplace-id="@wp.WorkPlaceId">@wpLabel</th>
+                                }
+                            </tr>
+                            <tr>
+                                @foreach (var wp in Model.WorkPlaceOptions)
+                                {
+                                    foreach (var action in screenActions)
+                                    {
+                                        <th class="screenright-col text-center" data-workplace-id="@wp.WorkPlaceId">
+                                            <div>@AppScreenRights.ActionShortLabel(action)</div>
+                                            <button type="button" class="btn btn-link btn-sm p-0 screenright-col-toggle" data-workplace-id="@wp.WorkPlaceId" data-action="@action">Tümü</button>
+                                        </th>
+                                    }
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var screen in Model.ScreenCatalog)
+                            {
+                                <tr>
+                                    <td>@screen.Name</td>
+                                    @foreach (var wp in Model.WorkPlaceOptions)
+                                    {
+                                        foreach (var action in screenActions)
+                                        {
+                                            if (action == ScreenActionType.Delete && !screen.HasDelete)
+                                            {
+                                                <td class="screenright-col text-center text-muted" data-workplace-id="@wp.WorkPlaceId">—</td>
+                                            }
+                                            else
+                                            {
+                                                var rightCode = $"{screen.Code}.{action}";
+                                                var key = $"{wp.WorkPlaceId}_{rightCode}";
+                                                var isChecked = Model.SelectedScreenRightKeys.Contains(key);
+                                                <td class="screenright-col text-center" data-workplace-id="@wp.WorkPlaceId">
+                                                    <input type="checkbox"
+                                                           class="form-check-input screenright-checkbox"
+                                                           name="ScreenRight_@(wp.WorkPlaceId)_@(rightCode)"
+                                                           value="true"
+                                                           @(isChecked ? "checked" : "") />
+                                                </td>
+                                            }
+                                        }
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+
             <div class="d-flex flex-wrap gap-2 mt-4">
                 <button type="submit" class="btn btn-primary">Kaydet</button>
                 <a asp-action="Index" class="btn btn-outline-secondary">Vazgeç</a>
@@ -173,13 +249,66 @@
             if (selectAllButton) selectAllButton.addEventListener('click', function () {
                 checkboxes.forEach(function (cb) { cb.checked = true; });
                 syncSelection();
+                syncScreenRightColumns();
             });
             if (clearButton) clearButton.addEventListener('click', function () {
                 checkboxes.forEach(function (cb) { cb.checked = false; });
                 syncSelection();
+                syncScreenRightColumns();
             });
-            checkboxes.forEach(function (cb) { cb.addEventListener('change', syncSelection); });
+            checkboxes.forEach(function (cb) {
+                cb.addEventListener('change', function () {
+                    syncSelection();
+                    syncScreenRightColumns();
+                });
+            });
             syncSelection();
+
+            // Ekran Yetkileri matrisi: sütunlar seçili şubelerle senkron çalışır.
+            var isRightCheckbox = document.getElementById('IsRight');
+            var screenRightsWrapper = document.getElementById('ScreenRightsWrapper');
+
+            function syncScreenRightColumns() {
+                if (!screenRightsWrapper) return;
+                var selectedWorkPlaceIds = checkboxes
+                    .filter(function (cb) { return cb.checked; })
+                    .map(function (cb) { return cb.value; });
+
+                Array.from(screenRightsWrapper.querySelectorAll('.screenright-col')).forEach(function (col) {
+                    var isSelected = selectedWorkPlaceIds.indexOf(col.getAttribute('data-workplace-id')) >= 0;
+                    col.style.display = isSelected ? '' : 'none';
+                    if (!isSelected) {
+                        Array.from(col.querySelectorAll('.screenright-checkbox')).forEach(function (cb) { cb.checked = false; });
+                    }
+                });
+            }
+
+            function syncScreenRightsForAdmin() {
+                if (!screenRightsWrapper || !isRightCheckbox) return;
+                var isAdmin = isRightCheckbox.checked;
+                screenRightsWrapper.style.opacity = isAdmin ? '0.5' : '1';
+                Array.from(screenRightsWrapper.querySelectorAll('.screenright-checkbox')).forEach(function (cb) {
+                    cb.disabled = isAdmin;
+                });
+            }
+
+            Array.from(document.querySelectorAll('.screenright-col-toggle')).forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var workPlaceId = btn.getAttribute('data-workplace-id');
+                    var action = btn.getAttribute('data-action');
+                    var selector = '.screenright-checkbox[name^="ScreenRight_' + workPlaceId + '_"][name$=".' + action + '"]';
+                    var colCheckboxes = Array.from(screenRightsWrapper.querySelectorAll(selector));
+                    var allChecked = colCheckboxes.every(function (cb) { return cb.checked; });
+                    colCheckboxes.forEach(function (cb) { cb.checked = !allChecked; });
+                });
+            });
+
+            if (isRightCheckbox) {
+                isRightCheckbox.addEventListener('change', syncScreenRightsForAdmin);
+            }
+
+            syncScreenRightColumns();
+            syncScreenRightsForAdmin();
         });
     </script>
 }

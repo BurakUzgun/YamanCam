@@ -115,10 +115,8 @@ public class AccountController : Controller
         var claims = new List<Claim>
         {
             new(ClaimTypes.Name, vm.Username ?? string.Empty),
-            new("IsRight", currentUser.IsRight == true ? "true" : "false")
+            new("UserId", currentUser.RecId.ToString())
         };
-
-        claims.Add(new("UserId", currentUser.RecId.ToString()));
 
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
         var principal = new ClaimsPrincipal(identity);

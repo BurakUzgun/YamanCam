@@ -40,6 +40,10 @@ public class AppUserEditViewModel
     public List<int> SelectedWorkPlaceIds { get; set; } = [];
 
     public List<UserWorkPlaceOptionViewModel> WorkPlaceOptions { get; set; } = [];
+
+    public List<ScreenRightCatalogItem> ScreenCatalog { get; set; } = [];
+
+    public List<string> SelectedScreenRightKeys { get; set; } = [];
 }
 
 public class UserWorkPlaceOptionViewModel
@@ -48,4 +52,11 @@ public class UserWorkPlaceOptionViewModel
     public string? WorkPlaceCode { get; set; }
     public string? WorkPlaceName { get; set; }
     public bool IsSelected { get; set; }
+}
+
+public class ScreenRightCatalogItem
+{
+    public string Code { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public bool HasDelete { get; set; } = true;
 }

@@ -1,3 +1,13 @@
+@using YamanCam.Web.Services
+@inject IUserRightService UserRightService
+@{
+    var allowedScreenCodes = await UserRightService.GetAllowedScreenCodesAsync(User);
+    bool Allowed(string code) => allowedScreenCodes.Contains(code);
+    var showTanimlar = Allowed("AppCompanies") || Allowed("AppWorkPlaces") || Allowed("AppVatDefinitions");
+    var showFaturalar = Allowed("AppPurchaseInvoices") || Allowed("AppSalesInvoices") || Allowed("AppCustomsFreightInvoices");
+    var showMuhasebeIslemleri = Allowed("AppPaymentVouchers") || Allowed("AppReceiptVouchers") || Allowed("AppJournalVouchers");
+    var showMuhasebe = Allowed("AppAccountPlans") || showFaturalar || showMuhasebeIslemleri;
+}
 @* AnaMenu.dfm — sol agac menusu (yalnizca yapi, icerik henuz baglanmadi) *@
 
 <nav class="app-menu-tree" aria-label="Ana menu">
@@ -9,18 +19,33 @@
     </button>
     <ul class="collapse app-menu-sub" id="menuSistem">
       <li><a class="app-menu-link" asp-controller="Account" asp-action="ChangePassword">Sifre Degistir</a></li>
-      <li><a class="app-menu-link" asp-controller="AppUsers" asp-action="Index">Kullanıcı Tanımları</a></li>
+      @if (Allowed("AppUsers"))
+      {
+        <li><a class="app-menu-link" asp-controller="AppUsers" asp-action="Index">Kullanıcı Tanımları</a></li>
+      }
       <li><a class="app-menu-link" asp-controller="AppLogs" asp-action="Index">Log Kayıt İzleme</a></li>
-      <li class="app-menu-group">
-        <button class="app-menu-toggle app-menu-toggle-sub" type="button" data-bs-toggle="collapse" data-bs-target="#menuSistemTanimlar" aria-expanded="false">
-          Tanimlar
-        </button>
-        <ul class="collapse app-menu-sub" id="menuSistemTanimlar">
-          <li><a class="app-menu-link" asp-controller="AppCompanies" asp-action="Index">Şirket Tanımları</a></li>
-          <li><a class="app-menu-link" asp-controller="AppWorkPlaces" asp-action="Index">Şube Tanımları</a></li>
-          <li><a class="app-menu-link" asp-controller="AppVatDefinitions" asp-action="Index">Kdv Tanimlari</a></li>
-        </ul>
-      </li>
+      @if (showTanimlar)
+      {
+        <li class="app-menu-group">
+          <button class="app-menu-toggle app-menu-toggle-sub" type="button" data-bs-toggle="collapse" data-bs-target="#menuSistemTanimlar" aria-expanded="false">
+            Tanimlar
+          </button>
+          <ul class="collapse app-menu-sub" id="menuSistemTanimlar">
+            @if (Allowed("AppCompanies"))
+            {
+              <li><a class="app-menu-link" asp-controller="AppCompanies" asp-action="Index">Şirket Tanımları</a></li>
+            }
+            @if (Allowed("AppWorkPlaces"))
+            {
+              <li><a class="app-menu-link" asp-controller="AppWorkPlaces" asp-action="Index">Şube Tanımları</a></li>
+            }
+            @if (Allowed("AppVatDefinitions"))
+            {
+              <li><a class="app-menu-link" asp-controller="AppVatDefinitions" asp-action="Index">Kdv Tanimlari</a></li>
+            }
+          </ul>
+        </li>
+      }
     </ul>
   </div>
 
@@ -29,15 +54,24 @@
       Stok
     </button>
     <ul class="collapse app-menu-sub" id="menuStok">
-      <li><a class="app-menu-link" asp-controller="AppStocks" asp-action="Index">Stoklar</a></li>
+      @if (Allowed("AppStocks"))
+      {
+        <li><a class="app-menu-link" asp-controller="AppStocks" asp-action="Index">Stoklar</a></li>
+      }
       <li class="app-menu-group">
         <button class="app-menu-toggle app-menu-toggle-sub" type="button" data-bs-toggle="collapse" data-bs-target="#menuStokTanimlar" aria-expanded="false">
           Stok Tanimlar
         </button>
         <ul class="collapse app-menu-sub" id="menuStokTanimlar">
-          <li><a class="app-menu-link" asp-controller="AppStockGroups" asp-action="Index">Stok Gruplari</a></li>
+          @if (Allowed("AppStockGroups"))
+          {
+            <li><a class="app-menu-link" asp-controller="AppStockGroups" asp-action="Index">Stok Gruplari</a></li>
+          }
           <li><a class="app-menu-link" href="#">Stok Ek Bilgiler</a></li>
-          <li><a class="app-menu-link" asp-controller="AppStockUnits" asp-action="Index">Stok Birimleri</a></li>
+          @if (Allowed("AppStockUnits"))
+          {
+            <li><a class="app-menu-link" asp-controller="AppStockUnits" asp-action="Index">Stok Birimleri</a></li>
+          }
           <li><a class="app-menu-link" href="#">Uretim Tanimlari</a></li>
         </ul>
       </li>
@@ -59,34 +93,64 @@
     </ul>
   </div>
 
+  @if (showMuhasebe)
+  {
   <div class="app-menu-group">
     <button class="app-menu-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#menuMuhasebe" aria-expanded="false">
       Muhasebe
     </button>
     <ul class="collapse app-menu-sub" id="menuMuhasebe">
-      <li><a class="app-menu-link" asp-controller="AppAccountPlans" asp-action="Index">Hesap Plani</a></li>
-      <li class="app-menu-group">
-        <button class="app-menu-toggle app-menu-toggle-sub" type="button" data-bs-toggle="collapse" data-bs-target="#menuMuhasebeFaturalar" aria-expanded="false">
-          Faturalar
-        </button>
-        <ul class="collapse app-menu-sub" id="menuMuhasebeFaturalar">
-          <li><a class="app-menu-link" asp-controller="AppPurchaseInvoices" asp-action="Index">Alis Faturalari</a></li>
-          <li><a class="app-menu-link" asp-controller="AppSalesInvoices" asp-action="Index">Satis Faturalari</a></li>
-          <li><a class="app-menu-link" asp-controller="AppCustomsFreightInvoices" asp-action="Index">Gumruk Nakliye Faturalari</a></li>
-        </ul>
-      </li>
-      <li class="app-menu-group">
-        <button class="app-menu-toggle app-menu-toggle-sub" type="button" data-bs-toggle="collapse" data-bs-target="#menuMuhasebeIslemler" aria-expanded="false">
-          Muhasebe Islemleri
-        </button>
-        <ul class="collapse app-menu-sub" id="menuMuhasebeIslemler">
-          <li><a class="app-menu-link" asp-controller="AppPaymentVouchers" asp-action="Index">Tediye Fisi</a></li>
-          <li><a class="app-menu-link" asp-controller="AppReceiptVouchers" asp-action="Index">Tahsilat Fisi</a></li>
-          <li><a class="app-menu-link" asp-controller="AppJournalVouchers" asp-action="Index">Mahsup Fisi</a></li>
-        </ul>
-      </li>
+      @if (Allowed("AppAccountPlans"))
+      {
+        <li><a class="app-menu-link" asp-controller="AppAccountPlans" asp-action="Index">Hesap Plani</a></li>
+      }
+      @if (showFaturalar)
+      {
+        <li class="app-menu-group">
+          <button class="app-menu-toggle app-menu-toggle-sub" type="button" data-bs-toggle="collapse" data-bs-target="#menuMuhasebeFaturalar" aria-expanded="false">
+            Faturalar
+          </button>
+          <ul class="collapse app-menu-sub" id="menuMuhasebeFaturalar">
+            @if (Allowed("AppPurchaseInvoices"))
+            {
+              <li><a class="app-menu-link" asp-controller="AppPurchaseInvoices" asp-action="Index">Alis Faturalari</a></li>
+            }
+            @if (Allowed("AppSalesInvoices"))
+            {
+              <li><a class="app-menu-link" asp-controller="AppSalesInvoices" asp-action="Index">Satis Faturalari</a></li>
+            }
+            @if (Allowed("AppCustomsFreightInvoices"))
+            {
+              <li><a class="app-menu-link" asp-controller="AppCustomsFreightInvoices" asp-action="Index">Gumruk Nakliye Faturalari</a></li>
+            }
+          </ul>
+        </li>
+      }
+      @if (showMuhasebeIslemleri)
+      {
+        <li class="app-menu-group">
+          <button class="app-menu-toggle app-menu-toggle-sub" type="button" data-bs-toggle="collapse" data-bs-target="#menuMuhasebeIslemler" aria-expanded="false">
+            Muhasebe Islemleri
+          </button>
+          <ul class="collapse app-menu-sub" id="menuMuhasebeIslemler">
+            @if (Allowed("AppPaymentVouchers"))
+            {
+              <li><a class="app-menu-link" asp-controller="AppPaymentVouchers" asp-action="Index">Tediye Fisi</a></li>
+            }
+            @if (Allowed("AppReceiptVouchers"))
+            {
+              <li><a class="app-menu-link" asp-controller="AppReceiptVouchers" asp-action="Index">Tahsilat Fisi</a></li>
+            }
+            @if (Allowed("AppJournalVouchers"))
+            {
+              <li><a class="app-menu-link" asp-controller="AppJournalVouchers" asp-action="Index">Mahsup Fisi</a></li>
+            }
+          </ul>
+        </li>
+      }
     </ul>
   </div>
+  }
 
   <div class="app-menu-group">
     <button class="app-menu-toggle" type="button" data-bs-toggle="collapse" data-bs-target="#menuRaporlar" aria-expanded="false">
