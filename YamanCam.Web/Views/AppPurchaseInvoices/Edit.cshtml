@@ -113,7 +113,7 @@
                                 <td><input type="number" step="0.01" min="0" name="Lines[@i].VatRate" class="form-control form-control-sm text-end line-vatrate" value="@Model.Lines[i].VatRate" /></td>
                                 <td class="text-end line-net">0,00</td>
                                 <td class="text-end line-vat">0,00</td>
-                                <td class="text-end line-total">0,00</td>
+                                <td><input type="number" step="0.0001" min="0" class="form-control form-control-sm text-end line-total" value="0" /></td>
                                 <td class="text-center">
                                     <button type="button" class="btn btn-sm btn-outline-danger line-remove">&times;</button>
                                 </td>
@@ -197,6 +197,18 @@
                 });
             }
 
+            function roundValue(value) {
+                return Math.round(value * 10000) / 10000;
+            }
+
+            function setRowAmounts(row, net, vat, total) {
+                row.dataset.net = net;
+                row.dataset.vat = vat;
+                row.dataset.total = total;
+                row.querySelector('.line-net').textContent = formatAmount(net);
+                row.querySelector('.line-vat').textContent = formatAmount(vat);
+            }
+
             function recalcRow(row) {
                 var qty = parseFloat(row.querySelector('.line-qty').value) || 0;
                 var price = parseFloat(row.querySelector('.line-price').value) || 0;
@@ -206,23 +218,36 @@
                 var vat = net * vatRate / 100;
                 var total = net + vat;
 
-                row.querySelector('.line-net').textContent = formatAmount(net);
-                row.querySelector('.line-vat').textContent = formatAmount(vat);
-                row.querySelector('.line-total').textContent = formatAmount(total);
+                setRowAmounts(row, net, vat, total);
+                row.querySelector('.line-total').value = roundValue(total);
 
                 return { net: net, vat: vat, total: total };
             }
 
-            function recalcAll() {
-                var totalNet = 0, totalVat = 0;
+            function recalcRowFromTotal(row) {
+                var total = parseFloat(row.querySelector('.line-total').value) || 0;
+                var vatRate = parseFloat(row.querySelector('.line-vatrate').value) || 0;
+                var qty = parseFloat(row.querySelector('.line-qty').value) || 0;
+
+                var net = total / (1 + (vatRate / 100));
+                var vat = total - net;
+
+                if (qty) {
+                    row.querySelector('.line-price').value = roundValue(net / qty);
+                }
+
+                setRowAmounts(row, net, vat, total);
+            }
+
+            function updateSummary() {
+                var totalNet = 0, totalVat = 0, totalGross = 0;
 
                 linesBody.querySelectorAll('tr.line-row').forEach(function (row) {
-                    var result = recalcRow(row);
-                    totalNet += result.net;
-                    totalVat += result.vat;
+                    totalNet += parseFloat(row.dataset.net) || 0;
+                    totalVat += parseFloat(row.dataset.vat) || 0;
+                    totalGross += parseFloat(row.dataset.total) || 0;
                 });
 
-                var totalGross = totalNet + totalVat;
                 var rate = parseFloat(exchangeRateInput.value) || 0;
 
                 document.getElementById('totalNet').textContent = formatAmount(totalNet);
@@ -234,9 +259,22 @@
                 document.getElementById('totalGrossTry').textContent = formatAmount(totalGross * rate);
             }
 
+            function recalcAll() {
+                linesBody.querySelectorAll('tr.line-row').forEach(recalcRow);
+                updateSummary();
+            }
+
             function bindRowEvents(row) {
                 row.querySelectorAll('.line-qty, .line-price, .line-vatrate').forEach(function (el) {
-                    el.addEventListener('input', recalcAll);
+                    el.addEventListener('input', function () {
+                        recalcRow(row);
+                        updateSummary();
+                    });
+                });
+
+                row.querySelector('.line-total').addEventListener('input', function () {
+                    recalcRowFromTotal(row);
+                    updateSummary();
                 });
 
                 row.querySelector('.line-stock').addEventListener('change', function () {
@@ -244,14 +282,15 @@
                     if (rate !== undefined) {
                         row.querySelector('.line-vatrate').value = rate;
                     }
-                    recalcAll();
+                    recalcRow(row);
+                    updateSummary();
                 });
 
                 row.querySelector('.line-remove').addEventListener('click', function () {
                     if (linesBody.querySelectorAll('tr.line-row').length <= 1) return;
                     row.remove();
                     reindex();
-                    recalcAll();
+                    updateSummary();
                 });
             }
 
@@ -268,7 +307,7 @@
                     '<td><input type="number" step="0.01" min="0" name="Lines[' + idx + '].VatRate" class="form-control form-control-sm text-end line-vatrate" value="0" /></td>' +
                     '<td class="text-end line-net">0,00</td>' +
                     '<td class="text-end line-vat">0,00</td>' +
-                    '<td class="text-end line-total">0,00</td>' +
+                    '<td><input type="number" step="0.0001" min="0" class="form-control form-control-sm text-end line-total" value="0" /></td>' +
                     '<td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger line-remove">&times;</button></td>';
                 linesBody.appendChild(tr);
                 bindRowEvents(tr);
