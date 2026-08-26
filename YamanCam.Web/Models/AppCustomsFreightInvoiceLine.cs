@@ -21,6 +21,8 @@ public class AppCustomsFreightInvoiceLine
     [Column(TypeName = "decimal(5,2)")]
     public decimal VatRate { get; set; }
 
+    public int? WithholdingDefinitionId { get; set; }
+
     [Column(TypeName = "decimal(5,2)")]
     public decimal WithholdingRate { get; set; }
 
@@ -43,4 +45,7 @@ public class AppCustomsFreightInvoiceLine
 
     [ForeignKey(nameof(AccountId))]
     public AppAccountPlan? Account { get; set; }
+
+    [ForeignKey(nameof(WithholdingDefinitionId))]
+    public AppVatWithholdingDefinition? WithholdingDefinition { get; set; }
 }

@@ -36,6 +36,12 @@ public class AppSalesInvoice
     public decimal VatAmount { get; set; }
 
     [Column(TypeName = "decimal(18,2)")]
+    public decimal WithholdingAmount { get; set; }
+
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal NetVatAmount { get; set; }
+
+    [Column(TypeName = "decimal(18,2)")]
     public decimal TotalAmount { get; set; }
 
     [Column(TypeName = "decimal(18,2)")]
@@ -43,6 +49,12 @@ public class AppSalesInvoice
 
     [Column(TypeName = "decimal(18,2)")]
     public decimal VatAmountTRY { get; set; }
+
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal WithholdingAmountTRY { get; set; }
+
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal NetVatAmountTRY { get; set; }
 
     [Column(TypeName = "decimal(18,2)")]
     public decimal TotalAmountTRY { get; set; }

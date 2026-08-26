@@ -67,6 +67,7 @@ public class AppCustomsFreightInvoiceEditViewModel
     public IReadOnlyList<SelectListItem> CariAccountOptions { get; set; } = Array.Empty<SelectListItem>();
     public IReadOnlyList<SelectListItem> ExpenseAccountOptions { get; set; } = Array.Empty<SelectListItem>();
     public IReadOnlyList<SelectListItem> PurchaseInvoiceOptions { get; set; } = Array.Empty<SelectListItem>();
+    public IReadOnlyList<SelectListItem> WithholdingDefinitionOptions { get; set; } = Array.Empty<SelectListItem>();
 }
 
 public class AppCustomsFreightInvoiceLineEditViewModel
@@ -83,6 +84,9 @@ public class AppCustomsFreightInvoiceLineEditViewModel
 
     [Display(Name = "Kdv Oran")]
     public decimal VatRate { get; set; }
+
+    [Display(Name = "Tevkifat")]
+    public int? WithholdingDefinitionId { get; set; }
 
     [Display(Name = "Kdv İnd. Oran")]
     public decimal WithholdingRate { get; set; }

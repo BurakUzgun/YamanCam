@@ -3,6 +3,7 @@
     var isNew = Model.RecId == 0;
     ViewData["Title"] = isNew ? "Yeni Gümrük Nakliye Faturası" : "Gümrük Nakliye Faturası Düzenle";
     var expenseAccountMetaJson = System.Text.Json.JsonSerializer.Serialize(ViewData["ExpenseAccountMeta"]);
+    var withholdingDefinitionMetaJson = System.Text.Json.JsonSerializer.Serialize(ViewData["WithholdingDefinitionMeta"]);
     var initialLinesJson = System.Text.Json.JsonSerializer.Serialize(
         Model.Lines.Select(l => new
         {
@@ -10,6 +11,7 @@
             accountId = l.AccountId,
             amount = l.Amount,
             vatRate = l.VatRate,
+            withholdingDefinitionId = l.WithholdingDefinitionId,
             withholdingRate = l.WithholdingRate
         }));
 }
@@ -147,6 +149,16 @@
                             <label class="form-label">Kdv</label>
                             <input id="lineVatRateInput" type="number" step="0.01" min="0" class="form-control form-control-sm text-end" value="0" />
                         </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Tevkifat</label>
+                            <select id="lineWithholdingSelect" class="form-select form-select-sm">
+                                <option value="">Yok</option>
+                                @foreach (var opt in Model.WithholdingDefinitionOptions)
+                                {
+                                    <option value="@opt.Value">@opt.Text</option>
+                                }
+                            </select>
+                        </div>
                         <div class="col-md-2">
                             <label class="form-label">Kdv İnd. Oran</label>
                             <input id="lineWithholdingRateInput" type="number" step="0.01" min="0" max="100" class="form-control form-control-sm text-end" value="0" />
@@ -164,6 +176,7 @@
                                     <th>Hesap Kodu</th>
                                     <th>Hesap Adı</th>
                                     <th class="text-end">Kdv Oran</th>
+                                    <th>Tevkifat</th>
                                     <th class="text-end">Tev Oran</th>
                                     <th class="text-end">Matrah</th>
                                     <th class="text-end">KDV Tutar</th>
@@ -202,6 +215,10 @@
             var accountMetaById = {};
             expenseAccountMeta.forEach(function (a) { accountMetaById[a.id] = a; });
 
+            var withholdingDefinitionMeta = @Html.Raw(withholdingDefinitionMetaJson);
+            var withholdingMetaById = {};
+            withholdingDefinitionMeta.forEach(function (w) { withholdingMetaById[w.id] = w; });
+
             var linesData = @Html.Raw(initialLinesJson);
             var selectedLineIndex = -1;
 
@@ -209,6 +226,7 @@
             var accountNameDisplay = document.getElementById('lineAccountNameDisplay');
             var amountInput = document.getElementById('lineAmountInput');
             var vatRateInput = document.getElementById('lineVatRateInput');
+            var withholdingSelect = document.getElementById('lineWithholdingSelect');
             var withholdingRateInput = document.getElementById('lineWithholdingRateInput');
             var addBtn = document.getElementById('addLineBtn');
             var removeBtn = document.getElementById('removeLineBtn');
@@ -252,6 +270,7 @@
                     totalGross += calc.totalAmount;
 
                     var meta = accountMetaById[line.accountId] || { code: '', name: '' };
+                    var wMeta = withholdingMetaById[line.withholdingDefinitionId] || null;
 
                     var tr = document.createElement('tr');
                     tr.className = 'line-row' + (idx === selectedLineIndex ? ' table-active' : '');
@@ -260,6 +279,7 @@
                         '<td>' + meta.code + '</td>' +
                         '<td>' + meta.name + '</td>' +
                         '<td class="text-end">' + line.vatRate.toFixed(2) + '</td>' +
+                        '<td>' + (wMeta ? wMeta.code : '-') + '</td>' +
                         '<td class="text-end">' + line.withholdingRate.toFixed(2) + '</td>' +
                         '<td class="text-end">' + formatAmount(line.amount) + '</td>' +
                         '<td class="text-end">' + formatAmount(calc.vatAmount) + '</td>' +
@@ -273,12 +293,13 @@
                     appendHidden('Lines[' + idx + '].AccountId', line.accountId);
                     appendHidden('Lines[' + idx + '].Amount', line.amount);
                     appendHidden('Lines[' + idx + '].VatRate', line.vatRate);
+                    appendHidden('Lines[' + idx + '].WithholdingDefinitionId', line.withholdingDefinitionId || '');
                     appendHidden('Lines[' + idx + '].WithholdingRate', line.withholdingRate);
                 });
 
                 if (linesData.length === 0) {
                     var emptyRow = document.createElement('tr');
-                    emptyRow.innerHTML = '<td colspan="9" class="text-center text-muted">Satır eklenmedi.</td>';
+                    emptyRow.innerHTML = '<td colspan="10" class="text-center text-muted">Satır eklenmedi.</td>';
                     linesBody.appendChild(emptyRow);
                 }
 
@@ -309,6 +330,7 @@
                 var accountId = parseInt(accountSelect.value, 10) || 0;
                 var amount = parseFloat(amountInput.value) || 0;
                 var vatRate = parseFloat(vatRateInput.value) || 0;
+                var withholdingDefinitionId = parseInt(withholdingSelect.value, 10) || null;
                 var withholdingRate = parseFloat(withholdingRateInput.value) || 0;
 
                 if (!accountId) {
@@ -320,12 +342,13 @@
                     return;
                 }
 
-                linesData.push({ recId: 0, accountId: accountId, amount: amount, vatRate: vatRate, withholdingRate: withholdingRate });
+                linesData.push({ recId: 0, accountId: accountId, amount: amount, vatRate: vatRate, withholdingDefinitionId: withholdingDefinitionId, withholdingRate: withholdingRate });
 
                 accountSelect.value = '';
                 accountNameDisplay.value = '';
                 amountInput.value = '0';
                 vatRateInput.value = '0';
+                withholdingSelect.value = '';
                 withholdingRateInput.value = '0';
 
                 renderLines();
@@ -339,6 +362,11 @@
             });
 
             accountSelect.addEventListener('change', syncAccountName);
+
+            withholdingSelect.addEventListener('change', function () {
+                var meta = withholdingMetaById[this.value];
+                withholdingRateInput.value = meta ? meta.withholdingRate : 0;
+            });
 
             function syncCurrency() {
                 if (currencySelect.value === 'TRY') {

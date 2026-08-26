@@ -323,6 +323,20 @@ public class AppCustomsFreightInvoicesController : Controller
         ViewData["ExpenseAccountMeta"] = expenseAccounts
             .Select(x => new { id = x.RecId, code = x.AccountCode, name = x.AccountName })
             .ToList();
+
+        var withholdingDefinitions = await _context.AppVatWithholdingDefinitions.AsNoTracking()
+            .Where(x => x.IsActive != false)
+            .OrderBy(x => x.WithholdingCode)
+            .Select(x => new { x.RecId, x.WithholdingCode, x.WithholdingName, x.VatRate, x.WithholdingRate })
+            .ToListAsync();
+
+        vm.WithholdingDefinitionOptions = withholdingDefinitions
+            .Select(x => new SelectListItem($"{x.WithholdingCode} - {x.WithholdingName} (KDV %{x.VatRate:0.##}, Tevkifat %{x.WithholdingRate:0.##})", x.RecId.ToString(CultureInfo.InvariantCulture)))
+            .ToList();
+
+        ViewData["WithholdingDefinitionMeta"] = withholdingDefinitions
+            .Select(x => new { id = x.RecId, code = x.WithholdingCode, withholdingRate = x.WithholdingRate })
+            .ToList();
     }
 
     private async Task ValidateInvoiceAsync(AppCustomsFreightInvoiceEditViewModel vm)
@@ -405,6 +419,12 @@ public class AppCustomsFreightInvoicesController : Controller
                 ModelState.AddModelError($"Lines[{i}].WithholdingRate", "Tevkifat (KDV indirim) oranı 0-100 arasında olmalıdır.");
             }
 
+            if (line.WithholdingDefinitionId.HasValue &&
+                !await _context.AppVatWithholdingDefinitions.AnyAsync(x => x.RecId == line.WithholdingDefinitionId.Value))
+            {
+                ModelState.AddModelError($"Lines[{i}].WithholdingDefinitionId", "Geçersiz tevkifat tanımı seçildi.");
+            }
+
             line.VatAmount = Math.Round(line.Amount * line.VatRate / 100m, 2, MidpointRounding.AwayFromZero);
             line.WithholdingAmount = Math.Round(line.VatAmount * line.WithholdingRate / 100m, 2, MidpointRounding.AwayFromZero);
             line.NetVatAmount = line.VatAmount - line.WithholdingAmount;
@@ -455,6 +475,7 @@ public class AppCustomsFreightInvoicesController : Controller
                     AccountId = x.AccountId,
                     Amount = x.Amount,
                     VatRate = x.VatRate,
+                    WithholdingDefinitionId = x.WithholdingDefinitionId,
                     WithholdingRate = x.WithholdingRate,
                     VatAmount = x.VatAmount,
                     WithholdingAmount = x.WithholdingAmount,
@@ -494,6 +515,7 @@ public class AppCustomsFreightInvoicesController : Controller
                 AccountId = line.AccountId,
                 Amount = line.Amount,
                 VatRate = line.VatRate,
+                WithholdingDefinitionId = line.WithholdingDefinitionId,
                 WithholdingRate = line.WithholdingRate,
                 VatAmount = line.VatAmount,
                 WithholdingAmount = line.WithholdingAmount,

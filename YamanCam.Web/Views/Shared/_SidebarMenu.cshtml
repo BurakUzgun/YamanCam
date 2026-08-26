@@ -3,7 +3,7 @@
 @{
     var allowedScreenCodes = await UserRightService.GetAllowedScreenCodesAsync(User);
     bool Allowed(string code) => allowedScreenCodes.Contains(code);
-    var showTanimlar = Allowed("AppCompanies") || Allowed("AppWorkPlaces") || Allowed("AppVatDefinitions");
+    var showTanimlar = Allowed("AppCompanies") || Allowed("AppWorkPlaces") || Allowed("AppVatDefinitions") || Allowed("AppVatWithholdingDefinitions");
     var showFaturalar = Allowed("AppPurchaseInvoices") || Allowed("AppSalesInvoices") || Allowed("AppCustomsFreightInvoices");
     var showMuhasebeIslemleri = Allowed("AppPaymentVouchers") || Allowed("AppReceiptVouchers") || Allowed("AppJournalVouchers");
     var showMuhasebe = Allowed("AppAccountPlans") || showFaturalar || showMuhasebeIslemleri;
@@ -42,6 +42,10 @@
             @if (Allowed("AppVatDefinitions"))
             {
               <li><a class="app-menu-link" asp-controller="AppVatDefinitions" asp-action="Index">Kdv Tanimlari</a></li>
+            }
+            @if (Allowed("AppVatWithholdingDefinitions"))
+            {
+              <li><a class="app-menu-link" asp-controller="AppVatWithholdingDefinitions" asp-action="Index">Tevkifat Kdv Tanimlari</a></li>
             }
           </ul>
         </li>

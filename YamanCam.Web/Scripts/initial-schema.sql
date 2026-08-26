@@ -1823,3 +1823,176 @@ BEGIN
     VALUES (16, N'YamanCam.Core', N'App_CustomsFreightInvoice / App_CustomsFreightInvoiceLine gumruk nakliye faturasi master-detail', SYSUTCDATETIME());
 END
 GO
+
+/* ------------------------------------------------------------------ */
+/* Surum 17 - App_VatWithholdingDefinition (Tevkifat Kdv Tanimlari)   */
+/* ------------------------------------------------------------------ */
+IF OBJECT_ID(N'dbo.App_VatWithholdingDefinition', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[App_VatWithholdingDefinition](
+        [RecId]              [int] IDENTITY(1,1) NOT NULL,
+        [WithholdingCode]    [nvarchar](20) NOT NULL,
+        [WithholdingName]    [nvarchar](100) NOT NULL,
+        [VatRate]            [decimal](5, 2) NOT NULL,
+        [WithholdingRate]    [decimal](5, 2) NOT NULL,
+        [AccountCode]        [nvarchar](50) NULL,
+        [IsActive]           [bit] NULL CONSTRAINT [DF_App_VatWithholdingDefinition_IsActive] DEFAULT (1),
+        [CreatedDate]        [datetime2](0) NULL CONSTRAINT [DF_App_VatWithholdingDefinition_CreatedDate] DEFAULT (SYSUTCDATETIME()),
+        CONSTRAINT [PK_App_VatWithholdingDefinition] PRIMARY KEY CLUSTERED ([RecId] ASC)
+    ) ON [PRIMARY];
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_VatWithholdingDefinition', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_VatWithholdingDefinition', 'WithholdingCode') IS NULL
+    ALTER TABLE [dbo].[App_VatWithholdingDefinition] ADD [WithholdingCode] [nvarchar](20) NOT NULL CONSTRAINT [DF_App_VatWithholdingDefinition_WithholdingCode] DEFAULT (N'');
+GO
+IF OBJECT_ID(N'dbo.App_VatWithholdingDefinition', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_VatWithholdingDefinition', 'WithholdingName') IS NULL
+    ALTER TABLE [dbo].[App_VatWithholdingDefinition] ADD [WithholdingName] [nvarchar](100) NOT NULL CONSTRAINT [DF_App_VatWithholdingDefinition_WithholdingName] DEFAULT (N'');
+GO
+IF OBJECT_ID(N'dbo.App_VatWithholdingDefinition', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_VatWithholdingDefinition', 'VatRate') IS NULL
+    ALTER TABLE [dbo].[App_VatWithholdingDefinition] ADD [VatRate] [decimal](5, 2) NOT NULL CONSTRAINT [DF_App_VatWithholdingDefinition_VatRate] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_VatWithholdingDefinition', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_VatWithholdingDefinition', 'WithholdingRate') IS NULL
+    ALTER TABLE [dbo].[App_VatWithholdingDefinition] ADD [WithholdingRate] [decimal](5, 2) NOT NULL CONSTRAINT [DF_App_VatWithholdingDefinition_WithholdingRate] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_VatWithholdingDefinition', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_VatWithholdingDefinition', 'AccountCode') IS NULL
+    ALTER TABLE [dbo].[App_VatWithholdingDefinition] ADD [AccountCode] [nvarchar](50) NULL;
+GO
+IF OBJECT_ID(N'dbo.App_VatWithholdingDefinition', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_VatWithholdingDefinition', 'IsActive') IS NULL
+    ALTER TABLE [dbo].[App_VatWithholdingDefinition] ADD [IsActive] [bit] NULL CONSTRAINT [DF_App_VatWithholdingDefinition_IsActive_Alt] DEFAULT (1);
+GO
+IF OBJECT_ID(N'dbo.App_VatWithholdingDefinition', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_VatWithholdingDefinition', 'CreatedDate') IS NULL
+    ALTER TABLE [dbo].[App_VatWithholdingDefinition] ADD [CreatedDate] [datetime2](0) NULL CONSTRAINT [DF_App_VatWithholdingDefinition_CreatedDate_Alt] DEFAULT (SYSUTCDATETIME());
+GO
+
+IF OBJECT_ID(N'dbo.App_VatWithholdingDefinition', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UX_App_VatWithholdingDefinition_WithholdingCode' AND object_id = OBJECT_ID(N'dbo.App_VatWithholdingDefinition'))
+BEGIN
+    CREATE UNIQUE NONCLUSTERED INDEX [UX_App_VatWithholdingDefinition_WithholdingCode]
+    ON [dbo].[App_VatWithholdingDefinition]([WithholdingCode]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_SchemaVersion', N'U') IS NOT NULL
+   AND NOT EXISTS (
+       SELECT 1 FROM [dbo].[App_SchemaVersion]
+       WHERE [ScriptName] = N'YamanCam.Core' AND [VersionNo] = 17
+   )
+BEGIN
+    INSERT INTO [dbo].[App_SchemaVersion] ([VersionNo], [ScriptName], [Description], [AppliedUtc])
+    VALUES (17, N'YamanCam.Core', N'App_VatWithholdingDefinition tevkifat kdv tanimlari tablosu', SYSUTCDATETIME());
+END
+GO
+
+/* ------------------------------------------------------------------ */
+/* Surum 18 - Alis/Satis/Gumruk Nakliye faturalarina tevkifat kdv     */
+/* secimi ve hesaplama alanlari eklendi.                              */
+/* ------------------------------------------------------------------ */
+IF OBJECT_ID(N'dbo.App_PurchaseInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_PurchaseInvoiceLine', 'WithholdingDefinitionId') IS NULL
+    ALTER TABLE [dbo].[App_PurchaseInvoiceLine] ADD [WithholdingDefinitionId] [int] NULL;
+GO
+IF OBJECT_ID(N'dbo.App_PurchaseInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_PurchaseInvoiceLine', 'WithholdingRate') IS NULL
+    ALTER TABLE [dbo].[App_PurchaseInvoiceLine] ADD [WithholdingRate] [decimal](5, 2) NOT NULL CONSTRAINT [DF_App_PurchaseInvoiceLine_WithholdingRate] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_PurchaseInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_PurchaseInvoiceLine', 'WithholdingAmount') IS NULL
+    ALTER TABLE [dbo].[App_PurchaseInvoiceLine] ADD [WithholdingAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_PurchaseInvoiceLine_WithholdingAmount] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_PurchaseInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_PurchaseInvoiceLine', 'NetVatAmount') IS NULL
+    ALTER TABLE [dbo].[App_PurchaseInvoiceLine] ADD [NetVatAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_PurchaseInvoiceLine_NetVatAmount] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_PurchaseInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_PurchaseInvoiceLine', 'NetVatAmount') IS NOT NULL
+    UPDATE [dbo].[App_PurchaseInvoiceLine] SET [NetVatAmount] = [VatAmount] WHERE [WithholdingRate] = 0;
+GO
+
+IF OBJECT_ID(N'dbo.App_PurchaseInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_PurchaseInvoice', 'WithholdingAmount') IS NULL
+    ALTER TABLE [dbo].[App_PurchaseInvoice] ADD [WithholdingAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_WithholdingAmount] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_PurchaseInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_PurchaseInvoice', 'NetVatAmount') IS NULL
+    ALTER TABLE [dbo].[App_PurchaseInvoice] ADD [NetVatAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_NetVatAmount] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_PurchaseInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_PurchaseInvoice', 'WithholdingAmountTRY') IS NULL
+    ALTER TABLE [dbo].[App_PurchaseInvoice] ADD [WithholdingAmountTRY] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_WithholdingAmountTRY] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_PurchaseInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_PurchaseInvoice', 'NetVatAmountTRY') IS NULL
+    ALTER TABLE [dbo].[App_PurchaseInvoice] ADD [NetVatAmountTRY] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_NetVatAmountTRY] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_PurchaseInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_PurchaseInvoice', 'NetVatAmountTRY') IS NOT NULL
+    UPDATE [dbo].[App_PurchaseInvoice] SET [NetVatAmount] = [VatAmount], [NetVatAmountTRY] = [VatAmountTRY] WHERE [WithholdingAmount] = 0;
+GO
+
+IF OBJECT_ID(N'dbo.App_SalesInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_SalesInvoiceLine', 'WithholdingDefinitionId') IS NULL
+    ALTER TABLE [dbo].[App_SalesInvoiceLine] ADD [WithholdingDefinitionId] [int] NULL;
+GO
+IF OBJECT_ID(N'dbo.App_SalesInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_SalesInvoiceLine', 'WithholdingRate') IS NULL
+    ALTER TABLE [dbo].[App_SalesInvoiceLine] ADD [WithholdingRate] [decimal](5, 2) NOT NULL CONSTRAINT [DF_App_SalesInvoiceLine_WithholdingRate] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_SalesInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_SalesInvoiceLine', 'WithholdingAmount') IS NULL
+    ALTER TABLE [dbo].[App_SalesInvoiceLine] ADD [WithholdingAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_SalesInvoiceLine_WithholdingAmount] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_SalesInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_SalesInvoiceLine', 'NetVatAmount') IS NULL
+    ALTER TABLE [dbo].[App_SalesInvoiceLine] ADD [NetVatAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_SalesInvoiceLine_NetVatAmount] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_SalesInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_SalesInvoiceLine', 'NetVatAmount') IS NOT NULL
+    UPDATE [dbo].[App_SalesInvoiceLine] SET [NetVatAmount] = [VatAmount] WHERE [WithholdingRate] = 0;
+GO
+
+IF OBJECT_ID(N'dbo.App_SalesInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_SalesInvoice', 'WithholdingAmount') IS NULL
+    ALTER TABLE [dbo].[App_SalesInvoice] ADD [WithholdingAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_SalesInvoice_WithholdingAmount] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_SalesInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_SalesInvoice', 'NetVatAmount') IS NULL
+    ALTER TABLE [dbo].[App_SalesInvoice] ADD [NetVatAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_SalesInvoice_NetVatAmount] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_SalesInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_SalesInvoice', 'WithholdingAmountTRY') IS NULL
+    ALTER TABLE [dbo].[App_SalesInvoice] ADD [WithholdingAmountTRY] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_SalesInvoice_WithholdingAmountTRY] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_SalesInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_SalesInvoice', 'NetVatAmountTRY') IS NULL
+    ALTER TABLE [dbo].[App_SalesInvoice] ADD [NetVatAmountTRY] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_SalesInvoice_NetVatAmountTRY] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_SalesInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_SalesInvoice', 'NetVatAmountTRY') IS NOT NULL
+    UPDATE [dbo].[App_SalesInvoice] SET [NetVatAmount] = [VatAmount], [NetVatAmountTRY] = [VatAmountTRY] WHERE [WithholdingAmount] = 0;
+GO
+
+IF OBJECT_ID(N'dbo.App_CustomsFreightInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_CustomsFreightInvoiceLine', 'WithholdingDefinitionId') IS NULL
+    ALTER TABLE [dbo].[App_CustomsFreightInvoiceLine] ADD [WithholdingDefinitionId] [int] NULL;
+GO
+
+IF OBJECT_ID(N'dbo.App_PurchaseInvoiceLine', N'U') IS NOT NULL
+   AND OBJECT_ID(N'dbo.App_VatWithholdingDefinition', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_App_PurchaseInvoiceLine_App_VatWithholdingDefinition')
+BEGIN
+    ALTER TABLE [dbo].[App_PurchaseInvoiceLine] WITH CHECK
+    ADD CONSTRAINT [FK_App_PurchaseInvoiceLine_App_VatWithholdingDefinition]
+    FOREIGN KEY([WithholdingDefinitionId]) REFERENCES [dbo].[App_VatWithholdingDefinition]([RecId]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_SalesInvoiceLine', N'U') IS NOT NULL
+   AND OBJECT_ID(N'dbo.App_VatWithholdingDefinition', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_App_SalesInvoiceLine_App_VatWithholdingDefinition')
+BEGIN
+    ALTER TABLE [dbo].[App_SalesInvoiceLine] WITH CHECK
+    ADD CONSTRAINT [FK_App_SalesInvoiceLine_App_VatWithholdingDefinition]
+    FOREIGN KEY([WithholdingDefinitionId]) REFERENCES [dbo].[App_VatWithholdingDefinition]([RecId]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_CustomsFreightInvoiceLine', N'U') IS NOT NULL
+   AND OBJECT_ID(N'dbo.App_VatWithholdingDefinition', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_App_CustomsFreightInvoiceLine_App_VatWithholdingDefinition')
+BEGIN
+    ALTER TABLE [dbo].[App_CustomsFreightInvoiceLine] WITH CHECK
+    ADD CONSTRAINT [FK_App_CustomsFreightInvoiceLine_App_VatWithholdingDefinition]
+    FOREIGN KEY([WithholdingDefinitionId]) REFERENCES [dbo].[App_VatWithholdingDefinition]([RecId]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_SchemaVersion', N'U') IS NOT NULL
+   AND NOT EXISTS (
+       SELECT 1 FROM [dbo].[App_SchemaVersion]
+       WHERE [ScriptName] = N'YamanCam.Core' AND [VersionNo] = 18
+   )
+BEGIN
+    INSERT INTO [dbo].[App_SchemaVersion] ([VersionNo], [ScriptName], [Description], [AppliedUtc])
+    VALUES (18, N'YamanCam.Core', N'Alis/Satis/Gumruk Nakliye faturalarina tevkifat kdv secimi ve hesaplama alanlari eklendi', SYSUTCDATETIME());
+END
+GO

@@ -31,6 +31,7 @@ public static class AppScreenRights
         new() { Code = "AppCompanies", Name = "Şirket Tanımları", HasDelete = false },
         new() { Code = "AppWorkPlaces", Name = "Şube Tanımları", HasDelete = false },
         new() { Code = "AppVatDefinitions", Name = "Kdv Tanımları" },
+        new() { Code = "AppVatWithholdingDefinitions", Name = "Tevkifat Kdv Tanımları" },
         new() { Code = "AppStocks", Name = "Stoklar" },
         new() { Code = "AppStockGroups", Name = "Stok Grupları" },
         new() { Code = "AppStockUnits", Name = "Stok Birimleri" },

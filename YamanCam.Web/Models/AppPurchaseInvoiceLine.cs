@@ -27,11 +27,22 @@ public class AppPurchaseInvoiceLine
     [Column(TypeName = "decimal(5,2)")]
     public decimal VatRate { get; set; }
 
+    public int? WithholdingDefinitionId { get; set; }
+
+    [Column(TypeName = "decimal(5,2)")]
+    public decimal WithholdingRate { get; set; }
+
     [Column(TypeName = "decimal(18,2)")]
     public decimal NetAmount { get; set; }
 
     [Column(TypeName = "decimal(18,2)")]
     public decimal VatAmount { get; set; }
+
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal WithholdingAmount { get; set; }
+
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal NetVatAmount { get; set; }
 
     [Column(TypeName = "decimal(18,2)")]
     public decimal TotalAmount { get; set; }
@@ -43,4 +54,7 @@ public class AppPurchaseInvoiceLine
 
     [ForeignKey(nameof(StockId))]
     public AppStock? Stock { get; set; }
+
+    [ForeignKey(nameof(WithholdingDefinitionId))]
+    public AppVatWithholdingDefinition? WithholdingDefinition { get; set; }
 }

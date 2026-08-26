@@ -45,6 +45,12 @@ public class AppSalesInvoiceEditViewModel
     [Display(Name = "KDV (Döviz)")]
     public decimal VatAmount { get; set; }
 
+    [Display(Name = "Tevkifat (Döviz)")]
+    public decimal WithholdingAmount { get; set; }
+
+    [Display(Name = "NET KDV (Döviz)")]
+    public decimal NetVatAmount { get; set; }
+
     [Display(Name = "Genel Toplam (Döviz)")]
     public decimal TotalAmount { get; set; }
 
@@ -53,6 +59,12 @@ public class AppSalesInvoiceEditViewModel
 
     [Display(Name = "KDV (TL)")]
     public decimal VatAmountTRY { get; set; }
+
+    [Display(Name = "Tevkifat (TL)")]
+    public decimal WithholdingAmountTRY { get; set; }
+
+    [Display(Name = "NET KDV (TL)")]
+    public decimal NetVatAmountTRY { get; set; }
 
     [Display(Name = "Genel Toplam (TL)")]
     public decimal TotalAmountTRY { get; set; }
@@ -67,6 +79,7 @@ public class AppSalesInvoiceEditViewModel
     public IReadOnlyList<SelectListItem> WorkPlaceOptions { get; set; } = Array.Empty<SelectListItem>();
     public IReadOnlyList<SelectListItem> AccountOptions { get; set; } = Array.Empty<SelectListItem>();
     public IReadOnlyList<SelectListItem> StockOptions { get; set; } = Array.Empty<SelectListItem>();
+    public IReadOnlyList<SelectListItem> WithholdingDefinitionOptions { get; set; } = Array.Empty<SelectListItem>();
 }
 
 public class AppSalesInvoiceLineEditViewModel
@@ -91,7 +104,15 @@ public class AppSalesInvoiceLineEditViewModel
     [Display(Name = "KDV %")]
     public decimal VatRate { get; set; }
 
+    [Display(Name = "Tevkifat")]
+    public int? WithholdingDefinitionId { get; set; }
+
+    [Display(Name = "Tevkifat %")]
+    public decimal WithholdingRate { get; set; }
+
     public decimal NetAmount { get; set; }
     public decimal VatAmount { get; set; }
+    public decimal WithholdingAmount { get; set; }
+    public decimal NetVatAmount { get; set; }
     public decimal TotalAmount { get; set; }
 }

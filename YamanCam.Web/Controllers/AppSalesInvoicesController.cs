@@ -325,6 +325,20 @@ public class AppSalesInvoicesController : Controller
         ViewData["StockVatRates"] = stocks.ToDictionary(
             x => x.RecId.ToString(CultureInfo.InvariantCulture),
             x => x.VatRate ?? 0m);
+
+        var withholdingDefinitions = await _context.AppVatWithholdingDefinitions.AsNoTracking()
+            .Where(x => x.IsActive != false)
+            .OrderBy(x => x.WithholdingCode)
+            .Select(x => new { x.RecId, x.WithholdingCode, x.WithholdingName, x.VatRate, x.WithholdingRate })
+            .ToListAsync();
+
+        vm.WithholdingDefinitionOptions = withholdingDefinitions
+            .Select(x => new SelectListItem($"{x.WithholdingCode} - {x.WithholdingName} (KDV %{x.VatRate:0.##}, Tevkifat %{x.WithholdingRate:0.##})", x.RecId.ToString(CultureInfo.InvariantCulture)))
+            .ToList();
+
+        ViewData["WithholdingDefinitionRates"] = withholdingDefinitions.ToDictionary(
+            x => x.RecId.ToString(CultureInfo.InvariantCulture),
+            x => x.WithholdingRate);
     }
 
     private async Task ValidateInvoiceAsync(AppSalesInvoiceEditViewModel vm)
@@ -405,18 +419,35 @@ public class AppSalesInvoicesController : Controller
                 ModelState.AddModelError($"Lines[{i}].VatRate", "KDV oranı negatif olamaz.");
             }
 
+            if (line.WithholdingDefinitionId.HasValue &&
+                !await _context.AppVatWithholdingDefinitions.AnyAsync(x => x.RecId == line.WithholdingDefinitionId.Value))
+            {
+                ModelState.AddModelError($"Lines[{i}].WithholdingDefinitionId", "Geçersiz tevkifat tanımı seçildi.");
+            }
+
+            if (line.WithholdingRate is < 0 or > 100)
+            {
+                ModelState.AddModelError($"Lines[{i}].WithholdingRate", "Tevkifat oranı 0-100 arasında olmalıdır.");
+            }
+
             line.NetAmount = Math.Round(line.Quantity * line.UnitPrice, 2, MidpointRounding.AwayFromZero);
             line.VatAmount = Math.Round(line.NetAmount * line.VatRate / 100m, 2, MidpointRounding.AwayFromZero);
-            line.TotalAmount = line.NetAmount + line.VatAmount;
+            line.WithholdingAmount = Math.Round(line.VatAmount * line.WithholdingRate / 100m, 2, MidpointRounding.AwayFromZero);
+            line.NetVatAmount = line.VatAmount - line.WithholdingAmount;
+            line.TotalAmount = line.NetAmount + line.NetVatAmount;
         }
 
         vm.NetAmount = vm.Lines.Sum(x => x.NetAmount);
         vm.VatAmount = vm.Lines.Sum(x => x.VatAmount);
-        vm.TotalAmount = vm.NetAmount + vm.VatAmount;
+        vm.WithholdingAmount = vm.Lines.Sum(x => x.WithholdingAmount);
+        vm.NetVatAmount = vm.VatAmount - vm.WithholdingAmount;
+        vm.TotalAmount = vm.NetAmount + vm.NetVatAmount;
 
         vm.NetAmountTRY = Math.Round(vm.NetAmount * vm.ExchangeRate, 2, MidpointRounding.AwayFromZero);
         vm.VatAmountTRY = Math.Round(vm.VatAmount * vm.ExchangeRate, 2, MidpointRounding.AwayFromZero);
-        vm.TotalAmountTRY = vm.NetAmountTRY + vm.VatAmountTRY;
+        vm.WithholdingAmountTRY = Math.Round(vm.WithholdingAmount * vm.ExchangeRate, 2, MidpointRounding.AwayFromZero);
+        vm.NetVatAmountTRY = vm.VatAmountTRY - vm.WithholdingAmountTRY;
+        vm.TotalAmountTRY = vm.NetAmountTRY + vm.NetVatAmountTRY;
 
         if (vm.TotalAmount <= 0)
         {
@@ -439,9 +470,13 @@ public class AppSalesInvoicesController : Controller
             ExchangeRate = entity.ExchangeRate,
             NetAmount = entity.NetAmount,
             VatAmount = entity.VatAmount,
+            WithholdingAmount = entity.WithholdingAmount,
+            NetVatAmount = entity.NetVatAmount,
             TotalAmount = entity.TotalAmount,
             NetAmountTRY = entity.NetAmountTRY,
             VatAmountTRY = entity.VatAmountTRY,
+            WithholdingAmountTRY = entity.WithholdingAmountTRY,
+            NetVatAmountTRY = entity.NetVatAmountTRY,
             TotalAmountTRY = entity.TotalAmountTRY,
             Lines = entity.Lines
                 .OrderBy(x => x.LineNo)
@@ -454,8 +489,12 @@ public class AppSalesInvoicesController : Controller
                     Quantity = x.Quantity,
                     UnitPrice = x.UnitPrice,
                     VatRate = x.VatRate,
+                    WithholdingDefinitionId = x.WithholdingDefinitionId,
+                    WithholdingRate = x.WithholdingRate,
                     NetAmount = x.NetAmount,
                     VatAmount = x.VatAmount,
+                    WithholdingAmount = x.WithholdingAmount,
+                    NetVatAmount = x.NetVatAmount,
                     TotalAmount = x.TotalAmount
                 })
                 .ToList()
@@ -474,9 +513,13 @@ public class AppSalesInvoicesController : Controller
         entity.ExchangeRate = vm.ExchangeRate;
         entity.NetAmount = vm.NetAmount;
         entity.VatAmount = vm.VatAmount;
+        entity.WithholdingAmount = vm.WithholdingAmount;
+        entity.NetVatAmount = vm.NetVatAmount;
         entity.TotalAmount = vm.TotalAmount;
         entity.NetAmountTRY = vm.NetAmountTRY;
         entity.VatAmountTRY = vm.VatAmountTRY;
+        entity.WithholdingAmountTRY = vm.WithholdingAmountTRY;
+        entity.NetVatAmountTRY = vm.NetVatAmountTRY;
         entity.TotalAmountTRY = vm.TotalAmountTRY;
     }
 
@@ -492,8 +535,12 @@ public class AppSalesInvoicesController : Controller
                 Quantity = line.Quantity,
                 UnitPrice = line.UnitPrice,
                 VatRate = line.VatRate,
+                WithholdingDefinitionId = line.WithholdingDefinitionId,
+                WithholdingRate = line.WithholdingRate,
                 NetAmount = line.NetAmount,
                 VatAmount = line.VatAmount,
+                WithholdingAmount = line.WithholdingAmount,
+                NetVatAmount = line.NetVatAmount,
                 TotalAmount = line.TotalAmount,
                 CreatedDate = DateTime.UtcNow
             });
@@ -506,6 +553,7 @@ public class AppSalesInvoicesController : Controller
         sb.Append($"No={entity.InvoiceNo}, Tarih={entity.InvoiceDate:yyyy-MM-dd}");
         sb.Append($", CariId={entity.AccountId}, SubeId={entity.WorkPlaceId}");
         sb.Append($", Doviz={entity.CurrencyCode}, Kur={entity.ExchangeRate}");
+        sb.Append($", Tevkifat={entity.WithholdingAmount}");
         sb.Append($", ToplamDoviz={entity.TotalAmount}, ToplamTL={entity.TotalAmountTRY}");
         sb.Append($", SatirSayisi={entity.Lines.Count}");
         sb.Append($", IsActive={entity.IsActive == true}");
