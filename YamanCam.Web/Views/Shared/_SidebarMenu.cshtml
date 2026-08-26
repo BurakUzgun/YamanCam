@@ -76,7 +76,10 @@
           {
             <li><a class="app-menu-link" asp-controller="AppStockUnits" asp-action="Index">Stok Birimleri</a></li>
           }
-          <li><a class="app-menu-link" href="#">Uretim Tanimlari</a></li>
+          @if (Allowed("AppProductionDefinitions"))
+          {
+            <li><a class="app-menu-link" asp-controller="AppProductionDefinitions" asp-action="Index">Uretim Tanimlari</a></li>
+          }
         </ul>
       </li>
       <li class="app-menu-group">
@@ -84,7 +87,10 @@
           Stok Islemleri
         </button>
         <ul class="collapse app-menu-sub" id="menuStokIslemler">
-          <li><a class="app-menu-link" href="#">Acilis Fisleri</a></li>
+          @if (Allowed("AppStockOpenings"))
+          {
+            <li><a class="app-menu-link" asp-controller="AppStockOpenings" asp-action="Index">Acilis Fisleri</a></li>
+          }
           <li><a class="app-menu-link" href="#">Subeler Arasi Transfer Fisleri</a></li>
           <li><a class="app-menu-link" href="#">Cikis Fisleri</a></li>
           <li><a class="app-menu-link" href="#">Uretim</a></li>

@@ -1996,3 +1996,248 @@ BEGIN
     VALUES (18, N'YamanCam.Core', N'Alis/Satis/Gumruk Nakliye faturalarina tevkifat kdv secimi ve hesaplama alanlari eklendi', SYSUTCDATETIME());
 END
 GO
+
+/* ------------------------------------------------------------------ */
+/* Surum 19 - App_StockOpening / App_StockOpeningLine                 */
+/* (Stok Acilis Fisi basligi + stok satirlari, doviz/KDV yok)          */
+/* ------------------------------------------------------------------ */
+IF OBJECT_ID(N'dbo.App_StockOpening', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[App_StockOpening](
+        [RecId]           [int] IDENTITY(1,1) NOT NULL,
+        [VoucherNo]       [nvarchar](50) NOT NULL,
+        [VoucherDate]     [datetime2](0) NOT NULL,
+        [WorkPlaceId]     [int] NULL,
+        [TransactionType] [nvarchar](30) NOT NULL CONSTRAINT [DF_App_StockOpening_TransactionType] DEFAULT (N'İlk Giriş'),
+        [SpecialCode]     [nvarchar](50) NULL,
+        [TotalAmount]     [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_StockOpening_TotalAmount] DEFAULT (0),
+        [IsActive]        [bit] NULL CONSTRAINT [DF_App_StockOpening_IsActive] DEFAULT (1),
+        [CreatedDate]     [datetime2](0) NULL CONSTRAINT [DF_App_StockOpening_CreatedDate] DEFAULT (SYSUTCDATETIME()),
+        CONSTRAINT [PK_App_StockOpening] PRIMARY KEY CLUSTERED ([RecId] ASC)
+    ) ON [PRIMARY];
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_StockOpening', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockOpening', 'VoucherNo') IS NULL
+    ALTER TABLE [dbo].[App_StockOpening] ADD [VoucherNo] [nvarchar](50) NOT NULL CONSTRAINT [DF_App_StockOpening_VoucherNo] DEFAULT (N'');
+GO
+IF OBJECT_ID(N'dbo.App_StockOpening', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockOpening', 'VoucherDate') IS NULL
+    ALTER TABLE [dbo].[App_StockOpening] ADD [VoucherDate] [datetime2](0) NOT NULL CONSTRAINT [DF_App_StockOpening_VoucherDate] DEFAULT (SYSUTCDATETIME());
+GO
+IF OBJECT_ID(N'dbo.App_StockOpening', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockOpening', 'WorkPlaceId') IS NULL
+    ALTER TABLE [dbo].[App_StockOpening] ADD [WorkPlaceId] [int] NULL;
+GO
+IF OBJECT_ID(N'dbo.App_StockOpening', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockOpening', 'TransactionType') IS NULL
+    ALTER TABLE [dbo].[App_StockOpening] ADD [TransactionType] [nvarchar](30) NOT NULL CONSTRAINT [DF_App_StockOpening_TransactionType_Alt] DEFAULT (N'İlk Giriş');
+GO
+IF OBJECT_ID(N'dbo.App_StockOpening', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockOpening', 'SpecialCode') IS NULL
+    ALTER TABLE [dbo].[App_StockOpening] ADD [SpecialCode] [nvarchar](50) NULL;
+GO
+IF OBJECT_ID(N'dbo.App_StockOpening', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockOpening', 'TotalAmount') IS NULL
+    ALTER TABLE [dbo].[App_StockOpening] ADD [TotalAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_StockOpening_TotalAmount_Alt] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_StockOpening', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockOpening', 'IsActive') IS NULL
+    ALTER TABLE [dbo].[App_StockOpening] ADD [IsActive] [bit] NULL CONSTRAINT [DF_App_StockOpening_IsActive_Alt] DEFAULT (1);
+GO
+IF OBJECT_ID(N'dbo.App_StockOpening', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockOpening', 'CreatedDate') IS NULL
+    ALTER TABLE [dbo].[App_StockOpening] ADD [CreatedDate] [datetime2](0) NULL CONSTRAINT [DF_App_StockOpening_CreatedDate_Alt] DEFAULT (SYSUTCDATETIME());
+GO
+
+IF OBJECT_ID(N'dbo.App_StockOpening', N'U') IS NOT NULL
+   AND OBJECT_ID(N'dbo.App_WorkPlace', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_App_StockOpening_App_WorkPlace')
+BEGIN
+    ALTER TABLE [dbo].[App_StockOpening] WITH CHECK
+    ADD CONSTRAINT [FK_App_StockOpening_App_WorkPlace]
+    FOREIGN KEY([WorkPlaceId]) REFERENCES [dbo].[App_WorkPlace]([RecId]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_StockOpening', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UX_App_StockOpening_VoucherNo' AND object_id = OBJECT_ID(N'dbo.App_StockOpening'))
+BEGIN
+    CREATE UNIQUE NONCLUSTERED INDEX [UX_App_StockOpening_VoucherNo]
+    ON [dbo].[App_StockOpening]([VoucherNo]);
+END
+GO
+
+/* ------------------------------------------------------------------ */
+/* App_StockOpeningLine (Stok Acilis Fisi stok satirlari)              */
+/* ------------------------------------------------------------------ */
+IF OBJECT_ID(N'dbo.App_StockOpeningLine', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[App_StockOpeningLine](
+        [RecId]        [int] IDENTITY(1,1) NOT NULL,
+        [OpeningId]    [int] NOT NULL,
+        [LineNo]       [int] NOT NULL CONSTRAINT [DF_App_StockOpeningLine_LineNo] DEFAULT (1),
+        [StockId]      [int] NOT NULL,
+        [StockUnitId]  [int] NULL,
+        [Quantity]     [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_StockOpeningLine_Quantity] DEFAULT (0),
+        [UnitPrice]    [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_StockOpeningLine_UnitPrice] DEFAULT (0),
+        [TotalPrice]   [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_StockOpeningLine_TotalPrice] DEFAULT (0),
+        [CreatedDate]  [datetime2](0) NULL CONSTRAINT [DF_App_StockOpeningLine_CreatedDate] DEFAULT (SYSUTCDATETIME()),
+        CONSTRAINT [PK_App_StockOpeningLine] PRIMARY KEY CLUSTERED ([RecId] ASC)
+    ) ON [PRIMARY];
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_StockOpeningLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockOpeningLine', 'OpeningId') IS NULL
+    ALTER TABLE [dbo].[App_StockOpeningLine] ADD [OpeningId] [int] NOT NULL CONSTRAINT [DF_App_StockOpeningLine_OpeningId] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_StockOpeningLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockOpeningLine', 'LineNo') IS NULL
+    ALTER TABLE [dbo].[App_StockOpeningLine] ADD [LineNo] [int] NOT NULL CONSTRAINT [DF_App_StockOpeningLine_LineNo_Alt] DEFAULT (1);
+GO
+IF OBJECT_ID(N'dbo.App_StockOpeningLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockOpeningLine', 'StockId') IS NULL
+    ALTER TABLE [dbo].[App_StockOpeningLine] ADD [StockId] [int] NOT NULL CONSTRAINT [DF_App_StockOpeningLine_StockId] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_StockOpeningLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockOpeningLine', 'StockUnitId') IS NULL
+    ALTER TABLE [dbo].[App_StockOpeningLine] ADD [StockUnitId] [int] NULL;
+GO
+IF OBJECT_ID(N'dbo.App_StockOpeningLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockOpeningLine', 'Quantity') IS NULL
+    ALTER TABLE [dbo].[App_StockOpeningLine] ADD [Quantity] [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_StockOpeningLine_Quantity_Alt] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_StockOpeningLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockOpeningLine', 'UnitPrice') IS NULL
+    ALTER TABLE [dbo].[App_StockOpeningLine] ADD [UnitPrice] [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_StockOpeningLine_UnitPrice_Alt] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_StockOpeningLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockOpeningLine', 'TotalPrice') IS NULL
+    ALTER TABLE [dbo].[App_StockOpeningLine] ADD [TotalPrice] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_StockOpeningLine_TotalPrice_Alt] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_StockOpeningLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockOpeningLine', 'CreatedDate') IS NULL
+    ALTER TABLE [dbo].[App_StockOpeningLine] ADD [CreatedDate] [datetime2](0) NULL CONSTRAINT [DF_App_StockOpeningLine_CreatedDate_Alt] DEFAULT (SYSUTCDATETIME());
+GO
+
+IF OBJECT_ID(N'dbo.App_StockOpeningLine', N'U') IS NOT NULL
+   AND OBJECT_ID(N'dbo.App_StockOpening', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_App_StockOpeningLine_App_StockOpening')
+BEGIN
+    ALTER TABLE [dbo].[App_StockOpeningLine] WITH CHECK
+    ADD CONSTRAINT [FK_App_StockOpeningLine_App_StockOpening]
+    FOREIGN KEY([OpeningId]) REFERENCES [dbo].[App_StockOpening]([RecId])
+    ON DELETE CASCADE;
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_StockOpeningLine', N'U') IS NOT NULL
+   AND OBJECT_ID(N'dbo.App_Stock', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_App_StockOpeningLine_App_Stock')
+BEGIN
+    ALTER TABLE [dbo].[App_StockOpeningLine] WITH CHECK
+    ADD CONSTRAINT [FK_App_StockOpeningLine_App_Stock]
+    FOREIGN KEY([StockId]) REFERENCES [dbo].[App_Stock]([RecId]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_StockOpeningLine', N'U') IS NOT NULL
+   AND OBJECT_ID(N'dbo.App_StockUnit', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_App_StockOpeningLine_App_StockUnit')
+BEGIN
+    ALTER TABLE [dbo].[App_StockOpeningLine] WITH CHECK
+    ADD CONSTRAINT [FK_App_StockOpeningLine_App_StockUnit]
+    FOREIGN KEY([StockUnitId]) REFERENCES [dbo].[App_StockUnit]([RecId]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_StockOpeningLine', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_App_StockOpeningLine_OpeningId' AND object_id = OBJECT_ID(N'dbo.App_StockOpeningLine'))
+BEGIN
+    CREATE NONCLUSTERED INDEX [IX_App_StockOpeningLine_OpeningId]
+    ON [dbo].[App_StockOpeningLine]([OpeningId]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_SchemaVersion', N'U') IS NOT NULL
+   AND NOT EXISTS (
+       SELECT 1 FROM [dbo].[App_SchemaVersion]
+       WHERE [ScriptName] = N'YamanCam.Core' AND [VersionNo] = 19
+   )
+BEGIN
+    INSERT INTO [dbo].[App_SchemaVersion] ([VersionNo], [ScriptName], [Description], [AppliedUtc])
+    VALUES (19, N'YamanCam.Core', N'App_StockOpening / App_StockOpeningLine stok acilis fisi master-detail', SYSUTCDATETIME());
+END
+GO
+
+/* ------------------------------------------------------------------ */
+/* Surum 20 - App_ProductionDefinition (Uretim Tanimlari)              */
+/* ------------------------------------------------------------------ */
+IF OBJECT_ID(N'dbo.App_ProductionDefinition', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[App_ProductionDefinition](
+        [RecId]              [int] IDENTITY(1,1) NOT NULL,
+        [ProductStockId]     [int] NOT NULL,
+        [RawMaterialStockId] [int] NOT NULL,
+        [ProductionQuantity] [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_ProductionDefinition_ProductionQuantity] DEFAULT (1),
+        [WorkPlaceId]        [int] NOT NULL,
+        [IsActive]           [bit] NULL CONSTRAINT [DF_App_ProductionDefinition_IsActive] DEFAULT (1),
+        [CreatedDate]        [datetime2](0) NULL CONSTRAINT [DF_App_ProductionDefinition_CreatedDate] DEFAULT (SYSUTCDATETIME()),
+        CONSTRAINT [PK_App_ProductionDefinition] PRIMARY KEY CLUSTERED ([RecId] ASC)
+    ) ON [PRIMARY];
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_ProductionDefinition', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductionDefinition', 'ProductStockId') IS NULL
+    ALTER TABLE [dbo].[App_ProductionDefinition] ADD [ProductStockId] [int] NOT NULL CONSTRAINT [DF_App_ProductionDefinition_ProductStockId] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_ProductionDefinition', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductionDefinition', 'RawMaterialStockId') IS NULL
+    ALTER TABLE [dbo].[App_ProductionDefinition] ADD [RawMaterialStockId] [int] NOT NULL CONSTRAINT [DF_App_ProductionDefinition_RawMaterialStockId] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_ProductionDefinition', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductionDefinition', 'ProductionQuantity') IS NULL
+    ALTER TABLE [dbo].[App_ProductionDefinition] ADD [ProductionQuantity] [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_ProductionDefinition_ProductionQuantity_Alt] DEFAULT (1);
+GO
+IF OBJECT_ID(N'dbo.App_ProductionDefinition', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductionDefinition', 'WorkPlaceId') IS NULL
+    ALTER TABLE [dbo].[App_ProductionDefinition] ADD [WorkPlaceId] [int] NOT NULL CONSTRAINT [DF_App_ProductionDefinition_WorkPlaceId] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_ProductionDefinition', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductionDefinition', 'IsActive') IS NULL
+    ALTER TABLE [dbo].[App_ProductionDefinition] ADD [IsActive] [bit] NULL CONSTRAINT [DF_App_ProductionDefinition_IsActive_Alt] DEFAULT (1);
+GO
+IF OBJECT_ID(N'dbo.App_ProductionDefinition', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductionDefinition', 'CreatedDate') IS NULL
+    ALTER TABLE [dbo].[App_ProductionDefinition] ADD [CreatedDate] [datetime2](0) NULL CONSTRAINT [DF_App_ProductionDefinition_CreatedDate_Alt] DEFAULT (SYSUTCDATETIME());
+GO
+
+IF OBJECT_ID(N'dbo.App_ProductionDefinition', N'U') IS NOT NULL
+   AND OBJECT_ID(N'dbo.App_Stock', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_App_ProductionDefinition_ProductStock')
+BEGIN
+    ALTER TABLE [dbo].[App_ProductionDefinition] WITH CHECK
+    ADD CONSTRAINT [FK_App_ProductionDefinition_ProductStock]
+    FOREIGN KEY([ProductStockId]) REFERENCES [dbo].[App_Stock]([RecId]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_ProductionDefinition', N'U') IS NOT NULL
+   AND OBJECT_ID(N'dbo.App_Stock', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_App_ProductionDefinition_RawMaterialStock')
+BEGIN
+    ALTER TABLE [dbo].[App_ProductionDefinition] WITH CHECK
+    ADD CONSTRAINT [FK_App_ProductionDefinition_RawMaterialStock]
+    FOREIGN KEY([RawMaterialStockId]) REFERENCES [dbo].[App_Stock]([RecId]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_ProductionDefinition', N'U') IS NOT NULL
+   AND OBJECT_ID(N'dbo.App_WorkPlace', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_App_ProductionDefinition_App_WorkPlace')
+BEGIN
+    ALTER TABLE [dbo].[App_ProductionDefinition] WITH CHECK
+    ADD CONSTRAINT [FK_App_ProductionDefinition_App_WorkPlace]
+    FOREIGN KEY([WorkPlaceId]) REFERENCES [dbo].[App_WorkPlace]([RecId]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_ProductionDefinition', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_App_ProductionDefinition_ProductStockId' AND object_id = OBJECT_ID(N'dbo.App_ProductionDefinition'))
+BEGIN
+    CREATE NONCLUSTERED INDEX [IX_App_ProductionDefinition_ProductStockId]
+    ON [dbo].[App_ProductionDefinition]([ProductStockId]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_SchemaVersion', N'U') IS NOT NULL
+   AND NOT EXISTS (
+       SELECT 1 FROM [dbo].[App_SchemaVersion]
+       WHERE [ScriptName] = N'YamanCam.Core' AND [VersionNo] = 20
+   )
+BEGIN
+    INSERT INTO [dbo].[App_SchemaVersion] ([VersionNo], [ScriptName], [Description], [AppliedUtc])
+    VALUES (20, N'YamanCam.Core', N'App_ProductionDefinition uretim tanimlari tablosu', SYSUTCDATETIME());
+END
+GO
