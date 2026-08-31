@@ -91,12 +91,18 @@
           {
             <li><a class="app-menu-link" asp-controller="AppStockOpenings" asp-action="Index">Acilis Fisleri</a></li>
           }
-          <li><a class="app-menu-link" href="#">Subeler Arasi Transfer Fisleri</a></li>
+          @if (Allowed("AppStockTransfers"))
+          {
+            <li><a class="app-menu-link" asp-controller="AppStockTransfers" asp-action="Index">Subeler Arasi Transfer Fisleri</a></li>
+          }
           <li><a class="app-menu-link" href="#">Cikis Fisleri</a></li>
           <li><a class="app-menu-link" href="#">Uretim</a></li>
           <li><a class="app-menu-link" href="#">Sayim Islemleri</a></li>
           <li><a class="app-menu-link" href="#">Yonetim Gideri Stok Dagitimi</a></li>
-          <li><a class="app-menu-link" href="#">Stoklari Birlestir</a></li>
+          @if (Allowed("AppStockMerges"))
+          {
+            <li><a class="app-menu-link" asp-controller="AppStockMerges" asp-action="Index">Stoklari Birlestir</a></li>
+          }
           <li><a class="app-menu-link" href="#">Subeler Arasi Transfer Farkli Urun</a></li>
         </ul>
       </li>

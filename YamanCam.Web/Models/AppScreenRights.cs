@@ -43,6 +43,8 @@ public static class AppScreenRights
         new() { Code = "AppReceiptVouchers", Name = "Tahsilat Fişi" },
         new() { Code = "AppJournalVouchers", Name = "Mahsup Fişi" },
         new() { Code = "AppStockOpenings", Name = "Stok Açılış Fişleri" },
+        new() { Code = "AppStockTransfers", Name = "Şubeler Arası Transfer Fişleri" },
+        new() { Code = "AppStockMerges", Name = "Stokları Birleştir" },
         new() { Code = "AppProductionDefinitions", Name = "Üretim Tanımları" },
     ];
 

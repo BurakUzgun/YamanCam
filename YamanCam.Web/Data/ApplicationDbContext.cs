@@ -32,5 +32,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<AppCustomsFreightInvoiceLine> AppCustomsFreightInvoiceLines => Set<AppCustomsFreightInvoiceLine>();
     public DbSet<AppStockOpening> AppStockOpenings => Set<AppStockOpening>();
     public DbSet<AppStockOpeningLine> AppStockOpeningLines => Set<AppStockOpeningLine>();
+    public DbSet<AppStockTransfer> AppStockTransfers => Set<AppStockTransfer>();
+    public DbSet<AppStockTransferLine> AppStockTransferLines => Set<AppStockTransferLine>();
+    public DbSet<AppStockMerge> AppStockMerges => Set<AppStockMerge>();
     public DbSet<AppProductionDefinition> AppProductionDefinitions => Set<AppProductionDefinition>();
 }
