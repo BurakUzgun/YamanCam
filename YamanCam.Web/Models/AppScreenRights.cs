@@ -43,9 +43,13 @@ public static class AppScreenRights
         new() { Code = "AppReceiptVouchers", Name = "Tahsilat Fişi" },
         new() { Code = "AppJournalVouchers", Name = "Mahsup Fişi" },
         new() { Code = "AppStockOpenings", Name = "Stok Açılış Fişleri" },
+        new() { Code = "AppStockIssues", Name = "Stok Çıkış Fişleri" },
         new() { Code = "AppStockTransfers", Name = "Şubeler Arası Transfer Fişleri" },
+        new() { Code = "AppProductTransfers", Name = "Şubeler Arası Transfer (Farklı Ürün)" },
         new() { Code = "AppStockMerges", Name = "Stokları Birleştir" },
         new() { Code = "AppProductionDefinitions", Name = "Üretim Tanımları" },
+        new() { Code = "AppProductionVouchers", Name = "Stok Ürün Üretim Fişleri" },
+        new() { Code = "AppStockCounts", Name = "Sayım Kayıtları" },
     ];
 
     public static string BuildRightCode(string controllerCode, ScreenActionType action) => $"{controllerCode}.{action}";

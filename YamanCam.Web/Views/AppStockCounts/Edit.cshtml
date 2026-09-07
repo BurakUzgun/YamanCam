@@ -1,0 +1,203 @@
+@model YamanCam.Web.Models.AppStockCountEditViewModel
+@using System.Globalization
+@{
+    var isNew = Model.RecId == 0;
+    ViewData["Title"] = isNew ? "Yeni Sayım Kaydı" : "Sayım Kaydı Düzenle";
+    var stockOptionsJson = System.Text.Json.JsonSerializer.Serialize(
+        Model.StockOptions.Select(o => new { value = o.Value, text = o.Text }));
+}
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <form asp-action="@(isNew ? "Create" : "Edit")" method="post" id="stockCountForm">
+            @Html.AntiForgeryToken()
+            <input asp-for="RecId" type="hidden" />
+
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <h1 class="h4 mb-0">@ViewData["Title"]</h1>
+            </div>
+
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <h2 class="h6 text-muted mb-3">Sayım Bilgileri</h2>
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label asp-for="StartDate" class="form-label"></label>
+                    <input asp-for="StartDate" type="date" class="form-control" asp-format="{0:yyyy-MM-dd}" />
+                    <span asp-validation-for="StartDate" class="text-danger"></span>
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="EndDate" class="form-label"></label>
+                    <input asp-for="EndDate" type="date" class="form-control" asp-format="{0:yyyy-MM-dd}" />
+                    <span asp-validation-for="EndDate" class="text-danger"></span>
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="WorkPlaceId" class="form-label"></label>
+                    <select asp-for="WorkPlaceId" asp-items="Model.WorkPlaceOptions" class="form-select">
+                        <option value="">Seçiniz</option>
+                    </select>
+                    <span asp-validation-for="WorkPlaceId" class="text-danger"></span>
+                </div>
+            </div>
+
+            <h2 class="h6 text-muted mt-4 mb-3">Sayım Satırları</h2>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-2" id="linesTable">
+                    <thead>
+                        <tr>
+                            <th style="min-width:280px;">Stok Adı</th>
+                            <th style="width:160px;" class="text-end">Sayım Miktar</th>
+                            <th style="width:50px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="linesBody">
+                        @for (var i = 0; i < Model.Lines.Count; i++)
+                        {
+                            <tr class="line-row">
+                                <td>
+                                    <input type="hidden" name="Lines[@i].RecId" value="@Model.Lines[i].RecId" />
+                                    <select name="Lines[@i].StockId" class="form-select form-select-sm line-stock">
+                                        <option value="0">Seçiniz</option>
+                                        @foreach (var opt in Model.StockOptions)
+                                        {
+                                            <option value="@opt.Value" selected="@(opt.Value == Model.Lines[i].StockId.ToString(CultureInfo.InvariantCulture) ? "selected" : null)">@opt.Text</option>
+                                        }
+                                    </select>
+                                </td>
+                                <td><input type="number" step="0.0001" min="0" name="Lines[@i].CountQuantity" class="form-control form-control-sm text-end line-count" value="@Model.Lines[i].CountQuantity.ToString(CultureInfo.InvariantCulture)" /></td>
+                                <td class="text-center">
+                                    <button type="button" class="btn btn-sm btn-outline-danger line-remove">&times;</button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="d-flex flex-wrap gap-2 mb-4">
+                <button type="button" class="btn btn-sm btn-outline-primary" id="loadStocksBtn">Stokları Getir</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="addLineBtn">Satır Ekle</button>
+                <button type="button" class="btn btn-sm btn-outline-danger" id="removeLastLineBtn">Satır Sil</button>
+                <button type="button" class="btn btn-sm btn-outline-danger" id="clearLinesBtn">Tümünü Temizle</button>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2 mt-4">
+                <button type="submit" class="btn btn-primary">Kaydet</button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Vazgeç</a>
+            </div>
+        </form>
+
+        @if (!isNew)
+        {
+            <form asp-action="Delete" asp-route-id="@Model.RecId" method="post" class="mt-3 pt-3 border-top">
+                @Html.AntiForgeryToken()
+                <button type="submit"
+                        class="btn btn-outline-danger"
+                        onclick="return confirm('Bu sayım kaydını silmek istediğinize emin misiniz?');">
+                    Kaydı Sil
+                </button>
+            </form>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            var linesBody = document.getElementById('linesBody');
+            var addBtn = document.getElementById('addLineBtn');
+            var removeLastBtn = document.getElementById('removeLastLineBtn');
+            var loadStocksBtn = document.getElementById('loadStocksBtn');
+            var clearLinesBtn = document.getElementById('clearLinesBtn');
+            var stockOptions = @Html.Raw(stockOptionsJson);
+
+            function buildStockOptionsHtml() {
+                var html = '<option value="0">Seçiniz</option>';
+                stockOptions.forEach(function (opt) {
+                    html += '<option value="' + opt.value + '">' + opt.text + '</option>';
+                });
+                return html;
+            }
+
+            function reindex() {
+                var rows = linesBody.querySelectorAll('tr.line-row');
+                rows.forEach(function (row, idx) {
+                    row.querySelectorAll('[name]').forEach(function (el) {
+                        el.name = el.name.replace(/Lines\[\d+\]/, 'Lines[' + idx + ']');
+                    });
+                });
+            }
+
+            function bindRowEvents(row) {
+                row.querySelector('.line-remove').addEventListener('click', function () {
+                    row.remove();
+                    reindex();
+                });
+            }
+
+            function createRow(stockValue, countValue) {
+                var idx = linesBody.querySelectorAll('tr.line-row').length;
+                var tr = document.createElement('tr');
+                tr.className = 'line-row';
+                tr.innerHTML =
+                    '<td><input type="hidden" name="Lines[' + idx + '].RecId" value="0" />' +
+                    '<select name="Lines[' + idx + '].StockId" class="form-select form-select-sm line-stock">' + buildStockOptionsHtml() + '</select></td>' +
+                    '<td><input type="number" step="0.0001" min="0" name="Lines[' + idx + '].CountQuantity" class="form-control form-control-sm text-end line-count" value="' + (countValue || 0) + '" /></td>' +
+                    '<td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger line-remove">&times;</button></td>';
+                linesBody.appendChild(tr);
+                if (stockValue) {
+                    tr.querySelector('.line-stock').value = stockValue;
+                }
+                bindRowEvents(tr);
+                return tr;
+            }
+
+            function selectedStockIds() {
+                var ids = {};
+                linesBody.querySelectorAll('tr.line-row .line-stock').forEach(function (sel) {
+                    if (sel.value && sel.value !== '0') {
+                        ids[sel.value] = true;
+                    }
+                });
+                return ids;
+            }
+
+            loadStocksBtn.addEventListener('click', function () {
+                var existing = selectedStockIds();
+                stockOptions.forEach(function (opt) {
+                    if (!existing[opt.value]) {
+                        createRow(opt.value, 0);
+                    }
+                });
+                // Baştaki boş "Seçiniz" satırlarını temizle.
+                linesBody.querySelectorAll('tr.line-row').forEach(function (row) {
+                    var sel = row.querySelector('.line-stock');
+                    if ((!sel.value || sel.value === '0') && linesBody.querySelectorAll('tr.line-row').length > 1) {
+                        row.remove();
+                    }
+                });
+                reindex();
+            });
+
+            addBtn.addEventListener('click', function () {
+                createRow(null, 0);
+                reindex();
+            });
+
+            removeLastBtn.addEventListener('click', function () {
+                var rows = linesBody.querySelectorAll('tr.line-row');
+                if (rows.length <= 1) return;
+                rows[rows.length - 1].remove();
+                reindex();
+            });
+
+            clearLinesBtn.addEventListener('click', function () {
+                linesBody.innerHTML = '';
+                createRow(null, 0);
+                reindex();
+            });
+
+            linesBody.querySelectorAll('tr.line-row').forEach(bindRowEvents);
+        })();
+    </script>
+}

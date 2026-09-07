@@ -2469,3 +2469,629 @@ BEGIN
     VALUES (22, N'YamanCam.Core', N'App_StockMerge stoklari birlestir islemi tablosu', SYSUTCDATETIME());
 END
 GO
+
+/* ------------------------------------------------------------------ */
+/* Surum 23 - App_ProductTransfer / App_ProductTransferLine            */
+/* (Subeler Arasi Transfer Farkli Urun fisi basligi + satirlari.       */
+/*  Her satirda cikan stok + giren/aktarilan stok ayri secilir.        */
+/*  Doviz/KDV yok; miktar x birim fiyat = toplam fiyat)                */
+/* ------------------------------------------------------------------ */
+IF OBJECT_ID(N'dbo.App_ProductTransfer', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[App_ProductTransfer](
+        [RecId]           [int] IDENTITY(1,1) NOT NULL,
+        [VoucherNo]       [nvarchar](50) NOT NULL,
+        [VoucherDate]     [datetime2](0) NOT NULL,
+        [InWorkPlaceId]   [int] NULL,
+        [OutWorkPlaceId]  [int] NULL,
+        [TransactionType] [nvarchar](40) NOT NULL CONSTRAINT [DF_App_ProductTransfer_TransactionType] DEFAULT (N'Farklı Ürün Transfer'),
+        [SpecialCode]     [nvarchar](50) NULL,
+        [TotalAmount]     [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_ProductTransfer_TotalAmount] DEFAULT (0),
+        [IsActive]        [bit] NULL CONSTRAINT [DF_App_ProductTransfer_IsActive] DEFAULT (1),
+        [CreatedDate]     [datetime2](0) NULL CONSTRAINT [DF_App_ProductTransfer_CreatedDate] DEFAULT (SYSUTCDATETIME()),
+        CONSTRAINT [PK_App_ProductTransfer] PRIMARY KEY CLUSTERED ([RecId] ASC)
+    ) ON [PRIMARY];
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_ProductTransfer', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductTransfer', 'VoucherNo') IS NULL
+    ALTER TABLE [dbo].[App_ProductTransfer] ADD [VoucherNo] [nvarchar](50) NOT NULL CONSTRAINT [DF_App_ProductTransfer_VoucherNo] DEFAULT (N'');
+GO
+IF OBJECT_ID(N'dbo.App_ProductTransfer', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductTransfer', 'VoucherDate') IS NULL
+    ALTER TABLE [dbo].[App_ProductTransfer] ADD [VoucherDate] [datetime2](0) NOT NULL CONSTRAINT [DF_App_ProductTransfer_VoucherDate] DEFAULT (SYSUTCDATETIME());
+GO
+IF OBJECT_ID(N'dbo.App_ProductTransfer', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductTransfer', 'InWorkPlaceId') IS NULL
+    ALTER TABLE [dbo].[App_ProductTransfer] ADD [InWorkPlaceId] [int] NULL;
+GO
+IF OBJECT_ID(N'dbo.App_ProductTransfer', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductTransfer', 'OutWorkPlaceId') IS NULL
+    ALTER TABLE [dbo].[App_ProductTransfer] ADD [OutWorkPlaceId] [int] NULL;
+GO
+IF OBJECT_ID(N'dbo.App_ProductTransfer', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductTransfer', 'TransactionType') IS NULL
+    ALTER TABLE [dbo].[App_ProductTransfer] ADD [TransactionType] [nvarchar](40) NOT NULL CONSTRAINT [DF_App_ProductTransfer_TransactionType_Alt] DEFAULT (N'Farklı Ürün Transfer');
+GO
+IF OBJECT_ID(N'dbo.App_ProductTransfer', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductTransfer', 'SpecialCode') IS NULL
+    ALTER TABLE [dbo].[App_ProductTransfer] ADD [SpecialCode] [nvarchar](50) NULL;
+GO
+IF OBJECT_ID(N'dbo.App_ProductTransfer', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductTransfer', 'TotalAmount') IS NULL
+    ALTER TABLE [dbo].[App_ProductTransfer] ADD [TotalAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_ProductTransfer_TotalAmount_Alt] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_ProductTransfer', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductTransfer', 'IsActive') IS NULL
+    ALTER TABLE [dbo].[App_ProductTransfer] ADD [IsActive] [bit] NULL CONSTRAINT [DF_App_ProductTransfer_IsActive_Alt] DEFAULT (1);
+GO
+IF OBJECT_ID(N'dbo.App_ProductTransfer', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductTransfer', 'CreatedDate') IS NULL
+    ALTER TABLE [dbo].[App_ProductTransfer] ADD [CreatedDate] [datetime2](0) NULL CONSTRAINT [DF_App_ProductTransfer_CreatedDate_Alt] DEFAULT (SYSUTCDATETIME());
+GO
+
+IF OBJECT_ID(N'dbo.App_ProductTransfer', N'U') IS NOT NULL
+   AND OBJECT_ID(N'dbo.App_WorkPlace', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_App_ProductTransfer_InWorkPlace')
+BEGIN
+    ALTER TABLE [dbo].[App_ProductTransfer] WITH CHECK
+    ADD CONSTRAINT [FK_App_ProductTransfer_InWorkPlace]
+    FOREIGN KEY([InWorkPlaceId]) REFERENCES [dbo].[App_WorkPlace]([RecId]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_ProductTransfer', N'U') IS NOT NULL
+   AND OBJECT_ID(N'dbo.App_WorkPlace', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_App_ProductTransfer_OutWorkPlace')
+BEGIN
+    ALTER TABLE [dbo].[App_ProductTransfer] WITH CHECK
+    ADD CONSTRAINT [FK_App_ProductTransfer_OutWorkPlace]
+    FOREIGN KEY([OutWorkPlaceId]) REFERENCES [dbo].[App_WorkPlace]([RecId]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_ProductTransfer', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UX_App_ProductTransfer_VoucherNo' AND object_id = OBJECT_ID(N'dbo.App_ProductTransfer'))
+BEGIN
+    CREATE UNIQUE NONCLUSTERED INDEX [UX_App_ProductTransfer_VoucherNo]
+    ON [dbo].[App_ProductTransfer]([VoucherNo]);
+END
+GO
+
+/* ------------------------------------------------------------------ */
+/* App_ProductTransferLine (Farkli Urun Transfer fisi stok satirlari)  */
+/* ------------------------------------------------------------------ */
+IF OBJECT_ID(N'dbo.App_ProductTransferLine', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[App_ProductTransferLine](
+        [RecId]        [int] IDENTITY(1,1) NOT NULL,
+        [TransferId]   [int] NOT NULL,
+        [LineNo]       [int] NOT NULL CONSTRAINT [DF_App_ProductTransferLine_LineNo] DEFAULT (1),
+        [OutStockId]   [int] NOT NULL,
+        [InStockId]    [int] NOT NULL,
+        [StockUnitId]  [int] NULL,
+        [Quantity]     [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_ProductTransferLine_Quantity] DEFAULT (0),
+        [UnitPrice]    [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_ProductTransferLine_UnitPrice] DEFAULT (0),
+        [TotalPrice]   [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_ProductTransferLine_TotalPrice] DEFAULT (0),
+        [CreatedDate]  [datetime2](0) NULL CONSTRAINT [DF_App_ProductTransferLine_CreatedDate] DEFAULT (SYSUTCDATETIME()),
+        CONSTRAINT [PK_App_ProductTransferLine] PRIMARY KEY CLUSTERED ([RecId] ASC)
+    ) ON [PRIMARY];
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_ProductTransferLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductTransferLine', 'TransferId') IS NULL
+    ALTER TABLE [dbo].[App_ProductTransferLine] ADD [TransferId] [int] NOT NULL CONSTRAINT [DF_App_ProductTransferLine_TransferId] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_ProductTransferLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductTransferLine', 'LineNo') IS NULL
+    ALTER TABLE [dbo].[App_ProductTransferLine] ADD [LineNo] [int] NOT NULL CONSTRAINT [DF_App_ProductTransferLine_LineNo_Alt] DEFAULT (1);
+GO
+IF OBJECT_ID(N'dbo.App_ProductTransferLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductTransferLine', 'OutStockId') IS NULL
+    ALTER TABLE [dbo].[App_ProductTransferLine] ADD [OutStockId] [int] NOT NULL CONSTRAINT [DF_App_ProductTransferLine_OutStockId] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_ProductTransferLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductTransferLine', 'InStockId') IS NULL
+    ALTER TABLE [dbo].[App_ProductTransferLine] ADD [InStockId] [int] NOT NULL CONSTRAINT [DF_App_ProductTransferLine_InStockId] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_ProductTransferLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductTransferLine', 'StockUnitId') IS NULL
+    ALTER TABLE [dbo].[App_ProductTransferLine] ADD [StockUnitId] [int] NULL;
+GO
+IF OBJECT_ID(N'dbo.App_ProductTransferLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductTransferLine', 'Quantity') IS NULL
+    ALTER TABLE [dbo].[App_ProductTransferLine] ADD [Quantity] [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_ProductTransferLine_Quantity_Alt] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_ProductTransferLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductTransferLine', 'UnitPrice') IS NULL
+    ALTER TABLE [dbo].[App_ProductTransferLine] ADD [UnitPrice] [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_ProductTransferLine_UnitPrice_Alt] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_ProductTransferLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductTransferLine', 'TotalPrice') IS NULL
+    ALTER TABLE [dbo].[App_ProductTransferLine] ADD [TotalPrice] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_ProductTransferLine_TotalPrice_Alt] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_ProductTransferLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductTransferLine', 'CreatedDate') IS NULL
+    ALTER TABLE [dbo].[App_ProductTransferLine] ADD [CreatedDate] [datetime2](0) NULL CONSTRAINT [DF_App_ProductTransferLine_CreatedDate_Alt] DEFAULT (SYSUTCDATETIME());
+GO
+
+IF OBJECT_ID(N'dbo.App_ProductTransferLine', N'U') IS NOT NULL
+   AND OBJECT_ID(N'dbo.App_ProductTransfer', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_App_ProductTransferLine_App_ProductTransfer')
+BEGIN
+    ALTER TABLE [dbo].[App_ProductTransferLine] WITH CHECK
+    ADD CONSTRAINT [FK_App_ProductTransferLine_App_ProductTransfer]
+    FOREIGN KEY([TransferId]) REFERENCES [dbo].[App_ProductTransfer]([RecId])
+    ON DELETE CASCADE;
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_ProductTransferLine', N'U') IS NOT NULL
+   AND OBJECT_ID(N'dbo.App_Stock', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_App_ProductTransferLine_OutStock')
+BEGIN
+    ALTER TABLE [dbo].[App_ProductTransferLine] WITH CHECK
+    ADD CONSTRAINT [FK_App_ProductTransferLine_OutStock]
+    FOREIGN KEY([OutStockId]) REFERENCES [dbo].[App_Stock]([RecId]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_ProductTransferLine', N'U') IS NOT NULL
+   AND OBJECT_ID(N'dbo.App_Stock', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_App_ProductTransferLine_InStock')
+BEGIN
+    ALTER TABLE [dbo].[App_ProductTransferLine] WITH CHECK
+    ADD CONSTRAINT [FK_App_ProductTransferLine_InStock]
+    FOREIGN KEY([InStockId]) REFERENCES [dbo].[App_Stock]([RecId]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_ProductTransferLine', N'U') IS NOT NULL
+   AND OBJECT_ID(N'dbo.App_StockUnit', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_App_ProductTransferLine_App_StockUnit')
+BEGIN
+    ALTER TABLE [dbo].[App_ProductTransferLine] WITH CHECK
+    ADD CONSTRAINT [FK_App_ProductTransferLine_App_StockUnit]
+    FOREIGN KEY([StockUnitId]) REFERENCES [dbo].[App_StockUnit]([RecId]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_ProductTransferLine', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_App_ProductTransferLine_TransferId' AND object_id = OBJECT_ID(N'dbo.App_ProductTransferLine'))
+BEGIN
+    CREATE NONCLUSTERED INDEX [IX_App_ProductTransferLine_TransferId]
+    ON [dbo].[App_ProductTransferLine]([TransferId]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_SchemaVersion', N'U') IS NOT NULL
+   AND NOT EXISTS (
+       SELECT 1 FROM [dbo].[App_SchemaVersion]
+       WHERE [ScriptName] = N'YamanCam.Core' AND [VersionNo] = 23
+   )
+BEGIN
+    INSERT INTO [dbo].[App_SchemaVersion] ([VersionNo], [ScriptName], [Description], [AppliedUtc])
+    VALUES (23, N'YamanCam.Core', N'App_ProductTransfer / App_ProductTransferLine subeler arasi transfer farkli urun master-detail', SYSUTCDATETIME());
+END
+GO
+
+/* ------------------------------------------------------------------ */
+/* Surum 24 - App_StockIssue / App_StockIssueLine                      */
+/* (Stok Cikis Fisi basligi + stok satirlari, doviz/KDV yok)           */
+/* ------------------------------------------------------------------ */
+IF OBJECT_ID(N'dbo.App_StockIssue', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[App_StockIssue](
+        [RecId]           [int] IDENTITY(1,1) NOT NULL,
+        [VoucherNo]       [nvarchar](50) NOT NULL,
+        [VoucherDate]     [datetime2](0) NOT NULL,
+        [WorkPlaceId]     [int] NULL,
+        [TransactionType] [nvarchar](30) NOT NULL CONSTRAINT [DF_App_StockIssue_TransactionType] DEFAULT (N'Sarf Çıkışı'),
+        [SpecialCode]     [nvarchar](50) NULL,
+        [TotalAmount]     [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_StockIssue_TotalAmount] DEFAULT (0),
+        [IsActive]        [bit] NULL CONSTRAINT [DF_App_StockIssue_IsActive] DEFAULT (1),
+        [CreatedDate]     [datetime2](0) NULL CONSTRAINT [DF_App_StockIssue_CreatedDate] DEFAULT (SYSUTCDATETIME()),
+        CONSTRAINT [PK_App_StockIssue] PRIMARY KEY CLUSTERED ([RecId] ASC)
+    ) ON [PRIMARY];
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_StockIssue', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockIssue', 'VoucherNo') IS NULL
+    ALTER TABLE [dbo].[App_StockIssue] ADD [VoucherNo] [nvarchar](50) NOT NULL CONSTRAINT [DF_App_StockIssue_VoucherNo] DEFAULT (N'');
+GO
+IF OBJECT_ID(N'dbo.App_StockIssue', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockIssue', 'VoucherDate') IS NULL
+    ALTER TABLE [dbo].[App_StockIssue] ADD [VoucherDate] [datetime2](0) NOT NULL CONSTRAINT [DF_App_StockIssue_VoucherDate] DEFAULT (SYSUTCDATETIME());
+GO
+IF OBJECT_ID(N'dbo.App_StockIssue', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockIssue', 'WorkPlaceId') IS NULL
+    ALTER TABLE [dbo].[App_StockIssue] ADD [WorkPlaceId] [int] NULL;
+GO
+IF OBJECT_ID(N'dbo.App_StockIssue', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockIssue', 'TransactionType') IS NULL
+    ALTER TABLE [dbo].[App_StockIssue] ADD [TransactionType] [nvarchar](30) NOT NULL CONSTRAINT [DF_App_StockIssue_TransactionType_Alt] DEFAULT (N'Sarf Çıkışı');
+GO
+IF OBJECT_ID(N'dbo.App_StockIssue', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockIssue', 'SpecialCode') IS NULL
+    ALTER TABLE [dbo].[App_StockIssue] ADD [SpecialCode] [nvarchar](50) NULL;
+GO
+IF OBJECT_ID(N'dbo.App_StockIssue', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockIssue', 'TotalAmount') IS NULL
+    ALTER TABLE [dbo].[App_StockIssue] ADD [TotalAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_StockIssue_TotalAmount_Alt] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_StockIssue', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockIssue', 'IsActive') IS NULL
+    ALTER TABLE [dbo].[App_StockIssue] ADD [IsActive] [bit] NULL CONSTRAINT [DF_App_StockIssue_IsActive_Alt] DEFAULT (1);
+GO
+IF OBJECT_ID(N'dbo.App_StockIssue', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockIssue', 'CreatedDate') IS NULL
+    ALTER TABLE [dbo].[App_StockIssue] ADD [CreatedDate] [datetime2](0) NULL CONSTRAINT [DF_App_StockIssue_CreatedDate_Alt] DEFAULT (SYSUTCDATETIME());
+GO
+
+IF OBJECT_ID(N'dbo.App_StockIssue', N'U') IS NOT NULL
+   AND OBJECT_ID(N'dbo.App_WorkPlace', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_App_StockIssue_App_WorkPlace')
+BEGIN
+    ALTER TABLE [dbo].[App_StockIssue] WITH CHECK
+    ADD CONSTRAINT [FK_App_StockIssue_App_WorkPlace]
+    FOREIGN KEY([WorkPlaceId]) REFERENCES [dbo].[App_WorkPlace]([RecId]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_StockIssue', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UX_App_StockIssue_VoucherNo' AND object_id = OBJECT_ID(N'dbo.App_StockIssue'))
+BEGIN
+    CREATE UNIQUE NONCLUSTERED INDEX [UX_App_StockIssue_VoucherNo]
+    ON [dbo].[App_StockIssue]([VoucherNo]);
+END
+GO
+
+/* ------------------------------------------------------------------ */
+/* App_StockIssueLine (Stok Cikis Fisi stok satirlari)                 */
+/* ------------------------------------------------------------------ */
+IF OBJECT_ID(N'dbo.App_StockIssueLine', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[App_StockIssueLine](
+        [RecId]        [int] IDENTITY(1,1) NOT NULL,
+        [IssueId]      [int] NOT NULL,
+        [LineNo]       [int] NOT NULL CONSTRAINT [DF_App_StockIssueLine_LineNo] DEFAULT (1),
+        [StockId]      [int] NOT NULL,
+        [StockUnitId]  [int] NULL,
+        [Quantity]     [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_StockIssueLine_Quantity] DEFAULT (0),
+        [UnitPrice]    [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_StockIssueLine_UnitPrice] DEFAULT (0),
+        [TotalPrice]   [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_StockIssueLine_TotalPrice] DEFAULT (0),
+        [CreatedDate]  [datetime2](0) NULL CONSTRAINT [DF_App_StockIssueLine_CreatedDate] DEFAULT (SYSUTCDATETIME()),
+        CONSTRAINT [PK_App_StockIssueLine] PRIMARY KEY CLUSTERED ([RecId] ASC)
+    ) ON [PRIMARY];
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_StockIssueLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockIssueLine', 'IssueId') IS NULL
+    ALTER TABLE [dbo].[App_StockIssueLine] ADD [IssueId] [int] NOT NULL CONSTRAINT [DF_App_StockIssueLine_IssueId] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_StockIssueLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockIssueLine', 'LineNo') IS NULL
+    ALTER TABLE [dbo].[App_StockIssueLine] ADD [LineNo] [int] NOT NULL CONSTRAINT [DF_App_StockIssueLine_LineNo_Alt] DEFAULT (1);
+GO
+IF OBJECT_ID(N'dbo.App_StockIssueLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockIssueLine', 'StockId') IS NULL
+    ALTER TABLE [dbo].[App_StockIssueLine] ADD [StockId] [int] NOT NULL CONSTRAINT [DF_App_StockIssueLine_StockId] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_StockIssueLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockIssueLine', 'StockUnitId') IS NULL
+    ALTER TABLE [dbo].[App_StockIssueLine] ADD [StockUnitId] [int] NULL;
+GO
+IF OBJECT_ID(N'dbo.App_StockIssueLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockIssueLine', 'Quantity') IS NULL
+    ALTER TABLE [dbo].[App_StockIssueLine] ADD [Quantity] [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_StockIssueLine_Quantity_Alt] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_StockIssueLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockIssueLine', 'UnitPrice') IS NULL
+    ALTER TABLE [dbo].[App_StockIssueLine] ADD [UnitPrice] [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_StockIssueLine_UnitPrice_Alt] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_StockIssueLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockIssueLine', 'TotalPrice') IS NULL
+    ALTER TABLE [dbo].[App_StockIssueLine] ADD [TotalPrice] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_StockIssueLine_TotalPrice_Alt] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_StockIssueLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockIssueLine', 'CreatedDate') IS NULL
+    ALTER TABLE [dbo].[App_StockIssueLine] ADD [CreatedDate] [datetime2](0) NULL CONSTRAINT [DF_App_StockIssueLine_CreatedDate_Alt] DEFAULT (SYSUTCDATETIME());
+GO
+
+IF OBJECT_ID(N'dbo.App_StockIssueLine', N'U') IS NOT NULL
+   AND OBJECT_ID(N'dbo.App_StockIssue', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_App_StockIssueLine_App_StockIssue')
+BEGIN
+    ALTER TABLE [dbo].[App_StockIssueLine] WITH CHECK
+    ADD CONSTRAINT [FK_App_StockIssueLine_App_StockIssue]
+    FOREIGN KEY([IssueId]) REFERENCES [dbo].[App_StockIssue]([RecId])
+    ON DELETE CASCADE;
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_StockIssueLine', N'U') IS NOT NULL
+   AND OBJECT_ID(N'dbo.App_Stock', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_App_StockIssueLine_App_Stock')
+BEGIN
+    ALTER TABLE [dbo].[App_StockIssueLine] WITH CHECK
+    ADD CONSTRAINT [FK_App_StockIssueLine_App_Stock]
+    FOREIGN KEY([StockId]) REFERENCES [dbo].[App_Stock]([RecId]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_StockIssueLine', N'U') IS NOT NULL
+   AND OBJECT_ID(N'dbo.App_StockUnit', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_App_StockIssueLine_App_StockUnit')
+BEGIN
+    ALTER TABLE [dbo].[App_StockIssueLine] WITH CHECK
+    ADD CONSTRAINT [FK_App_StockIssueLine_App_StockUnit]
+    FOREIGN KEY([StockUnitId]) REFERENCES [dbo].[App_StockUnit]([RecId]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_StockIssueLine', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_App_StockIssueLine_IssueId' AND object_id = OBJECT_ID(N'dbo.App_StockIssueLine'))
+BEGIN
+    CREATE NONCLUSTERED INDEX [IX_App_StockIssueLine_IssueId]
+    ON [dbo].[App_StockIssueLine]([IssueId]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_SchemaVersion', N'U') IS NOT NULL
+   AND NOT EXISTS (
+       SELECT 1 FROM [dbo].[App_SchemaVersion]
+       WHERE [ScriptName] = N'YamanCam.Core' AND [VersionNo] = 24
+   )
+BEGIN
+    INSERT INTO [dbo].[App_SchemaVersion] ([VersionNo], [ScriptName], [Description], [AppliedUtc])
+    VALUES (24, N'YamanCam.Core', N'App_StockIssue / App_StockIssueLine stok cikis fisi master-detail', SYSUTCDATETIME());
+END
+GO
+
+/* ------------------------------------------------------------------ */
+/* Surum 25 - App_ProductionVoucher / App_ProductionVoucherLine        */
+/* (Stok Urun Uretim Fisi basligi + hammadde/mamul satirlari.          */
+/*  Fis tarihi + uretim tarihi + sube. Doviz/KDV/tutar yok)            */
+/* ------------------------------------------------------------------ */
+IF OBJECT_ID(N'dbo.App_ProductionVoucher', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[App_ProductionVoucher](
+        [RecId]           [int] IDENTITY(1,1) NOT NULL,
+        [VoucherNo]       [nvarchar](50) NOT NULL,
+        [VoucherDate]     [datetime2](0) NOT NULL,
+        [ProductionDate]  [datetime2](0) NOT NULL,
+        [WorkPlaceId]     [int] NULL,
+        [TransactionType] [nvarchar](30) NOT NULL CONSTRAINT [DF_App_ProductionVoucher_TransactionType] DEFAULT (N'Üretim'),
+        [SpecialCode]     [nvarchar](50) NULL,
+        [IsActive]        [bit] NULL CONSTRAINT [DF_App_ProductionVoucher_IsActive] DEFAULT (1),
+        [CreatedDate]     [datetime2](0) NULL CONSTRAINT [DF_App_ProductionVoucher_CreatedDate] DEFAULT (SYSUTCDATETIME()),
+        CONSTRAINT [PK_App_ProductionVoucher] PRIMARY KEY CLUSTERED ([RecId] ASC)
+    ) ON [PRIMARY];
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_ProductionVoucher', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductionVoucher', 'VoucherNo') IS NULL
+    ALTER TABLE [dbo].[App_ProductionVoucher] ADD [VoucherNo] [nvarchar](50) NOT NULL CONSTRAINT [DF_App_ProductionVoucher_VoucherNo] DEFAULT (N'');
+GO
+IF OBJECT_ID(N'dbo.App_ProductionVoucher', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductionVoucher', 'VoucherDate') IS NULL
+    ALTER TABLE [dbo].[App_ProductionVoucher] ADD [VoucherDate] [datetime2](0) NOT NULL CONSTRAINT [DF_App_ProductionVoucher_VoucherDate] DEFAULT (SYSUTCDATETIME());
+GO
+IF OBJECT_ID(N'dbo.App_ProductionVoucher', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductionVoucher', 'ProductionDate') IS NULL
+    ALTER TABLE [dbo].[App_ProductionVoucher] ADD [ProductionDate] [datetime2](0) NOT NULL CONSTRAINT [DF_App_ProductionVoucher_ProductionDate] DEFAULT (SYSUTCDATETIME());
+GO
+IF OBJECT_ID(N'dbo.App_ProductionVoucher', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductionVoucher', 'WorkPlaceId') IS NULL
+    ALTER TABLE [dbo].[App_ProductionVoucher] ADD [WorkPlaceId] [int] NULL;
+GO
+IF OBJECT_ID(N'dbo.App_ProductionVoucher', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductionVoucher', 'TransactionType') IS NULL
+    ALTER TABLE [dbo].[App_ProductionVoucher] ADD [TransactionType] [nvarchar](30) NOT NULL CONSTRAINT [DF_App_ProductionVoucher_TransactionType_Alt] DEFAULT (N'Üretim');
+GO
+IF OBJECT_ID(N'dbo.App_ProductionVoucher', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductionVoucher', 'SpecialCode') IS NULL
+    ALTER TABLE [dbo].[App_ProductionVoucher] ADD [SpecialCode] [nvarchar](50) NULL;
+GO
+IF OBJECT_ID(N'dbo.App_ProductionVoucher', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductionVoucher', 'IsActive') IS NULL
+    ALTER TABLE [dbo].[App_ProductionVoucher] ADD [IsActive] [bit] NULL CONSTRAINT [DF_App_ProductionVoucher_IsActive_Alt] DEFAULT (1);
+GO
+IF OBJECT_ID(N'dbo.App_ProductionVoucher', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductionVoucher', 'CreatedDate') IS NULL
+    ALTER TABLE [dbo].[App_ProductionVoucher] ADD [CreatedDate] [datetime2](0) NULL CONSTRAINT [DF_App_ProductionVoucher_CreatedDate_Alt] DEFAULT (SYSUTCDATETIME());
+GO
+
+IF OBJECT_ID(N'dbo.App_ProductionVoucher', N'U') IS NOT NULL
+   AND OBJECT_ID(N'dbo.App_WorkPlace', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_App_ProductionVoucher_App_WorkPlace')
+BEGIN
+    ALTER TABLE [dbo].[App_ProductionVoucher] WITH CHECK
+    ADD CONSTRAINT [FK_App_ProductionVoucher_App_WorkPlace]
+    FOREIGN KEY([WorkPlaceId]) REFERENCES [dbo].[App_WorkPlace]([RecId]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_ProductionVoucher', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UX_App_ProductionVoucher_VoucherNo' AND object_id = OBJECT_ID(N'dbo.App_ProductionVoucher'))
+BEGIN
+    CREATE UNIQUE NONCLUSTERED INDEX [UX_App_ProductionVoucher_VoucherNo]
+    ON [dbo].[App_ProductionVoucher]([VoucherNo]);
+END
+GO
+
+/* ------------------------------------------------------------------ */
+/* App_ProductionVoucherLine (Uretim Fisi hammadde/mamul satirlari)    */
+/* ------------------------------------------------------------------ */
+IF OBJECT_ID(N'dbo.App_ProductionVoucherLine', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[App_ProductionVoucherLine](
+        [RecId]               [int] IDENTITY(1,1) NOT NULL,
+        [VoucherId]           [int] NOT NULL,
+        [LineNo]              [int] NOT NULL CONSTRAINT [DF_App_ProductionVoucherLine_LineNo] DEFAULT (1),
+        [RawMaterialStockId]  [int] NOT NULL,
+        [RawMaterialQuantity] [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_ProductionVoucherLine_RawQty] DEFAULT (0),
+        [WasteRate]           [decimal](5, 2) NOT NULL CONSTRAINT [DF_App_ProductionVoucherLine_WasteRate] DEFAULT (0),
+        [ProductQuantity]     [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_ProductionVoucherLine_ProdQty] DEFAULT (0),
+        [ProductStockId]      [int] NOT NULL,
+        [CreatedDate]         [datetime2](0) NULL CONSTRAINT [DF_App_ProductionVoucherLine_CreatedDate] DEFAULT (SYSUTCDATETIME()),
+        CONSTRAINT [PK_App_ProductionVoucherLine] PRIMARY KEY CLUSTERED ([RecId] ASC)
+    ) ON [PRIMARY];
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_ProductionVoucherLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductionVoucherLine', 'VoucherId') IS NULL
+    ALTER TABLE [dbo].[App_ProductionVoucherLine] ADD [VoucherId] [int] NOT NULL CONSTRAINT [DF_App_ProductionVoucherLine_VoucherId] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_ProductionVoucherLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductionVoucherLine', 'LineNo') IS NULL
+    ALTER TABLE [dbo].[App_ProductionVoucherLine] ADD [LineNo] [int] NOT NULL CONSTRAINT [DF_App_ProductionVoucherLine_LineNo_Alt] DEFAULT (1);
+GO
+IF OBJECT_ID(N'dbo.App_ProductionVoucherLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductionVoucherLine', 'RawMaterialStockId') IS NULL
+    ALTER TABLE [dbo].[App_ProductionVoucherLine] ADD [RawMaterialStockId] [int] NOT NULL CONSTRAINT [DF_App_ProductionVoucherLine_RawStockId] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_ProductionVoucherLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductionVoucherLine', 'RawMaterialQuantity') IS NULL
+    ALTER TABLE [dbo].[App_ProductionVoucherLine] ADD [RawMaterialQuantity] [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_ProductionVoucherLine_RawQty_Alt] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_ProductionVoucherLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductionVoucherLine', 'WasteRate') IS NULL
+    ALTER TABLE [dbo].[App_ProductionVoucherLine] ADD [WasteRate] [decimal](5, 2) NOT NULL CONSTRAINT [DF_App_ProductionVoucherLine_WasteRate_Alt] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_ProductionVoucherLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductionVoucherLine', 'ProductQuantity') IS NULL
+    ALTER TABLE [dbo].[App_ProductionVoucherLine] ADD [ProductQuantity] [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_ProductionVoucherLine_ProdQty_Alt] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_ProductionVoucherLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductionVoucherLine', 'ProductStockId') IS NULL
+    ALTER TABLE [dbo].[App_ProductionVoucherLine] ADD [ProductStockId] [int] NOT NULL CONSTRAINT [DF_App_ProductionVoucherLine_ProdStockId] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_ProductionVoucherLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductionVoucherLine', 'CreatedDate') IS NULL
+    ALTER TABLE [dbo].[App_ProductionVoucherLine] ADD [CreatedDate] [datetime2](0) NULL CONSTRAINT [DF_App_ProductionVoucherLine_CreatedDate_Alt] DEFAULT (SYSUTCDATETIME());
+GO
+
+IF OBJECT_ID(N'dbo.App_ProductionVoucherLine', N'U') IS NOT NULL
+   AND OBJECT_ID(N'dbo.App_ProductionVoucher', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_App_ProductionVoucherLine_App_ProductionVoucher')
+BEGIN
+    ALTER TABLE [dbo].[App_ProductionVoucherLine] WITH CHECK
+    ADD CONSTRAINT [FK_App_ProductionVoucherLine_App_ProductionVoucher]
+    FOREIGN KEY([VoucherId]) REFERENCES [dbo].[App_ProductionVoucher]([RecId])
+    ON DELETE CASCADE;
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_ProductionVoucherLine', N'U') IS NOT NULL
+   AND OBJECT_ID(N'dbo.App_Stock', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_App_ProductionVoucherLine_RawStock')
+BEGIN
+    ALTER TABLE [dbo].[App_ProductionVoucherLine] WITH CHECK
+    ADD CONSTRAINT [FK_App_ProductionVoucherLine_RawStock]
+    FOREIGN KEY([RawMaterialStockId]) REFERENCES [dbo].[App_Stock]([RecId]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_ProductionVoucherLine', N'U') IS NOT NULL
+   AND OBJECT_ID(N'dbo.App_Stock', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_App_ProductionVoucherLine_ProductStock')
+BEGIN
+    ALTER TABLE [dbo].[App_ProductionVoucherLine] WITH CHECK
+    ADD CONSTRAINT [FK_App_ProductionVoucherLine_ProductStock]
+    FOREIGN KEY([ProductStockId]) REFERENCES [dbo].[App_Stock]([RecId]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_ProductionVoucherLine', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_App_ProductionVoucherLine_VoucherId' AND object_id = OBJECT_ID(N'dbo.App_ProductionVoucherLine'))
+BEGIN
+    CREATE NONCLUSTERED INDEX [IX_App_ProductionVoucherLine_VoucherId]
+    ON [dbo].[App_ProductionVoucherLine]([VoucherId]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_SchemaVersion', N'U') IS NOT NULL
+   AND NOT EXISTS (
+       SELECT 1 FROM [dbo].[App_SchemaVersion]
+       WHERE [ScriptName] = N'YamanCam.Core' AND [VersionNo] = 25
+   )
+BEGIN
+    INSERT INTO [dbo].[App_SchemaVersion] ([VersionNo], [ScriptName], [Description], [AppliedUtc])
+    VALUES (25, N'YamanCam.Core', N'App_ProductionVoucher / App_ProductionVoucherLine stok urun uretim fisi master-detail', SYSUTCDATETIME());
+END
+GO
+
+/* ------------------------------------------------------------------ */
+/* Surum 26 - App_StockCount / App_StockCountLine                      */
+/* (Sayim Kaydi basligi: baslangic/bitis tarihi + sube;               */
+/*  satirlar: stok + sayim miktari. Doviz/KDV/tutar yok)               */
+/* ------------------------------------------------------------------ */
+IF OBJECT_ID(N'dbo.App_StockCount', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[App_StockCount](
+        [RecId]        [int] IDENTITY(1,1) NOT NULL,
+        [StartDate]    [datetime2](0) NOT NULL,
+        [EndDate]      [datetime2](0) NOT NULL,
+        [WorkPlaceId]  [int] NULL,
+        [IsActive]     [bit] NULL CONSTRAINT [DF_App_StockCount_IsActive] DEFAULT (1),
+        [CreatedDate]  [datetime2](0) NULL CONSTRAINT [DF_App_StockCount_CreatedDate] DEFAULT (SYSUTCDATETIME()),
+        CONSTRAINT [PK_App_StockCount] PRIMARY KEY CLUSTERED ([RecId] ASC)
+    ) ON [PRIMARY];
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_StockCount', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockCount', 'StartDate') IS NULL
+    ALTER TABLE [dbo].[App_StockCount] ADD [StartDate] [datetime2](0) NOT NULL CONSTRAINT [DF_App_StockCount_StartDate] DEFAULT (SYSUTCDATETIME());
+GO
+IF OBJECT_ID(N'dbo.App_StockCount', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockCount', 'EndDate') IS NULL
+    ALTER TABLE [dbo].[App_StockCount] ADD [EndDate] [datetime2](0) NOT NULL CONSTRAINT [DF_App_StockCount_EndDate] DEFAULT (SYSUTCDATETIME());
+GO
+IF OBJECT_ID(N'dbo.App_StockCount', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockCount', 'WorkPlaceId') IS NULL
+    ALTER TABLE [dbo].[App_StockCount] ADD [WorkPlaceId] [int] NULL;
+GO
+IF OBJECT_ID(N'dbo.App_StockCount', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockCount', 'IsActive') IS NULL
+    ALTER TABLE [dbo].[App_StockCount] ADD [IsActive] [bit] NULL CONSTRAINT [DF_App_StockCount_IsActive_Alt] DEFAULT (1);
+GO
+IF OBJECT_ID(N'dbo.App_StockCount', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockCount', 'CreatedDate') IS NULL
+    ALTER TABLE [dbo].[App_StockCount] ADD [CreatedDate] [datetime2](0) NULL CONSTRAINT [DF_App_StockCount_CreatedDate_Alt] DEFAULT (SYSUTCDATETIME());
+GO
+
+IF OBJECT_ID(N'dbo.App_StockCount', N'U') IS NOT NULL
+   AND OBJECT_ID(N'dbo.App_WorkPlace', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_App_StockCount_App_WorkPlace')
+BEGIN
+    ALTER TABLE [dbo].[App_StockCount] WITH CHECK
+    ADD CONSTRAINT [FK_App_StockCount_App_WorkPlace]
+    FOREIGN KEY([WorkPlaceId]) REFERENCES [dbo].[App_WorkPlace]([RecId]);
+END
+GO
+
+/* ------------------------------------------------------------------ */
+/* App_StockCountLine (Sayim Kaydi stok satirlari)                     */
+/* ------------------------------------------------------------------ */
+IF OBJECT_ID(N'dbo.App_StockCountLine', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[App_StockCountLine](
+        [RecId]         [int] IDENTITY(1,1) NOT NULL,
+        [CountId]       [int] NOT NULL,
+        [LineNo]        [int] NOT NULL CONSTRAINT [DF_App_StockCountLine_LineNo] DEFAULT (1),
+        [StockId]       [int] NOT NULL,
+        [CountQuantity] [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_StockCountLine_CountQuantity] DEFAULT (0),
+        [CreatedDate]   [datetime2](0) NULL CONSTRAINT [DF_App_StockCountLine_CreatedDate] DEFAULT (SYSUTCDATETIME()),
+        CONSTRAINT [PK_App_StockCountLine] PRIMARY KEY CLUSTERED ([RecId] ASC)
+    ) ON [PRIMARY];
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_StockCountLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockCountLine', 'CountId') IS NULL
+    ALTER TABLE [dbo].[App_StockCountLine] ADD [CountId] [int] NOT NULL CONSTRAINT [DF_App_StockCountLine_CountId] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_StockCountLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockCountLine', 'LineNo') IS NULL
+    ALTER TABLE [dbo].[App_StockCountLine] ADD [LineNo] [int] NOT NULL CONSTRAINT [DF_App_StockCountLine_LineNo_Alt] DEFAULT (1);
+GO
+IF OBJECT_ID(N'dbo.App_StockCountLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockCountLine', 'StockId') IS NULL
+    ALTER TABLE [dbo].[App_StockCountLine] ADD [StockId] [int] NOT NULL CONSTRAINT [DF_App_StockCountLine_StockId] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_StockCountLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockCountLine', 'CountQuantity') IS NULL
+    ALTER TABLE [dbo].[App_StockCountLine] ADD [CountQuantity] [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_StockCountLine_CountQuantity_Alt] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_StockCountLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockCountLine', 'CreatedDate') IS NULL
+    ALTER TABLE [dbo].[App_StockCountLine] ADD [CreatedDate] [datetime2](0) NULL CONSTRAINT [DF_App_StockCountLine_CreatedDate_Alt] DEFAULT (SYSUTCDATETIME());
+GO
+
+IF OBJECT_ID(N'dbo.App_StockCountLine', N'U') IS NOT NULL
+   AND OBJECT_ID(N'dbo.App_StockCount', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_App_StockCountLine_App_StockCount')
+BEGIN
+    ALTER TABLE [dbo].[App_StockCountLine] WITH CHECK
+    ADD CONSTRAINT [FK_App_StockCountLine_App_StockCount]
+    FOREIGN KEY([CountId]) REFERENCES [dbo].[App_StockCount]([RecId])
+    ON DELETE CASCADE;
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_StockCountLine', N'U') IS NOT NULL
+   AND OBJECT_ID(N'dbo.App_Stock', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_App_StockCountLine_App_Stock')
+BEGIN
+    ALTER TABLE [dbo].[App_StockCountLine] WITH CHECK
+    ADD CONSTRAINT [FK_App_StockCountLine_App_Stock]
+    FOREIGN KEY([StockId]) REFERENCES [dbo].[App_Stock]([RecId]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_StockCountLine', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_App_StockCountLine_CountId' AND object_id = OBJECT_ID(N'dbo.App_StockCountLine'))
+BEGIN
+    CREATE NONCLUSTERED INDEX [IX_App_StockCountLine_CountId]
+    ON [dbo].[App_StockCountLine]([CountId]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_SchemaVersion', N'U') IS NOT NULL
+   AND NOT EXISTS (
+       SELECT 1 FROM [dbo].[App_SchemaVersion]
+       WHERE [ScriptName] = N'YamanCam.Core' AND [VersionNo] = 26
+   )
+BEGIN
+    INSERT INTO [dbo].[App_SchemaVersion] ([VersionNo], [ScriptName], [Description], [AppliedUtc])
+    VALUES (26, N'YamanCam.Core', N'App_StockCount / App_StockCountLine sayim kaydi master-detail', SYSUTCDATETIME());
+END
+GO
