@@ -1,4 +1,5 @@
 using YamanCam.Web.Data;
+using YamanCam.Web.Infrastructure;
 using YamanCam.Web.Middleware;
 using YamanCam.Web.Services;
 using Microsoft.AspNetCore.Authentication;
@@ -8,7 +9,13 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.UseUrls("http://0.0.0.0:1926");
 
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+{
+    // decimal/double/float alanları her zaman "." ondalık ile (InvariantCulture) çözülsün.
+    // <input type="number"> değeri tarayıcı dilinden bağımsız olarak nokta ile gönderir;
+    // sunucu tr-TR kültürüyle çözünce "10.0000" -> 100000 gibi hatalı sonuç oluşuyordu.
+    options.ModelBinderProviders.Insert(0, new InvariantNumericModelBinderProvider());
+});
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
