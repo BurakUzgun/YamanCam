@@ -1,4 +1,4 @@
-using YamanCam.Web.Data;
+﻿using YamanCam.Web.Data;
 using YamanCam.Web.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,7 +16,7 @@ public class AppLogService : IAppLogService
         ILogger<AppLogService> logger)
     {
         _dbContext = dbContext;
-        _httpContextAccessor = httpContextAccessor;
+        _httpContextAccessor = httpContextAccessor;//
         _logger = logger;
     }
 
