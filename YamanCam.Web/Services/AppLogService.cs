@@ -16,7 +16,7 @@ public class AppLogService : IAppLogService
         ILogger<AppLogService> logger)
     {
         _dbContext = dbContext;
-        _httpContextAccessor = httpContextAccessor;//
+        _httpContextAccessor = httpContextAccessor;
         _logger = logger;
     }
 
