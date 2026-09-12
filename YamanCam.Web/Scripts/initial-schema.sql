@@ -3095,3 +3095,47 @@ BEGIN
     VALUES (26, N'YamanCam.Core', N'App_StockCount / App_StockCountLine sayim kaydi master-detail', SYSUTCDATETIME());
 END
 GO
+
+/* ------------------------------------------------------------------ */
+/* Surum 27 - App_Setting (Ayarlar / Kusurat Haneleri)                 */
+/* ------------------------------------------------------------------ */
+IF OBJECT_ID(N'dbo.App_Setting', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[App_Setting](
+        [RecId]        [int] IDENTITY(1,1) NOT NULL,
+        [SettingGroup] [nvarchar](100) NOT NULL CONSTRAINT [DF_App_Setting_SettingGroup] DEFAULT (N''),
+        [Explanation]  [nvarchar](200) NOT NULL CONSTRAINT [DF_App_Setting_Explanation] DEFAULT (N''),
+        [Value]        [int] NOT NULL CONSTRAINT [DF_App_Setting_Value] DEFAULT (0),
+        [IsActive]     [bit] NULL CONSTRAINT [DF_App_Setting_IsActive] DEFAULT (1),
+        [CreatedDate]  [datetime2](0) NULL CONSTRAINT [DF_App_Setting_CreatedDate] DEFAULT (SYSUTCDATETIME()),
+        CONSTRAINT [PK_App_Setting] PRIMARY KEY CLUSTERED ([RecId] ASC)
+    ) ON [PRIMARY];
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_Setting', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_Setting', 'SettingGroup') IS NULL
+    ALTER TABLE [dbo].[App_Setting] ADD [SettingGroup] [nvarchar](100) NOT NULL CONSTRAINT [DF_App_Setting_SettingGroup_Alt] DEFAULT (N'');
+GO
+IF OBJECT_ID(N'dbo.App_Setting', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_Setting', 'Explanation') IS NULL
+    ALTER TABLE [dbo].[App_Setting] ADD [Explanation] [nvarchar](200) NOT NULL CONSTRAINT [DF_App_Setting_Explanation_Alt] DEFAULT (N'');
+GO
+IF OBJECT_ID(N'dbo.App_Setting', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_Setting', 'Value') IS NULL
+    ALTER TABLE [dbo].[App_Setting] ADD [Value] [int] NOT NULL CONSTRAINT [DF_App_Setting_Value_Alt] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_Setting', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_Setting', 'IsActive') IS NULL
+    ALTER TABLE [dbo].[App_Setting] ADD [IsActive] [bit] NULL CONSTRAINT [DF_App_Setting_IsActive_Alt] DEFAULT (1);
+GO
+IF OBJECT_ID(N'dbo.App_Setting', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_Setting', 'CreatedDate') IS NULL
+    ALTER TABLE [dbo].[App_Setting] ADD [CreatedDate] [datetime2](0) NULL CONSTRAINT [DF_App_Setting_CreatedDate_Alt] DEFAULT (SYSUTCDATETIME());
+GO
+
+IF OBJECT_ID(N'dbo.App_SchemaVersion', N'U') IS NOT NULL
+   AND NOT EXISTS (
+       SELECT 1 FROM [dbo].[App_SchemaVersion]
+       WHERE [ScriptName] = N'YamanCam.Core' AND [VersionNo] = 27
+   )
+BEGIN
+    INSERT INTO [dbo].[App_SchemaVersion] ([VersionNo], [ScriptName], [Description], [AppliedUtc])
+    VALUES (27, N'YamanCam.Core', N'App_Setting ayarlar (kusurat haneleri) tablosu', SYSUTCDATETIME());
+END
+GO

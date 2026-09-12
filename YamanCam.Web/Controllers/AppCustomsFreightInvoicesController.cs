@@ -25,12 +25,18 @@ public class AppCustomsFreightInvoicesController : Controller
     private readonly ApplicationDbContext _context;
     private readonly IAppLogService _appLogService;
     private readonly IUserRightService _userRightService;
+    private readonly IAppSettingService _appSettingService;
 
-    public AppCustomsFreightInvoicesController(ApplicationDbContext context, IAppLogService appLogService, IUserRightService userRightService)
+    public AppCustomsFreightInvoicesController(
+        ApplicationDbContext context,
+        IAppLogService appLogService,
+        IUserRightService userRightService,
+        IAppSettingService appSettingService)
     {
         _context = context;
         _appLogService = appLogService;
         _userRightService = userRightService;
+        _appSettingService = appSettingService;
     }
 
     [HttpGet]
@@ -70,6 +76,8 @@ public class AppCustomsFreightInvoicesController : Controller
             })
             .ToListAsync();
 
+        ViewData["Kusurat"] = await _appSettingService.GetKusuratMapAsync();
+
         return View(new AppCustomsFreightInvoiceListViewModel
         {
             ShowDeleted = showDeleted,
@@ -88,6 +96,7 @@ public class AppCustomsFreightInvoicesController : Controller
 
         var vm = new AppCustomsFreightInvoiceEditViewModel();
         await PopulateSelectListsAsync(vm);
+        ViewData["Kusurat"] = await _appSettingService.GetKusuratMapAsync();
         return View("Edit", vm);
     }
 
@@ -107,6 +116,7 @@ public class AppCustomsFreightInvoicesController : Controller
         if (!ModelState.IsValid)
         {
             await PopulateSelectListsAsync(vm);
+            ViewData["Kusurat"] = await _appSettingService.GetKusuratMapAsync();
             return View("Edit", vm);
         }
 
@@ -149,6 +159,7 @@ public class AppCustomsFreightInvoicesController : Controller
 
         var vm = MapToViewModel(entity);
         await PopulateSelectListsAsync(vm);
+        ViewData["Kusurat"] = await _appSettingService.GetKusuratMapAsync();
         return View(vm);
     }
 
@@ -182,6 +193,7 @@ public class AppCustomsFreightInvoicesController : Controller
         if (!ModelState.IsValid)
         {
             await PopulateSelectListsAsync(vm);
+            ViewData["Kusurat"] = await _appSettingService.GetKusuratMapAsync();
             return View(vm);
         }
 

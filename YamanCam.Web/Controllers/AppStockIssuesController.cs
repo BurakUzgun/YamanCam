@@ -20,12 +20,18 @@ public class AppStockIssuesController : Controller
     private readonly ApplicationDbContext _context;
     private readonly IAppLogService _appLogService;
     private readonly IUserRightService _userRightService;
+    private readonly IAppSettingService _appSettingService;
 
-    public AppStockIssuesController(ApplicationDbContext context, IAppLogService appLogService, IUserRightService userRightService)
+    public AppStockIssuesController(
+        ApplicationDbContext context,
+        IAppLogService appLogService,
+        IUserRightService userRightService,
+        IAppSettingService appSettingService)
     {
         _context = context;
         _appLogService = appLogService;
         _userRightService = userRightService;
+        _appSettingService = appSettingService;
     }
 
     [HttpGet]
@@ -58,6 +64,8 @@ public class AppStockIssuesController : Controller
             })
             .ToListAsync();
 
+        ViewData["Kusurat"] = await _appSettingService.GetKusuratMapAsync();
+
         return View(new AppStockIssueListViewModel
         {
             ShowDeleted = showDeleted,
@@ -76,6 +84,7 @@ public class AppStockIssuesController : Controller
 
         var vm = new AppStockIssueEditViewModel();
         await PopulateSelectListsAsync(vm);
+        ViewData["Kusurat"] = await _appSettingService.GetKusuratMapAsync();
         return View("Edit", vm);
     }
 
@@ -95,6 +104,7 @@ public class AppStockIssuesController : Controller
         if (!ModelState.IsValid)
         {
             await PopulateSelectListsAsync(vm);
+            ViewData["Kusurat"] = await _appSettingService.GetKusuratMapAsync();
             return View("Edit", vm);
         }
 
@@ -137,6 +147,7 @@ public class AppStockIssuesController : Controller
 
         var vm = MapToViewModel(entity);
         await PopulateSelectListsAsync(vm);
+        ViewData["Kusurat"] = await _appSettingService.GetKusuratMapAsync();
         return View(vm);
     }
 
@@ -170,6 +181,7 @@ public class AppStockIssuesController : Controller
         if (!ModelState.IsValid)
         {
             await PopulateSelectListsAsync(vm);
+            ViewData["Kusurat"] = await _appSettingService.GetKusuratMapAsync();
             return View(vm);
         }
 

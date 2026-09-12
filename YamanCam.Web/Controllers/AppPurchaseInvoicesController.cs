@@ -22,12 +22,18 @@ public class AppPurchaseInvoicesController : Controller
     private readonly ApplicationDbContext _context;
     private readonly IAppLogService _appLogService;
     private readonly IUserRightService _userRightService;
+    private readonly IAppSettingService _appSettingService;
 
-    public AppPurchaseInvoicesController(ApplicationDbContext context, IAppLogService appLogService, IUserRightService userRightService)
+    public AppPurchaseInvoicesController(
+        ApplicationDbContext context,
+        IAppLogService appLogService,
+        IUserRightService userRightService,
+        IAppSettingService appSettingService)
     {
         _context = context;
         _appLogService = appLogService;
         _userRightService = userRightService;
+        _appSettingService = appSettingService;
     }
 
     [HttpGet]
@@ -64,6 +70,8 @@ public class AppPurchaseInvoicesController : Controller
             })
             .ToListAsync();
 
+        ViewData["Kusurat"] = await _appSettingService.GetKusuratMapAsync();
+
         return View(new AppPurchaseInvoiceListViewModel
         {
             ShowDeleted = showDeleted,
@@ -82,6 +90,7 @@ public class AppPurchaseInvoicesController : Controller
 
         var vm = new AppPurchaseInvoiceEditViewModel();
         await PopulateSelectListsAsync(vm);
+        ViewData["Kusurat"] = await _appSettingService.GetKusuratMapAsync();
         return View("Edit", vm);
     }
 
@@ -101,6 +110,7 @@ public class AppPurchaseInvoicesController : Controller
         if (!ModelState.IsValid)
         {
             await PopulateSelectListsAsync(vm);
+            ViewData["Kusurat"] = await _appSettingService.GetKusuratMapAsync();
             return View("Edit", vm);
         }
 
@@ -143,6 +153,7 @@ public class AppPurchaseInvoicesController : Controller
 
         var vm = MapToViewModel(entity);
         await PopulateSelectListsAsync(vm);
+        ViewData["Kusurat"] = await _appSettingService.GetKusuratMapAsync();
         return View(vm);
     }
 
@@ -176,6 +187,7 @@ public class AppPurchaseInvoicesController : Controller
         if (!ModelState.IsValid)
         {
             await PopulateSelectListsAsync(vm);
+            ViewData["Kusurat"] = await _appSettingService.GetKusuratMapAsync();
             return View(vm);
         }
 

@@ -26,12 +26,18 @@ public abstract class AppVoucherControllerBase : Controller
     private readonly ApplicationDbContext _context;
     private readonly IAppLogService _appLogService;
     private readonly IUserRightService _userRightService;
+    private readonly IAppSettingService _appSettingService;
 
-    protected AppVoucherControllerBase(ApplicationDbContext context, IAppLogService appLogService, IUserRightService userRightService)
+    protected AppVoucherControllerBase(
+        ApplicationDbContext context,
+        IAppLogService appLogService,
+        IUserRightService userRightService,
+        IAppSettingService appSettingService)
     {
         _context = context;
         _appLogService = appLogService;
         _userRightService = userRightService;
+        _appSettingService = appSettingService;
     }
 
     protected abstract string VoucherType { get; }
@@ -49,7 +55,7 @@ public abstract class AppVoucherControllerBase : Controller
             return denied;
         }
 
-        SetLabels();
+        await SetLabelsAsync();
 
         var query = _context.AppJournalVouchers
             .AsNoTracking()
@@ -92,7 +98,7 @@ public abstract class AppVoucherControllerBase : Controller
             return denied;
         }
 
-        SetLabels();
+        await SetLabelsAsync();
         var vm = new AppJournalVoucherEditViewModel();
         if (RequiresCashBankAccount)
         {
@@ -113,7 +119,7 @@ public abstract class AppVoucherControllerBase : Controller
             return denied;
         }
 
-        SetLabels();
+        await SetLabelsAsync();
         vm.RecId = 0;
         await ValidateVoucherAsync(vm);
 
@@ -154,7 +160,7 @@ public abstract class AppVoucherControllerBase : Controller
             return denied;
         }
 
-        SetLabels();
+        await SetLabelsAsync();
         var entity = await _context.AppJournalVouchers
             .AsNoTracking()
             .Include(x => x.Lines)
@@ -180,7 +186,7 @@ public abstract class AppVoucherControllerBase : Controller
             return denied;
         }
 
-        SetLabels();
+        await SetLabelsAsync();
         if (id != vm.RecId)
         {
             return NotFound();
@@ -290,12 +296,13 @@ public abstract class AppVoucherControllerBase : Controller
         return RedirectToAction(nameof(Index), new { showDeleted = true });
     }
 
-    private void SetLabels()
+    private async Task SetLabelsAsync()
     {
         ViewData["EntityLabel"] = EntityLabel;
         ViewData["EntityLabelPlural"] = EntityLabelPlural;
         ViewData["VoucherType"] = VoucherType;
         ViewData["RequiresCashBankAccount"] = RequiresCashBankAccount;
+        ViewData["Kusurat"] = await _appSettingService.GetKusuratMapAsync();
     }
 
     private async Task<IActionResult?> EnsureAdmin()

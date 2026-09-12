@@ -1,6 +1,9 @@
 @model YamanCam.Web.Models.AppCustomsFreightInvoiceListViewModel
+@using YamanCam.Web.Services
 @{
     ViewData["Title"] = "Gümrük Nakliye Faturaları";
+    var kusurat = ViewData["Kusurat"] as IReadOnlyDictionary<string, int>;
+    int Dec(string key) => NumberFormatHelper.Get(kusurat, key);
 }
 
 <div class="card border-0 shadow-sm">
@@ -89,11 +92,11 @@
                                     <td>@(item.WorkPlaceName ?? "-")</td>
                                     <td>@(item.AccountName ?? "-")</td>
                                     <td>@(item.LinkedPurchaseInvoiceNo ?? "-")</td>
-                                    <td class="text-end">@item.NetAmount.ToString("N2")</td>
-                                    <td class="text-end">@item.VatAmount.ToString("N2")</td>
-                                    <td class="text-end">@item.WithholdingAmount.ToString("N2")</td>
-                                    <td class="text-end">@item.TotalAmount.ToString("N2")</td>
-                                    <td class="text-end">@item.CurrencyAmount.ToString("N2")</td>
+                                    <td class="text-end">@item.NetAmount.ToString(NumberFormatHelper.Format(Dec("Yeni Gümrük Nakliye Faturası Matrah")))</td>
+                                    <td class="text-end">@item.VatAmount.ToString(NumberFormatHelper.Format(Dec("Yeni Gümrük Nakliye Faturası KDV Tutar")))</td>
+                                    <td class="text-end">@item.WithholdingAmount.ToString(NumberFormatHelper.Format(Dec("Yeni Gümrük Nakliye Faturası Tevkifat")))</td>
+                                    <td class="text-end">@item.TotalAmount.ToString(NumberFormatHelper.Format(Dec("Yeni Gümrük Nakliye Faturası Genel Tutar")))</td>
+                                    <td class="text-end">@item.CurrencyAmount.ToString(NumberFormatHelper.Format(Dec("Yeni Gümrük Nakliye Faturası Döviz Tutar")))</td>
                                     <td>@item.CurrencyCode</td>
                                     <td class="text-end text-nowrap">
                                         @if (Model.ShowDeleted)

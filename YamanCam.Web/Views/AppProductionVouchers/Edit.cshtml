@@ -1,5 +1,6 @@
 @model YamanCam.Web.Models.AppProductionVoucherEditViewModel
 @using System.Globalization
+@using YamanCam.Web.Services
 @{
     var isNew = Model.RecId == 0;
     ViewData["Title"] = isNew ? "Yeni Stok Ürün Üretim Fişi" : "Stok Ürün Üretim Fişi Düzenle";
@@ -7,6 +8,12 @@
         Model.StockOptions.Select(o => new { value = o.Value, text = o.Text }));
     var productRawMap = ViewData["ProductRawMaterialMap"] as Dictionary<string, string> ?? new Dictionary<string, string>();
     var productRawMapJson = System.Text.Json.JsonSerializer.Serialize(productRawMap);
+
+    var kusurat = ViewData["Kusurat"] as IReadOnlyDictionary<string, int>;
+    int Dec(string key) => NumberFormatHelper.Get(kusurat, key);
+    var rawQtyDec = Dec("Yeni Stok Ürün Üretim Fişi Miktar");
+    var wasteDec = Dec("Yeni Stok Ürün Üretim Fişi Fire Oran %");
+    var prodQtyDec = Dec("Yeni Stok Ürün Üretim Fişi Miktar (Mamül)");
 }
 
 <div class="card border-0 shadow-sm">
@@ -84,9 +91,9 @@
                                         }
                                     </select>
                                 </td>
-                                <td><input type="number" step="0.0001" min="0" name="Lines[@i].RawMaterialQuantity" class="form-control form-control-sm text-end line-raw-qty" value="@Model.Lines[i].RawMaterialQuantity.ToString(CultureInfo.InvariantCulture)" /></td>
-                                <td><input type="number" step="0.01" min="0" max="100" name="Lines[@i].WasteRate" class="form-control form-control-sm text-end line-waste" value="@Model.Lines[i].WasteRate.ToString(CultureInfo.InvariantCulture)" /></td>
-                                <td><input type="number" step="0.0001" min="0" name="Lines[@i].ProductQuantity" class="form-control form-control-sm text-end line-prod-qty" value="@Model.Lines[i].ProductQuantity.ToString(CultureInfo.InvariantCulture)" /></td>
+                                <td><input type="number" step="@NumberFormatHelper.Step(rawQtyDec)" min="0" name="Lines[@i].RawMaterialQuantity" class="form-control form-control-sm text-end line-raw-qty" value="@Model.Lines[i].RawMaterialQuantity.ToString(CultureInfo.InvariantCulture)" /></td>
+                                <td><input type="number" step="@NumberFormatHelper.Step(wasteDec)" min="0" max="100" name="Lines[@i].WasteRate" class="form-control form-control-sm text-end line-waste" value="@Model.Lines[i].WasteRate.ToString(CultureInfo.InvariantCulture)" /></td>
+                                <td><input type="number" step="@NumberFormatHelper.Step(prodQtyDec)" min="0" name="Lines[@i].ProductQuantity" class="form-control form-control-sm text-end line-prod-qty" value="@Model.Lines[i].ProductQuantity.ToString(CultureInfo.InvariantCulture)" /></td>
                                 <td>
                                     <select name="Lines[@i].ProductStockId" class="form-select form-select-sm line-product">
                                         <option value="0">Seçiniz</option>
@@ -139,6 +146,10 @@
             var stockOptions = @Html.Raw(stockOptionsJson);
             var productRawMap = @Html.Raw(productRawMapJson);
 
+            var rawQtyStep = '@NumberFormatHelper.Step(rawQtyDec)';
+            var wasteStep = '@NumberFormatHelper.Step(wasteDec)';
+            var prodQtyStep = '@NumberFormatHelper.Step(prodQtyDec)';
+
             function buildStockOptionsHtml() {
                 var html = '<option value="0">Seçiniz</option>';
                 stockOptions.forEach(function (opt) {
@@ -179,9 +190,9 @@
                 tr.innerHTML =
                     '<td><input type="hidden" name="Lines[' + idx + '].RecId" value="0" />' +
                     '<select name="Lines[' + idx + '].RawMaterialStockId" class="form-select form-select-sm line-raw">' + buildStockOptionsHtml() + '</select></td>' +
-                    '<td><input type="number" step="0.0001" min="0" name="Lines[' + idx + '].RawMaterialQuantity" class="form-control form-control-sm text-end line-raw-qty" value="0" /></td>' +
-                    '<td><input type="number" step="0.01" min="0" max="100" name="Lines[' + idx + '].WasteRate" class="form-control form-control-sm text-end line-waste" value="0" /></td>' +
-                    '<td><input type="number" step="0.0001" min="0" name="Lines[' + idx + '].ProductQuantity" class="form-control form-control-sm text-end line-prod-qty" value="0" /></td>' +
+                    '<td><input type="number" step="' + rawQtyStep + '" min="0" name="Lines[' + idx + '].RawMaterialQuantity" class="form-control form-control-sm text-end line-raw-qty" value="0" /></td>' +
+                    '<td><input type="number" step="' + wasteStep + '" min="0" max="100" name="Lines[' + idx + '].WasteRate" class="form-control form-control-sm text-end line-waste" value="0" /></td>' +
+                    '<td><input type="number" step="' + prodQtyStep + '" min="0" name="Lines[' + idx + '].ProductQuantity" class="form-control form-control-sm text-end line-prod-qty" value="0" /></td>' +
                     '<td><select name="Lines[' + idx + '].ProductStockId" class="form-select form-select-sm line-product">' + buildStockOptionsHtml() + '</select></td>' +
                     '<td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger line-remove">&times;</button></td>';
                 linesBody.appendChild(tr);

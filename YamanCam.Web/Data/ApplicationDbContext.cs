@@ -19,6 +19,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<AppAccountPlan> AppAccountPlans => Set<AppAccountPlan>();
     public DbSet<AppVatDefinition> AppVatDefinitions => Set<AppVatDefinition>();
     public DbSet<AppVatWithholdingDefinition> AppVatWithholdingDefinitions => Set<AppVatWithholdingDefinition>();
+    public DbSet<AppSetting> AppSettings => Set<AppSetting>();
     public DbSet<AppStockGroup> AppStockGroups => Set<AppStockGroup>();
     public DbSet<AppStockUnit> AppStockUnits => Set<AppStockUnit>();
     public DbSet<AppStock> AppStocks => Set<AppStock>();

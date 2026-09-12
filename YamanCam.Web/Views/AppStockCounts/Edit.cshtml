@@ -1,10 +1,15 @@
 @model YamanCam.Web.Models.AppStockCountEditViewModel
 @using System.Globalization
+@using YamanCam.Web.Services
 @{
     var isNew = Model.RecId == 0;
     ViewData["Title"] = isNew ? "Yeni Sayım Kaydı" : "Sayım Kaydı Düzenle";
     var stockOptionsJson = System.Text.Json.JsonSerializer.Serialize(
         Model.StockOptions.Select(o => new { value = o.Value, text = o.Text }));
+
+    var kusurat = ViewData["Kusurat"] as IReadOnlyDictionary<string, int>;
+    int Dec(string key) => NumberFormatHelper.Get(kusurat, key);
+    var countDec = Dec("Yeni Sayım Kaydı Sayım Miktar");
 }
 
 <div class="card border-0 shadow-sm">
@@ -64,7 +69,7 @@
                                         }
                                     </select>
                                 </td>
-                                <td><input type="number" step="0.0001" min="0" name="Lines[@i].CountQuantity" class="form-control form-control-sm text-end line-count" value="@Model.Lines[i].CountQuantity.ToString(CultureInfo.InvariantCulture)" /></td>
+                                <td><input type="number" step="@NumberFormatHelper.Step(countDec)" min="0" name="Lines[@i].CountQuantity" class="form-control form-control-sm text-end line-count" value="@Model.Lines[i].CountQuantity.ToString(CultureInfo.InvariantCulture)" /></td>
                                 <td class="text-center">
                                     <button type="button" class="btn btn-sm btn-outline-danger line-remove">&times;</button>
                                 </td>
@@ -110,6 +115,7 @@
             var loadStocksBtn = document.getElementById('loadStocksBtn');
             var clearLinesBtn = document.getElementById('clearLinesBtn');
             var stockOptions = @Html.Raw(stockOptionsJson);
+            var countStep = '@NumberFormatHelper.Step(countDec)';
 
             function buildStockOptionsHtml() {
                 var html = '<option value="0">Seçiniz</option>';
@@ -142,7 +148,7 @@
                 tr.innerHTML =
                     '<td><input type="hidden" name="Lines[' + idx + '].RecId" value="0" />' +
                     '<select name="Lines[' + idx + '].StockId" class="form-select form-select-sm line-stock">' + buildStockOptionsHtml() + '</select></td>' +
-                    '<td><input type="number" step="0.0001" min="0" name="Lines[' + idx + '].CountQuantity" class="form-control form-control-sm text-end line-count" value="' + (countValue || 0) + '" /></td>' +
+                    '<td><input type="number" step="' + countStep + '" min="0" name="Lines[' + idx + '].CountQuantity" class="form-control form-control-sm text-end line-count" value="' + (countValue || 0) + '" /></td>' +
                     '<td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger line-remove">&times;</button></td>';
                 linesBody.appendChild(tr);
                 if (stockValue) {

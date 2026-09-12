@@ -24,12 +24,18 @@ public class AppSalesInvoicesController : Controller
     private readonly ApplicationDbContext _context;
     private readonly IAppLogService _appLogService;
     private readonly IUserRightService _userRightService;
+    private readonly IAppSettingService _appSettingService;
 
-    public AppSalesInvoicesController(ApplicationDbContext context, IAppLogService appLogService, IUserRightService userRightService)
+    public AppSalesInvoicesController(
+        ApplicationDbContext context,
+        IAppLogService appLogService,
+        IUserRightService userRightService,
+        IAppSettingService appSettingService)
     {
         _context = context;
         _appLogService = appLogService;
         _userRightService = userRightService;
+        _appSettingService = appSettingService;
     }
 
     [HttpGet]
@@ -66,6 +72,8 @@ public class AppSalesInvoicesController : Controller
             })
             .ToListAsync();
 
+        ViewData["Kusurat"] = await _appSettingService.GetKusuratMapAsync();
+
         return View(new AppSalesInvoiceListViewModel
         {
             ShowDeleted = showDeleted,
@@ -84,6 +92,7 @@ public class AppSalesInvoicesController : Controller
 
         var vm = new AppSalesInvoiceEditViewModel();
         await PopulateSelectListsAsync(vm);
+        ViewData["Kusurat"] = await _appSettingService.GetKusuratMapAsync();
         return View("Edit", vm);
     }
 
@@ -103,6 +112,7 @@ public class AppSalesInvoicesController : Controller
         if (!ModelState.IsValid)
         {
             await PopulateSelectListsAsync(vm);
+            ViewData["Kusurat"] = await _appSettingService.GetKusuratMapAsync();
             return View("Edit", vm);
         }
 
@@ -145,6 +155,7 @@ public class AppSalesInvoicesController : Controller
 
         var vm = MapToViewModel(entity);
         await PopulateSelectListsAsync(vm);
+        ViewData["Kusurat"] = await _appSettingService.GetKusuratMapAsync();
         return View(vm);
     }
 
@@ -178,6 +189,7 @@ public class AppSalesInvoicesController : Controller
         if (!ModelState.IsValid)
         {
             await PopulateSelectListsAsync(vm);
+            ViewData["Kusurat"] = await _appSettingService.GetKusuratMapAsync();
             return View(vm);
         }
 

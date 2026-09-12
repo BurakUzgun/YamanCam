@@ -40,6 +40,7 @@ builder.Services.AddSingleton<ICenterLicenseConnectionService, CenterLicenseConn
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IAppLogService, AppLogService>();
 builder.Services.AddScoped<IUserRightService, UserRightService>();
+builder.Services.AddScoped<IAppSettingService, AppSettingService>();
 builder.Services.AddHostedService<LicenseDailyCheckHostedService>();
 builder.Services.AddDbContext<ApplicationDbContext>((serviceProvider, options) =>
 {

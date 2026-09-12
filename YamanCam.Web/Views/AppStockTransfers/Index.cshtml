@@ -1,6 +1,9 @@
 @model YamanCam.Web.Models.AppStockTransferListViewModel
+@using YamanCam.Web.Services
 @{
     ViewData["Title"] = "Şubeler Arası Transfer Fişleri";
+    var kusurat = ViewData["Kusurat"] as IReadOnlyDictionary<string, int>;
+    int Dec(string key) => NumberFormatHelper.Get(kusurat, key);
 }
 
 <div class="card border-0 shadow-sm">
@@ -82,7 +85,7 @@
                                     <td>@(item.OutWorkPlaceName ?? "-")</td>
                                     <td>@item.TransactionType</td>
                                     <td>@(item.SpecialCode ?? "-")</td>
-                                    <td class="text-end">@item.TotalAmount.ToString("N2")</td>
+                                    <td class="text-end">@item.TotalAmount.ToString(NumberFormatHelper.Format(Dec("Şubeler Arası Transfer Fişleri Toplam Tutar")))</td>
                                     <td class="text-end text-nowrap">
                                         @if (Model.ShowDeleted)
                                         {

@@ -1,4 +1,5 @@
 @model YamanCam.Web.Models.AppCustomsFreightInvoiceEditViewModel
+@using YamanCam.Web.Services
 @{
     var isNew = Model.RecId == 0;
     ViewData["Title"] = isNew ? "Yeni Gümrük Nakliye Faturası" : "Gümrük Nakliye Faturası Düzenle";
@@ -14,6 +15,23 @@
             withholdingDefinitionId = l.WithholdingDefinitionId,
             withholdingRate = l.WithholdingRate
         }));
+
+    var kusurat = ViewData["Kusurat"] as IReadOnlyDictionary<string, int>;
+    int Dec(string key) => NumberFormatHelper.Get(kusurat, key);
+    var kurDec = Dec("Yeni Gümrük Nakliye Faturası Döviz Kuru");
+    var matrahDec = Dec("Yeni Gümrük Nakliye Faturası Matrah");
+    var kdvTutarDec = Dec("Yeni Gümrük Nakliye Faturası KDV Tutar");
+    var tevkifatTutarDec = Dec("Yeni Gümrük Nakliye Faturası Tevkifat Tutar");
+    var netKdvTutarDec = Dec("Yeni Gümrük Nakliye Faturası Net KDV Tutar");
+    var genelTutarDec = Dec("Yeni Gümrük Nakliye Faturası Genel Tutar");
+    var dovizTutarDec = Dec("Yeni Gümrük Nakliye Faturası Döviz Tutar");
+    var tutarDec = Dec("Yeni Gümrük Nakliye Faturası Tutar");
+    var kdvOranTevkifatDec = Dec("Yeni Gümrük Nakliye Faturası Kdv Oran Tevkifat");
+    var kdvIndOranDec = Dec("Yeni Gümrük Nakliye Faturası Kdv İnd. Oran");
+    var tevOranDec = Dec("Yeni Gümrük Nakliye Faturası Tev Oran");
+    var kdvIndirimDec = Dec("Yeni Gümrük Nakliye Faturası KDV İndirim");
+    var netKdvDec = Dec("Yeni Gümrük Nakliye Faturası Net KDV");
+    var toplamDec = Dec("Yeni Gümrük Nakliye Faturası Toplam");
 }
 
 <div class="card border-0 shadow-sm">
@@ -79,31 +97,31 @@
 
                         <div class="col-12">
                             <label class="form-label">Matrah</label>
-                            <input id="totalNetDisplay" type="text" class="form-control text-end" readonly value="@Model.NetAmount.ToString("N2")" />
+                            <input id="totalNetDisplay" type="text" class="form-control text-end" readonly value="@Model.NetAmount.ToString(NumberFormatHelper.Format(matrahDec))" />
                         </div>
                         <div class="col-12">
                             <label class="form-label">KDV Tutar</label>
-                            <input id="totalVatDisplay" type="text" class="form-control text-end" readonly value="@Model.VatAmount.ToString("N2")" />
+                            <input id="totalVatDisplay" type="text" class="form-control text-end" readonly value="@Model.VatAmount.ToString(NumberFormatHelper.Format(kdvTutarDec))" />
                         </div>
                         <div class="col-12">
                             <label class="form-label">Tevkifat Tutar</label>
-                            <input id="totalWithholdingDisplay" type="text" class="form-control text-end" readonly value="@Model.WithholdingAmount.ToString("N2")" />
+                            <input id="totalWithholdingDisplay" type="text" class="form-control text-end" readonly value="@Model.WithholdingAmount.ToString(NumberFormatHelper.Format(tevkifatTutarDec))" />
                         </div>
                         <div class="col-12">
                             <label class="form-label">NET KDV Tutar</label>
-                            <input id="totalNetVatDisplay" type="text" class="form-control text-end" readonly value="@Model.NetVatAmount.ToString("N2")" />
+                            <input id="totalNetVatDisplay" type="text" class="form-control text-end" readonly value="@Model.NetVatAmount.ToString(NumberFormatHelper.Format(netKdvTutarDec))" />
                         </div>
                         <div class="col-12">
                             <label class="form-label">Genel Tutar</label>
-                            <input id="totalGrossDisplay" type="text" class="form-control text-end fw-bold" readonly value="@Model.TotalAmount.ToString("N2")" />
+                            <input id="totalGrossDisplay" type="text" class="form-control text-end fw-bold" readonly value="@Model.TotalAmount.ToString(NumberFormatHelper.Format(genelTutarDec))" />
                         </div>
                         <div class="col-12">
                             <label class="form-label">Döviz Tutar</label>
-                            <input id="totalCurrencyDisplay" type="text" class="form-control text-end" readonly value="@Model.CurrencyAmount.ToString("N2")" />
+                            <input id="totalCurrencyDisplay" type="text" class="form-control text-end" readonly value="@Model.CurrencyAmount.ToString(NumberFormatHelper.Format(dovizTutarDec))" />
                         </div>
                         <div class="col-12">
                             <label asp-for="ExchangeRate" class="form-label"></label>
-                            <input asp-for="ExchangeRate" id="exchangeRateInput" type="number" step="0.000001" min="0.000001" class="form-control" />
+                            <input asp-for="ExchangeRate" id="exchangeRateInput" type="number" step="@NumberFormatHelper.Step(kurDec)" min="0.000001" class="form-control" />
                             <span asp-validation-for="ExchangeRate" class="text-danger"></span>
                         </div>
                         <div class="col-12">
@@ -143,11 +161,11 @@
                         </div>
                         <div class="col-md-2">
                             <label class="form-label">Tutar</label>
-                            <input id="lineAmountInput" type="number" step="0.01" min="0" class="form-control form-control-sm text-end" value="0" />
+                            <input id="lineAmountInput" type="number" step="@NumberFormatHelper.Step(tutarDec)" min="0" class="form-control form-control-sm text-end" value="0" />
                         </div>
                         <div class="col-md-2">
                             <label class="form-label">Kdv</label>
-                            <input id="lineVatRateInput" type="number" step="0.01" min="0" class="form-control form-control-sm text-end" value="0" />
+                            <input id="lineVatRateInput" type="number" step="@NumberFormatHelper.Step(kdvOranTevkifatDec)" min="0" class="form-control form-control-sm text-end" value="0" />
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Tevkifat</label>
@@ -161,7 +179,7 @@
                         </div>
                         <div class="col-md-2">
                             <label class="form-label">Kdv İnd. Oran</label>
-                            <input id="lineWithholdingRateInput" type="number" step="0.01" min="0" max="100" class="form-control form-control-sm text-end" value="0" />
+                            <input id="lineWithholdingRateInput" type="number" step="@NumberFormatHelper.Step(kdvIndOranDec)" min="0" max="100" class="form-control form-control-sm text-end" value="0" />
                         </div>
                     </div>
                     <div class="d-flex gap-2 mt-2 mb-3">
@@ -235,8 +253,23 @@
             var currencySelect = document.getElementById('currencyCodeSelect');
             var exchangeRateInput = document.getElementById('exchangeRateInput');
 
-            function formatAmount(value) {
-                return value.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            var kusuratDecimals = {
+                matrah: @matrahDec,
+                kdvTutar: @kdvTutarDec,
+                tevkifatTutar: @tevkifatTutarDec,
+                netKdvTutar: @netKdvTutarDec,
+                genelTutar: @genelTutarDec,
+                dovizTutar: @dovizTutarDec,
+                kdvOranTevkifat: @kdvOranTevkifatDec,
+                tevOran: @tevOranDec,
+                kdvIndirim: @kdvIndirimDec,
+                netKdv: @netKdvDec,
+                toplam: @toplamDec
+            };
+
+            function formatAmount(value, decimals) {
+                var d = (decimals === undefined || decimals === null) ? 2 : decimals;
+                return value.toLocaleString('tr-TR', { minimumFractionDigits: d, maximumFractionDigits: d });
             }
 
             function computeLine(line) {
@@ -278,14 +311,14 @@
                     tr.innerHTML =
                         '<td>' + meta.code + '</td>' +
                         '<td>' + meta.name + '</td>' +
-                        '<td class="text-end">' + line.vatRate.toFixed(2) + '</td>' +
+                        '<td class="text-end">' + line.vatRate.toFixed(kusuratDecimals.kdvOranTevkifat) + '</td>' +
                         '<td>' + (wMeta ? wMeta.code : '-') + '</td>' +
-                        '<td class="text-end">' + line.withholdingRate.toFixed(2) + '</td>' +
-                        '<td class="text-end">' + formatAmount(line.amount) + '</td>' +
-                        '<td class="text-end">' + formatAmount(calc.vatAmount) + '</td>' +
-                        '<td class="text-end">' + formatAmount(calc.withholdingAmount) + '</td>' +
-                        '<td class="text-end">' + formatAmount(calc.netVatAmount) + '</td>' +
-                        '<td class="text-end">' + formatAmount(calc.totalAmount) + '</td>';
+                        '<td class="text-end">' + line.withholdingRate.toFixed(kusuratDecimals.tevOran) + '</td>' +
+                        '<td class="text-end">' + formatAmount(line.amount, kusuratDecimals.matrah) + '</td>' +
+                        '<td class="text-end">' + formatAmount(calc.vatAmount, kusuratDecimals.kdvTutar) + '</td>' +
+                        '<td class="text-end">' + formatAmount(calc.withholdingAmount, kusuratDecimals.kdvIndirim) + '</td>' +
+                        '<td class="text-end">' + formatAmount(calc.netVatAmount, kusuratDecimals.netKdv) + '</td>' +
+                        '<td class="text-end">' + formatAmount(calc.totalAmount, kusuratDecimals.toplam) + '</td>';
                     tr.addEventListener('click', function () { selectLine(idx); });
                     linesBody.appendChild(tr);
 
@@ -303,15 +336,15 @@
                     linesBody.appendChild(emptyRow);
                 }
 
-                document.getElementById('totalNetDisplay').value = formatAmount(totalNet);
-                document.getElementById('totalVatDisplay').value = formatAmount(totalVat);
-                document.getElementById('totalWithholdingDisplay').value = formatAmount(totalWithholding);
-                document.getElementById('totalNetVatDisplay').value = formatAmount(totalNetVat);
-                document.getElementById('totalGrossDisplay').value = formatAmount(totalGross);
+                document.getElementById('totalNetDisplay').value = formatAmount(totalNet, kusuratDecimals.matrah);
+                document.getElementById('totalVatDisplay').value = formatAmount(totalVat, kusuratDecimals.kdvTutar);
+                document.getElementById('totalWithholdingDisplay').value = formatAmount(totalWithholding, kusuratDecimals.tevkifatTutar);
+                document.getElementById('totalNetVatDisplay').value = formatAmount(totalNetVat, kusuratDecimals.netKdvTutar);
+                document.getElementById('totalGrossDisplay').value = formatAmount(totalGross, kusuratDecimals.genelTutar);
 
                 var rate = parseFloat(exchangeRateInput.value) || 0;
                 var currencyAmount = rate > 0 ? totalGross / rate : 0;
-                document.getElementById('totalCurrencyDisplay').value = formatAmount(currencyAmount);
+                document.getElementById('totalCurrencyDisplay').value = formatAmount(currencyAmount, kusuratDecimals.dovizTutar);
 
                 removeBtn.disabled = selectedLineIndex < 0;
             }

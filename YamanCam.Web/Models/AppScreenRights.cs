@@ -50,6 +50,7 @@ public static class AppScreenRights
         new() { Code = "AppProductionDefinitions", Name = "Üretim Tanımları" },
         new() { Code = "AppProductionVouchers", Name = "Stok Ürün Üretim Fişleri" },
         new() { Code = "AppStockCounts", Name = "Sayım Kayıtları" },
+        new() { Code = "AppSettings", Name = "Ayarlar" },
     ];
 
     public static string BuildRightCode(string controllerCode, ScreenActionType action) => $"{controllerCode}.{action}";

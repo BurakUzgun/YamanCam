@@ -24,6 +24,10 @@
         <li><a class="app-menu-link" asp-controller="AppUsers" asp-action="Index">Kullanıcı Tanımları</a></li>
       }
       <li><a class="app-menu-link" asp-controller="AppLogs" asp-action="Index">Log Kayıt İzleme</a></li>
+      @if (Allowed("AppSettings"))
+      {
+        <li><a class="app-menu-link" asp-controller="AppSettings" asp-action="Index">Ayarlar</a></li>
+      }
       @if (showTanimlar)
       {
         <li class="app-menu-group">

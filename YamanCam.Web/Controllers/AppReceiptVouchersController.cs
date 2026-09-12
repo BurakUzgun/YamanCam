@@ -6,8 +6,12 @@ namespace YamanCam.Web.Controllers;
 
 public class AppReceiptVouchersController : AppVoucherControllerBase
 {
-    public AppReceiptVouchersController(ApplicationDbContext context, IAppLogService appLogService, IUserRightService userRightService)
-        : base(context, appLogService, userRightService)
+    public AppReceiptVouchersController(
+        ApplicationDbContext context,
+        IAppLogService appLogService,
+        IUserRightService userRightService,
+        IAppSettingService appSettingService)
+        : base(context, appLogService, userRightService, appSettingService)
     {
     }
 

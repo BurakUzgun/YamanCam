@@ -1,8 +1,14 @@
 @model YamanCam.Web.Models.AppJournalVoucherListViewModel
+@using YamanCam.Web.Services
 @{
     var entityLabel = ViewData["EntityLabel"] as string ?? "Fiş";
     var entityLabelPlural = ViewData["EntityLabelPlural"] as string ?? "Fişler";
     ViewData["Title"] = entityLabelPlural;
+
+    var kusurat = ViewData["Kusurat"] as IReadOnlyDictionary<string, int>;
+    int Dec(string key) => NumberFormatHelper.Get(kusurat, key);
+    var debitDec = Dec($"{entityLabelPlural} Toplam Borç");
+    var creditDec = Dec($"{entityLabelPlural} Toplam Alacak");
 }
 
 <div class="card border-0 shadow-sm">
@@ -85,8 +91,8 @@
                                     <td>@(item.CompanyName ?? "-")</td>
                                     <td>@(item.WorkPlaceName ?? "-")</td>
                                     <td class="jv-col-desc">@(item.Description ?? "-")</td>
-                                    <td class="text-end">@item.TotalDebit.ToString("N2")</td>
-                                    <td class="text-end">@item.TotalCredit.ToString("N2")</td>
+                                    <td class="text-end">@item.TotalDebit.ToString(NumberFormatHelper.Format(debitDec))</td>
+                                    <td class="text-end">@item.TotalCredit.ToString(NumberFormatHelper.Format(creditDec))</td>
                                     <td>@item.CurrencyCode</td>
                                     <td class="text-end text-nowrap">
                                         @if (Model.ShowDeleted)

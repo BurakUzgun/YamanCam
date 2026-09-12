@@ -1,4 +1,5 @@
 @model YamanCam.Web.Models.AppJournalVoucherEditViewModel
+@using YamanCam.Web.Services
 @{
     var isNew = Model.RecId == 0;
     var entityLabel = ViewData["EntityLabel"] as string ?? "Fiş";
@@ -9,6 +10,11 @@
     ViewData["Title"] = isNew ? $"Yeni {entityLabel}" : $"{entityLabel} Düzenle";
     var accountOptionsJson = System.Text.Json.JsonSerializer.Serialize(
         Model.AccountOptions.Select(o => new { value = o.Value, text = o.Text }));
+
+    var kusurat = ViewData["Kusurat"] as IReadOnlyDictionary<string, int>;
+    int Dec(string key) => NumberFormatHelper.Get(kusurat, key);
+    var amountDec = Dec($"Yeni {entityLabel} Tutar");
+    var totalDec = Dec($"Yeni {entityLabel} Toplam");
 }
 
 <div class="card border-0 shadow-sm">
@@ -104,7 +110,7 @@
                                         </select>
                                     </td>
                                     <td><input type="text" name="Lines[@i].Description" class="form-control form-control-sm" value="@Model.Lines[i].Description" /></td>
-                                    <td><input type="number" step="0.01" min="0" name="Lines[@i].@amountFieldName" class="form-control form-control-sm text-end line-amount" value="@(isTahsilat ? Model.Lines[i].CreditAmount : Model.Lines[i].DebitAmount)" /></td>
+                                    <td><input type="number" step="@NumberFormatHelper.Step(amountDec)" min="0" name="Lines[@i].@amountFieldName" class="form-control form-control-sm text-end line-amount" value="@(isTahsilat ? Model.Lines[i].CreditAmount : Model.Lines[i].DebitAmount)" /></td>
                                     <td class="text-center">
                                         <button type="button" class="btn btn-sm btn-outline-danger line-remove">&times;</button>
                                     </td>
@@ -115,7 +121,7 @@
                             <tr>
                                 <th class="text-end">Toplam</th>
                                 <th></th>
-                                <th class="text-end" id="totalAmountCell">0,00</th>
+                                <th class="text-end" id="totalAmountCell">@(0m.ToString(NumberFormatHelper.Format(totalDec)))</th>
                                 <th></th>
                             </tr>
                         </tfoot>
@@ -152,8 +158,8 @@
                                         </select>
                                     </td>
                                     <td><input type="text" name="Lines[@i].Description" class="form-control form-control-sm" value="@Model.Lines[i].Description" /></td>
-                                    <td><input type="number" step="0.01" min="0" name="Lines[@i].DebitAmount" class="form-control form-control-sm text-end line-debit" value="@Model.Lines[i].DebitAmount" /></td>
-                                    <td><input type="number" step="0.01" min="0" name="Lines[@i].CreditAmount" class="form-control form-control-sm text-end line-credit" value="@Model.Lines[i].CreditAmount" /></td>
+                                    <td><input type="number" step="@NumberFormatHelper.Step(totalDec)" min="0" name="Lines[@i].DebitAmount" class="form-control form-control-sm text-end line-debit" value="@Model.Lines[i].DebitAmount" /></td>
+                                    <td><input type="number" step="@NumberFormatHelper.Step(totalDec)" min="0" name="Lines[@i].CreditAmount" class="form-control form-control-sm text-end line-credit" value="@Model.Lines[i].CreditAmount" /></td>
                                     <td class="text-center">
                                         <button type="button" class="btn btn-sm btn-outline-danger line-remove">&times;</button>
                                     </td>
@@ -163,8 +169,8 @@
                         <tfoot>
                             <tr>
                                 <th colspan="2" class="text-end">Toplam</th>
-                                <th class="text-end" id="totalDebitCell">0,00</th>
-                                <th class="text-end" id="totalCreditCell">0,00</th>
+                                <th class="text-end" id="totalDebitCell">@(0m.ToString(NumberFormatHelper.Format(totalDec)))</th>
+                                <th class="text-end" id="totalCreditCell">@(0m.ToString(NumberFormatHelper.Format(totalDec)))</th>
                                 <th></th>
                             </tr>
                             <tr id="balanceWarningRow" class="d-none">
@@ -207,9 +213,11 @@
                 var totalAmountCell = document.getElementById('totalAmountCell');
                 var accountOptions = @Html.Raw(accountOptionsJson);
                 var amountFieldName = '@amountFieldName';
+                var amountStep = '@NumberFormatHelper.Step(amountDec)';
+                var totalDecimals = @totalDec;
 
                 function formatAmount(value) {
-                    return value.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    return value.toLocaleString('tr-TR', { minimumFractionDigits: totalDecimals, maximumFractionDigits: totalDecimals });
                 }
 
                 function buildAccountOptionsHtml() {
@@ -255,7 +263,7 @@
                         '<td><input type="hidden" name="Lines[' + idx + '].RecId" value="0" />' +
                         '<select name="Lines[' + idx + '].AccountId" class="form-select form-select-sm line-account">' + buildAccountOptionsHtml() + '</select></td>' +
                         '<td><input type="text" name="Lines[' + idx + '].Description" class="form-control form-control-sm" /></td>' +
-                        '<td><input type="number" step="0.01" min="0" name="Lines[' + idx + '].' + amountFieldName + '" class="form-control form-control-sm text-end line-amount" value="0" /></td>' +
+                        '<td><input type="number" step="' + amountStep + '" min="0" name="Lines[' + idx + '].' + amountFieldName + '" class="form-control form-control-sm text-end line-amount" value="0" /></td>' +
                         '<td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger line-remove">&times;</button></td>';
                     linesBody.appendChild(tr);
                     bindRowEvents(tr);
@@ -278,9 +286,11 @@
                 var totalCreditCell = document.getElementById('totalCreditCell');
                 var balanceWarningRow = document.getElementById('balanceWarningRow');
                 var accountOptions = @Html.Raw(accountOptionsJson);
+                var lineStep = '@NumberFormatHelper.Step(totalDec)';
+                var totalDecimals = @totalDec;
 
                 function formatAmount(value) {
-                    return value.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    return value.toLocaleString('tr-TR', { minimumFractionDigits: totalDecimals, maximumFractionDigits: totalDecimals });
                 }
 
                 function buildAccountOptionsHtml() {
@@ -333,8 +343,8 @@
                         '<td><input type="hidden" name="Lines[' + idx + '].RecId" value="0" />' +
                         '<select name="Lines[' + idx + '].AccountId" class="form-select form-select-sm line-account">' + buildAccountOptionsHtml() + '</select></td>' +
                         '<td><input type="text" name="Lines[' + idx + '].Description" class="form-control form-control-sm" /></td>' +
-                        '<td><input type="number" step="0.01" min="0" name="Lines[' + idx + '].DebitAmount" class="form-control form-control-sm text-end line-debit" value="0" /></td>' +
-                        '<td><input type="number" step="0.01" min="0" name="Lines[' + idx + '].CreditAmount" class="form-control form-control-sm text-end line-credit" value="0" /></td>' +
+                        '<td><input type="number" step="' + lineStep + '" min="0" name="Lines[' + idx + '].DebitAmount" class="form-control form-control-sm text-end line-debit" value="0" /></td>' +
+                        '<td><input type="number" step="' + lineStep + '" min="0" name="Lines[' + idx + '].CreditAmount" class="form-control form-control-sm text-end line-credit" value="0" /></td>' +
                         '<td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger line-remove">&times;</button></td>';
                     linesBody.appendChild(tr);
                     bindRowEvents(tr);

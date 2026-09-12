@@ -66,6 +66,7 @@ public class DatabaseBootstrapService : IDatabaseBootstrapService
             _logger.LogInformation("Database schema script executed. YamanCam.Core version: {Version}", schemaVersion);
 
             await TrySeedDefaultUserAsync(connection, cancellationToken);
+            await TrySeedDefaultSettingsAsync(connection, cancellationToken);
 
             _initialized = true;
         }
@@ -115,6 +116,132 @@ public class DatabaseBootstrapService : IDatabaseBootstrapService
             "Varsayilan kullanici eklendi (App_User bosken): Code={Code}, NameSurname={Name}.",
             DefaultUserCode,
             DefaultUserCode);
+    }
+
+    private static readonly (string SettingGroup, string Explanation, int Value)[] DefaultSettings =
+    [
+        ("Küsürat", "Alış Faturaları Kur", 2),
+        ("Küsürat", "Alış Faturaları Toplam (Döviz)", 2),
+        ("Küsürat", "Alış Faturaları Toplam (TL)", 2),
+        ("Küsürat", "Yeni Alış Faturası Miktar", 2),
+        ("Küsürat", "Yeni Alış Faturası Birim Fiyat", 2),
+        ("Küsürat", "Yeni Alış Faturası KDV %", 2),
+        ("Küsürat", "Yeni Alış Faturası Tevkifat", 2),
+        ("Küsürat", "Yeni Alış Faturası Tev. %", 2),
+        ("Küsürat", "Yeni Alış Faturası Net (Döviz)", 2),
+        ("Küsürat", "Yeni Alış Faturası KDV (Döviz)", 2),
+        ("Küsürat", "Yeni Alış Faturası Tevkifat", 2),
+        ("Küsürat", "Yeni Alış Faturası Net KDV", 2),
+        ("Küsürat", "Yeni Alış Faturası Toplam (Döviz)", 2),
+        ("Küsürat", "Yeni Alış Faturası Mal Bedeli", 2),
+        ("Küsürat", "Yeni Alış Faturası Genel Toplam", 2),
+        ("Küsürat", "Satış Faturaları Kur", 2),
+        ("Küsürat", "Satış Faturaları Toplam (Döviz)", 2),
+        ("Küsürat", "Satış Faturaları Toplam (TL)", 2),
+        ("Küsürat", "Yeni Satış Faturası Miktar", 2),
+        ("Küsürat", "Yeni Satış Faturası Birim Fiyat", 2),
+        ("Küsürat", "Yeni Satış Faturası KDV %", 2),
+        ("Küsürat", "Yeni Satış Faturası Tevkifat", 2),
+        ("Küsürat", "Yeni Satış Faturası Tev. %", 2),
+        ("Küsürat", "Yeni Satış Faturası Net (Döviz)", 2),
+        ("Küsürat", "Yeni Satış Faturası KDV (Döviz)", 2),
+        ("Küsürat", "Yeni Satış Faturası Tevkifat", 2),
+        ("Küsürat", "Yeni Satış Faturası Net KDV", 2),
+        ("Küsürat", "Yeni Satış Faturası Toplam (Döviz)", 2),
+        ("Küsürat", "Yeni Satış Faturası Mal Bedeli", 2),
+        ("Küsürat", "Yeni Satış Faturası Genel Toplam", 2),
+        ("Küsürat", "Yeni Gümrük Nakliye Faturası Matrah", 2),
+        ("Küsürat", "Yeni Gümrük Nakliye Faturası KDV Tutar", 2),
+        ("Küsürat", "Yeni Gümrük Nakliye Faturası Tevkifat", 2),
+        ("Küsürat", "Yeni Gümrük Nakliye Faturası Genel Tutar", 2),
+        ("Küsürat", "Yeni Gümrük Nakliye Faturası Döviz Tutar", 2),
+        ("Küsürat", "Yeni Gümrük Nakliye Faturası Tutar", 2),
+        ("Küsürat", "Yeni Gümrük Nakliye Faturası Kdv İnd. Oran", 2),
+        ("Küsürat", "Yeni Gümrük Nakliye Faturası Kdv Oran Tevkifat", 2),
+        ("Küsürat", "Yeni Gümrük Nakliye Faturası Tev Oran", 2),
+        ("Küsürat", "Yeni Gümrük Nakliye Faturası KDV İndirim", 2),
+        ("Küsürat", "Yeni Gümrük Nakliye Faturası Net KDV", 2),
+        ("Küsürat", "Yeni Gümrük Nakliye Faturası Toplam", 2),
+        ("Küsürat", "Yeni Gümrük Nakliye Faturası Tevkifat Tutar", 2),
+        ("Küsürat", "Yeni Gümrük Nakliye Faturası Net KDV Tutar", 2),
+        ("Küsürat", "Yeni Gümrük Nakliye Faturası Döviz Kuru", 2),
+        ("Küsürat", "Stok Açılış Fişleri Toplam Tutar", 2),
+        ("Küsürat", "Yeni Stok Açılış Fişi Adet", 2),
+        ("Küsürat", "Yeni Stok Açılış Fişi Birim Fiyat", 2),
+        ("Küsürat", "Yeni Stok Açılış Fişi Toplam Fiyat", 2),
+        ("Küsürat", "Yeni Stok Açılış Fişi Genel Toplam", 2),
+        ("Küsürat", "Şubeler Arası Transfer Fişleri Toplam Tutar", 2),
+        ("Küsürat", "Yeni Şubeler Arası Transfer Fişi Adet", 2),
+        ("Küsürat", "Yeni Şubeler Arası Transfer Fişi Birim Fiyat", 2),
+        ("Küsürat", "Yeni Şubeler Arası Transfer Fişi Toplam Fiyat", 2),
+        ("Küsürat", "Yeni Şubeler Arası Transfer Fişi Genel Toplam", 2),
+        ("Küsürat", "Stok Çıkış Fişleri Toplam Tutar", 2),
+        ("Küsürat", "Yeni Stok Çıkış Fişi Adet", 2),
+        ("Küsürat", "Yeni Stok Çıkış Fişi Birim Fiyat", 2),
+        ("Küsürat", "Yeni Stok Çıkış Fişi Toplam Fiyat", 2),
+        ("Küsürat", "Yeni Stok Çıkış Fişi Genel Toplam", 2),
+        ("Küsürat", "Yeni Stok Ürün Üretim Fişi Miktar", 2),
+        ("Küsürat", "Yeni Stok Ürün Üretim Fişi Fire Oran %", 2),
+        ("Küsürat", "Yeni Stok Ürün Üretim Fişi Miktar (Mamül)", 2),
+        ("Küsürat", "Yeni Sayım Kaydı Sayım Miktar", 2),
+        ("Küsürat", "Yeni Farklı Ürün Transfer Fişi Adet", 2),
+        ("Küsürat", "Yeni Farklı Ürün Transfer Fişi Birim Fiyat", 2),
+        ("Küsürat", "Yeni Farklı Ürün Transfer Fişi Toplam Fiyat", 2),
+        ("Küsürat", "Yeni Farklı Ürün Transfer Fişi Genel Toplam", 2),
+        ("Küsürat", "Tediye Fişleri Toplam Borç", 2),
+        ("Küsürat", "Tediye Fişleri Toplam Alacak", 2),
+        ("Küsürat", "Yeni Tediye Fişi Tutar", 2),
+        ("Küsürat", "Yeni Tediye Fişi Toplam", 2),
+        ("Küsürat", "Tahsilat Fişleri Toplam Borç", 2),
+        ("Küsürat", "Tahsilat Fişleri Toplam Alacak", 2),
+        ("Küsürat", "Yeni Tahsilat Fişi Tutar", 2),
+        ("Küsürat", "Yeni Tahsilat Fişi Toplam", 2),
+        ("Küsürat", "Mahsup Fişleri Toplam Borç", 2),
+        ("Küsürat", "Mahsup Fişleri Toplam Alacak", 2),
+        ("Küsürat", "Yeni Mahsup Fişi Toplam", 2),
+    ];
+
+    private async Task TrySeedDefaultSettingsAsync(SqlConnection connection, CancellationToken cancellationToken)
+    {
+        const string tableExistsSql = "SELECT OBJECT_ID(N'dbo.App_Setting', N'U');";
+
+        await using (var cmd = new SqlCommand(tableExistsSql, connection))
+        {
+            var objId = await cmd.ExecuteScalarAsync(cancellationToken);
+            if (objId is null || objId == DBNull.Value || Convert.ToInt32(objId) == 0)
+            {
+                return;
+            }
+        }
+
+        const string countSql = "SELECT COUNT(*) FROM dbo.App_Setting;";
+        await using (var countCmd = new SqlCommand(countSql, connection))
+        {
+            var count = Convert.ToInt32(await countCmd.ExecuteScalarAsync(cancellationToken));
+            if (count > 0)
+            {
+                return;
+            }
+        }
+
+        const string insertSql = """
+            INSERT INTO dbo.App_Setting ([SettingGroup], [Explanation], [Value], [IsActive])
+            VALUES (@SettingGroup, @Explanation, @Value, @IsActive);
+            """;
+
+        foreach (var setting in DefaultSettings)
+        {
+            await using var insertCmd = new SqlCommand(insertSql, connection);
+            insertCmd.Parameters.AddWithValue("@SettingGroup", setting.SettingGroup);
+            insertCmd.Parameters.AddWithValue("@Explanation", setting.Explanation);
+            insertCmd.Parameters.AddWithValue("@Value", setting.Value);
+            insertCmd.Parameters.AddWithValue("@IsActive", true);
+            await insertCmd.ExecuteNonQueryAsync(cancellationToken);
+        }
+
+        _logger.LogInformation(
+            "Varsayilan ayarlar eklendi (App_Setting bosken): {Count} kayit.",
+            DefaultSettings.Length);
     }
 
     private static async Task<int> GetSchemaVersionAsync(SqlConnection connection, CancellationToken cancellationToken)

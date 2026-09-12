@@ -6,8 +6,12 @@ namespace YamanCam.Web.Controllers;
 
 public class AppJournalVouchersController : AppVoucherControllerBase
 {
-    public AppJournalVouchersController(ApplicationDbContext context, IAppLogService appLogService, IUserRightService userRightService)
-        : base(context, appLogService, userRightService)
+    public AppJournalVouchersController(
+        ApplicationDbContext context,
+        IAppLogService appLogService,
+        IUserRightService userRightService,
+        IAppSettingService appSettingService)
+        : base(context, appLogService, userRightService, appSettingService)
     {
     }
 
