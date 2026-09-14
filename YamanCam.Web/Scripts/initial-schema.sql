@@ -647,7 +647,7 @@ BEGIN
         [RecId]                    [int] IDENTITY(1,1) NOT NULL,
         [VatCode]                  [nvarchar](20) NOT NULL,
         [VatName]                  [nvarchar](100) NOT NULL,
-        [VatRate]                  [decimal](5, 2) NOT NULL,
+        [VatRate]                  [decimal](13, 10) NOT NULL,
         [PurchaseAccountCode]      [nvarchar](50) NULL,
         [SalesAccountCode]         [nvarchar](50) NULL,
         [PurchaseReturnAccountCode] [nvarchar](50) NULL,
@@ -666,7 +666,7 @@ IF OBJECT_ID(N'dbo.App_VatDefinition', N'U') IS NOT NULL AND COL_LENGTH('dbo.App
     ALTER TABLE [dbo].[App_VatDefinition] ADD [VatName] [nvarchar](100) NOT NULL CONSTRAINT [DF_App_VatDefinition_VatName] DEFAULT (N'');
 GO
 IF OBJECT_ID(N'dbo.App_VatDefinition', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_VatDefinition', 'VatRate') IS NULL
-    ALTER TABLE [dbo].[App_VatDefinition] ADD [VatRate] [decimal](5, 2) NOT NULL CONSTRAINT [DF_App_VatDefinition_VatRate] DEFAULT (0);
+    ALTER TABLE [dbo].[App_VatDefinition] ADD [VatRate] [decimal](13, 10) NOT NULL CONSTRAINT [DF_App_VatDefinition_VatRate] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_VatDefinition', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_VatDefinition', 'PurchaseAccountCode') IS NULL
     ALTER TABLE [dbo].[App_VatDefinition] ADD [PurchaseAccountCode] [nvarchar](50) NULL;
@@ -873,7 +873,7 @@ BEGIN
         [SalesVatId]         [int] NULL,
         [Barcode]            [nvarchar](50) NULL,
         [StockType]          [nvarchar](30) NULL,
-        [ProductionWeight]   [decimal](18, 4) NULL,
+        [ProductionWeight]   [decimal](28, 10) NULL,
         [IsActive]           [bit] NULL CONSTRAINT [DF_App_Stock_IsActive] DEFAULT (1),
         [CreatedDate]        [datetime2](0) NULL CONSTRAINT [DF_App_Stock_CreatedDate] DEFAULT (SYSUTCDATETIME()),
         CONSTRAINT [PK_App_Stock] PRIMARY KEY CLUSTERED ([RecId] ASC)
@@ -906,7 +906,7 @@ IF OBJECT_ID(N'dbo.App_Stock', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_Stock',
     ALTER TABLE [dbo].[App_Stock] ADD [StockType] [nvarchar](30) NULL;
 GO
 IF OBJECT_ID(N'dbo.App_Stock', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_Stock', 'ProductionWeight') IS NULL
-    ALTER TABLE [dbo].[App_Stock] ADD [ProductionWeight] [decimal](18, 4) NULL;
+    ALTER TABLE [dbo].[App_Stock] ADD [ProductionWeight] [decimal](28, 10) NULL;
 GO
 IF OBJECT_ID(N'dbo.App_Stock', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_Stock', 'IsActive') IS NULL
     ALTER TABLE [dbo].[App_Stock] ADD [IsActive] [bit] NULL CONSTRAINT [DF_App_Stock_IsActive_Alt] DEFAULT (1);
@@ -987,8 +987,8 @@ BEGIN
         [CompanyId]    [int] NULL,
         [WorkPlaceId]  [int] NULL,
         [Description]  [nvarchar](500) NULL,
-        [TotalDebit]   [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_JournalVoucher_TotalDebit] DEFAULT (0),
-        [TotalCredit]  [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_JournalVoucher_TotalCredit] DEFAULT (0),
+        [TotalDebit]   [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_JournalVoucher_TotalDebit] DEFAULT (0),
+        [TotalCredit]  [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_JournalVoucher_TotalCredit] DEFAULT (0),
         [CurrencyCode] [nvarchar](3) NOT NULL CONSTRAINT [DF_App_JournalVoucher_CurrencyCode] DEFAULT (N'TRY'),
         [IsActive]     [bit] NULL CONSTRAINT [DF_App_JournalVoucher_IsActive] DEFAULT (1),
         [CreatedDate]  [datetime2](0) NULL CONSTRAINT [DF_App_JournalVoucher_CreatedDate] DEFAULT (SYSUTCDATETIME()),
@@ -1013,10 +1013,10 @@ IF OBJECT_ID(N'dbo.App_JournalVoucher', N'U') IS NOT NULL AND COL_LENGTH('dbo.Ap
     ALTER TABLE [dbo].[App_JournalVoucher] ADD [Description] [nvarchar](500) NULL;
 GO
 IF OBJECT_ID(N'dbo.App_JournalVoucher', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_JournalVoucher', 'TotalDebit') IS NULL
-    ALTER TABLE [dbo].[App_JournalVoucher] ADD [TotalDebit] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_JournalVoucher_TotalDebit_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_JournalVoucher] ADD [TotalDebit] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_JournalVoucher_TotalDebit_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_JournalVoucher', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_JournalVoucher', 'TotalCredit') IS NULL
-    ALTER TABLE [dbo].[App_JournalVoucher] ADD [TotalCredit] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_JournalVoucher_TotalCredit_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_JournalVoucher] ADD [TotalCredit] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_JournalVoucher_TotalCredit_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_JournalVoucher', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_JournalVoucher', 'CurrencyCode') IS NULL
     ALTER TABLE [dbo].[App_JournalVoucher] ADD [CurrencyCode] [nvarchar](3) NOT NULL CONSTRAINT [DF_App_JournalVoucher_CurrencyCode_Alt] DEFAULT (N'TRY');
@@ -1067,8 +1067,8 @@ BEGIN
         [LineNo]        [int] NOT NULL CONSTRAINT [DF_App_JournalVoucherLine_LineNo] DEFAULT (1),
         [AccountId]     [int] NOT NULL,
         [Description]   [nvarchar](500) NULL,
-        [DebitAmount]   [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_JournalVoucherLine_DebitAmount] DEFAULT (0),
-        [CreditAmount]  [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_JournalVoucherLine_CreditAmount] DEFAULT (0),
+        [DebitAmount]   [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_JournalVoucherLine_DebitAmount] DEFAULT (0),
+        [CreditAmount]  [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_JournalVoucherLine_CreditAmount] DEFAULT (0),
         [CreatedDate]   [datetime2](0) NULL CONSTRAINT [DF_App_JournalVoucherLine_CreatedDate] DEFAULT (SYSUTCDATETIME()),
         CONSTRAINT [PK_App_JournalVoucherLine] PRIMARY KEY CLUSTERED ([RecId] ASC)
     ) ON [PRIMARY];
@@ -1088,10 +1088,10 @@ IF OBJECT_ID(N'dbo.App_JournalVoucherLine', N'U') IS NOT NULL AND COL_LENGTH('db
     ALTER TABLE [dbo].[App_JournalVoucherLine] ADD [Description] [nvarchar](500) NULL;
 GO
 IF OBJECT_ID(N'dbo.App_JournalVoucherLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_JournalVoucherLine', 'DebitAmount') IS NULL
-    ALTER TABLE [dbo].[App_JournalVoucherLine] ADD [DebitAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_JournalVoucherLine_DebitAmount_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_JournalVoucherLine] ADD [DebitAmount] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_JournalVoucherLine_DebitAmount_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_JournalVoucherLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_JournalVoucherLine', 'CreditAmount') IS NULL
-    ALTER TABLE [dbo].[App_JournalVoucherLine] ADD [CreditAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_JournalVoucherLine_CreditAmount_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_JournalVoucherLine] ADD [CreditAmount] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_JournalVoucherLine_CreditAmount_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_JournalVoucherLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_JournalVoucherLine', 'CreatedDate') IS NULL
     ALTER TABLE [dbo].[App_JournalVoucherLine] ADD [CreatedDate] [datetime2](0) NULL CONSTRAINT [DF_App_JournalVoucherLine_CreatedDate_Alt] DEFAULT (SYSUTCDATETIME());
@@ -1186,13 +1186,14 @@ BEGIN
         [AccountId]      [int] NOT NULL,
         [Description]    [nvarchar](500) NULL,
         [CurrencyCode]   [nvarchar](3) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_CurrencyCode] DEFAULT (N'TRY'),
-        [ExchangeRate]   [decimal](18, 6) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_ExchangeRate] DEFAULT (1),
-        [NetAmount]      [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_NetAmount] DEFAULT (0),
-        [VatAmount]      [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_VatAmount] DEFAULT (0),
-        [TotalAmount]    [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_TotalAmount] DEFAULT (0),
-        [NetAmountTRY]   [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_NetAmountTRY] DEFAULT (0),
-        [VatAmountTRY]   [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_VatAmountTRY] DEFAULT (0),
-        [TotalAmountTRY] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_TotalAmountTRY] DEFAULT (0),
+        [ExchangeRate]   [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_ExchangeRate] DEFAULT (1),
+        [NetAmount]      [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_NetAmount] DEFAULT (0),
+        [VatAmount]      [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_VatAmount] DEFAULT (0),
+        [TotalAmount]    [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_TotalAmount] DEFAULT (0),
+        [NetAmountTRY]   [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_NetAmountTRY] DEFAULT (0),
+        [VatAmountTRY]   [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_VatAmountTRY] DEFAULT (0),
+        [TotalAmountTRY] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_TotalAmountTRY] DEFAULT (0),
+        [IsReturn]       [bit] NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_IsReturn] DEFAULT (0),
         [IsActive]       [bit] NULL CONSTRAINT [DF_App_PurchaseInvoice_IsActive] DEFAULT (1),
         [CreatedDate]    [datetime2](0) NULL CONSTRAINT [DF_App_PurchaseInvoice_CreatedDate] DEFAULT (SYSUTCDATETIME()),
         CONSTRAINT [PK_App_PurchaseInvoice] PRIMARY KEY CLUSTERED ([RecId] ASC)
@@ -1222,25 +1223,28 @@ IF OBJECT_ID(N'dbo.App_PurchaseInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.A
     ALTER TABLE [dbo].[App_PurchaseInvoice] ADD [CurrencyCode] [nvarchar](3) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_CurrencyCode_Alt] DEFAULT (N'TRY');
 GO
 IF OBJECT_ID(N'dbo.App_PurchaseInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_PurchaseInvoice', 'ExchangeRate') IS NULL
-    ALTER TABLE [dbo].[App_PurchaseInvoice] ADD [ExchangeRate] [decimal](18, 6) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_ExchangeRate_Alt] DEFAULT (1);
+    ALTER TABLE [dbo].[App_PurchaseInvoice] ADD [ExchangeRate] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_ExchangeRate_Alt] DEFAULT (1);
 GO
 IF OBJECT_ID(N'dbo.App_PurchaseInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_PurchaseInvoice', 'NetAmount') IS NULL
-    ALTER TABLE [dbo].[App_PurchaseInvoice] ADD [NetAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_NetAmount_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_PurchaseInvoice] ADD [NetAmount] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_NetAmount_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_PurchaseInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_PurchaseInvoice', 'VatAmount') IS NULL
-    ALTER TABLE [dbo].[App_PurchaseInvoice] ADD [VatAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_VatAmount_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_PurchaseInvoice] ADD [VatAmount] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_VatAmount_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_PurchaseInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_PurchaseInvoice', 'TotalAmount') IS NULL
-    ALTER TABLE [dbo].[App_PurchaseInvoice] ADD [TotalAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_TotalAmount_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_PurchaseInvoice] ADD [TotalAmount] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_TotalAmount_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_PurchaseInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_PurchaseInvoice', 'NetAmountTRY') IS NULL
-    ALTER TABLE [dbo].[App_PurchaseInvoice] ADD [NetAmountTRY] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_NetAmountTRY_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_PurchaseInvoice] ADD [NetAmountTRY] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_NetAmountTRY_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_PurchaseInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_PurchaseInvoice', 'VatAmountTRY') IS NULL
-    ALTER TABLE [dbo].[App_PurchaseInvoice] ADD [VatAmountTRY] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_VatAmountTRY_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_PurchaseInvoice] ADD [VatAmountTRY] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_VatAmountTRY_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_PurchaseInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_PurchaseInvoice', 'TotalAmountTRY') IS NULL
-    ALTER TABLE [dbo].[App_PurchaseInvoice] ADD [TotalAmountTRY] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_TotalAmountTRY_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_PurchaseInvoice] ADD [TotalAmountTRY] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_TotalAmountTRY_Alt] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_PurchaseInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_PurchaseInvoice', 'IsReturn') IS NULL
+    ALTER TABLE [dbo].[App_PurchaseInvoice] ADD [IsReturn] [bit] NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_IsReturn_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_PurchaseInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_PurchaseInvoice', 'IsActive') IS NULL
     ALTER TABLE [dbo].[App_PurchaseInvoice] ADD [IsActive] [bit] NULL CONSTRAINT [DF_App_PurchaseInvoice_IsActive_Alt] DEFAULT (1);
@@ -1280,6 +1284,7 @@ END
 GO
 
 IF OBJECT_ID(N'dbo.App_PurchaseInvoice', N'U') IS NOT NULL
+   AND COL_LENGTH('dbo.App_PurchaseInvoice', 'IsReturn') IS NULL
    AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UX_App_PurchaseInvoice_InvoiceNo' AND object_id = OBJECT_ID(N'dbo.App_PurchaseInvoice'))
 BEGIN
     CREATE UNIQUE NONCLUSTERED INDEX [UX_App_PurchaseInvoice_InvoiceNo]
@@ -1298,12 +1303,12 @@ BEGIN
         [LineNo]       [int] NOT NULL CONSTRAINT [DF_App_PurchaseInvoiceLine_LineNo] DEFAULT (1),
         [StockId]      [int] NOT NULL,
         [Description]  [nvarchar](500) NULL,
-        [Quantity]     [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_PurchaseInvoiceLine_Quantity] DEFAULT (0),
-        [UnitPrice]    [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_PurchaseInvoiceLine_UnitPrice] DEFAULT (0),
-        [VatRate]      [decimal](5, 2) NOT NULL CONSTRAINT [DF_App_PurchaseInvoiceLine_VatRate] DEFAULT (0),
-        [NetAmount]    [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_PurchaseInvoiceLine_NetAmount] DEFAULT (0),
-        [VatAmount]    [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_PurchaseInvoiceLine_VatAmount] DEFAULT (0),
-        [TotalAmount]  [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_PurchaseInvoiceLine_TotalAmount] DEFAULT (0),
+        [Quantity]     [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_PurchaseInvoiceLine_Quantity] DEFAULT (0),
+        [UnitPrice]    [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_PurchaseInvoiceLine_UnitPrice] DEFAULT (0),
+        [VatRate]      [decimal](13, 10) NOT NULL CONSTRAINT [DF_App_PurchaseInvoiceLine_VatRate] DEFAULT (0),
+        [NetAmount]    [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_PurchaseInvoiceLine_NetAmount] DEFAULT (0),
+        [VatAmount]    [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_PurchaseInvoiceLine_VatAmount] DEFAULT (0),
+        [TotalAmount]  [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_PurchaseInvoiceLine_TotalAmount] DEFAULT (0),
         [CreatedDate]  [datetime2](0) NULL CONSTRAINT [DF_App_PurchaseInvoiceLine_CreatedDate] DEFAULT (SYSUTCDATETIME()),
         CONSTRAINT [PK_App_PurchaseInvoiceLine] PRIMARY KEY CLUSTERED ([RecId] ASC)
     ) ON [PRIMARY];
@@ -1323,22 +1328,22 @@ IF OBJECT_ID(N'dbo.App_PurchaseInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('d
     ALTER TABLE [dbo].[App_PurchaseInvoiceLine] ADD [Description] [nvarchar](500) NULL;
 GO
 IF OBJECT_ID(N'dbo.App_PurchaseInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_PurchaseInvoiceLine', 'Quantity') IS NULL
-    ALTER TABLE [dbo].[App_PurchaseInvoiceLine] ADD [Quantity] [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_PurchaseInvoiceLine_Quantity_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_PurchaseInvoiceLine] ADD [Quantity] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_PurchaseInvoiceLine_Quantity_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_PurchaseInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_PurchaseInvoiceLine', 'UnitPrice') IS NULL
-    ALTER TABLE [dbo].[App_PurchaseInvoiceLine] ADD [UnitPrice] [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_PurchaseInvoiceLine_UnitPrice_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_PurchaseInvoiceLine] ADD [UnitPrice] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_PurchaseInvoiceLine_UnitPrice_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_PurchaseInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_PurchaseInvoiceLine', 'VatRate') IS NULL
-    ALTER TABLE [dbo].[App_PurchaseInvoiceLine] ADD [VatRate] [decimal](5, 2) NOT NULL CONSTRAINT [DF_App_PurchaseInvoiceLine_VatRate_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_PurchaseInvoiceLine] ADD [VatRate] [decimal](13, 10) NOT NULL CONSTRAINT [DF_App_PurchaseInvoiceLine_VatRate_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_PurchaseInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_PurchaseInvoiceLine', 'NetAmount') IS NULL
-    ALTER TABLE [dbo].[App_PurchaseInvoiceLine] ADD [NetAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_PurchaseInvoiceLine_NetAmount_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_PurchaseInvoiceLine] ADD [NetAmount] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_PurchaseInvoiceLine_NetAmount_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_PurchaseInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_PurchaseInvoiceLine', 'VatAmount') IS NULL
-    ALTER TABLE [dbo].[App_PurchaseInvoiceLine] ADD [VatAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_PurchaseInvoiceLine_VatAmount_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_PurchaseInvoiceLine] ADD [VatAmount] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_PurchaseInvoiceLine_VatAmount_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_PurchaseInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_PurchaseInvoiceLine', 'TotalAmount') IS NULL
-    ALTER TABLE [dbo].[App_PurchaseInvoiceLine] ADD [TotalAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_PurchaseInvoiceLine_TotalAmount_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_PurchaseInvoiceLine] ADD [TotalAmount] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_PurchaseInvoiceLine_TotalAmount_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_PurchaseInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_PurchaseInvoiceLine', 'CreatedDate') IS NULL
     ALTER TABLE [dbo].[App_PurchaseInvoiceLine] ADD [CreatedDate] [datetime2](0) NULL CONSTRAINT [DF_App_PurchaseInvoiceLine_CreatedDate_Alt] DEFAULT (SYSUTCDATETIME());
@@ -1399,13 +1404,14 @@ BEGIN
         [AccountId]      [int] NOT NULL,
         [Description]    [nvarchar](500) NULL,
         [CurrencyCode]   [nvarchar](3) NOT NULL CONSTRAINT [DF_App_SalesInvoice_CurrencyCode] DEFAULT (N'TRY'),
-        [ExchangeRate]   [decimal](18, 6) NOT NULL CONSTRAINT [DF_App_SalesInvoice_ExchangeRate] DEFAULT (1),
-        [NetAmount]      [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_SalesInvoice_NetAmount] DEFAULT (0),
-        [VatAmount]      [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_SalesInvoice_VatAmount] DEFAULT (0),
-        [TotalAmount]    [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_SalesInvoice_TotalAmount] DEFAULT (0),
-        [NetAmountTRY]   [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_SalesInvoice_NetAmountTRY] DEFAULT (0),
-        [VatAmountTRY]   [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_SalesInvoice_VatAmountTRY] DEFAULT (0),
-        [TotalAmountTRY] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_SalesInvoice_TotalAmountTRY] DEFAULT (0),
+        [ExchangeRate]   [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_SalesInvoice_ExchangeRate] DEFAULT (1),
+        [NetAmount]      [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_SalesInvoice_NetAmount] DEFAULT (0),
+        [VatAmount]      [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_SalesInvoice_VatAmount] DEFAULT (0),
+        [TotalAmount]    [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_SalesInvoice_TotalAmount] DEFAULT (0),
+        [NetAmountTRY]   [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_SalesInvoice_NetAmountTRY] DEFAULT (0),
+        [VatAmountTRY]   [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_SalesInvoice_VatAmountTRY] DEFAULT (0),
+        [TotalAmountTRY] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_SalesInvoice_TotalAmountTRY] DEFAULT (0),
+        [IsReturn]       [bit] NOT NULL CONSTRAINT [DF_App_SalesInvoice_IsReturn] DEFAULT (0),
         [IsActive]       [bit] NULL CONSTRAINT [DF_App_SalesInvoice_IsActive] DEFAULT (1),
         [CreatedDate]    [datetime2](0) NULL CONSTRAINT [DF_App_SalesInvoice_CreatedDate] DEFAULT (SYSUTCDATETIME()),
         CONSTRAINT [PK_App_SalesInvoice] PRIMARY KEY CLUSTERED ([RecId] ASC)
@@ -1435,25 +1441,28 @@ IF OBJECT_ID(N'dbo.App_SalesInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_
     ALTER TABLE [dbo].[App_SalesInvoice] ADD [CurrencyCode] [nvarchar](3) NOT NULL CONSTRAINT [DF_App_SalesInvoice_CurrencyCode_Alt] DEFAULT (N'TRY');
 GO
 IF OBJECT_ID(N'dbo.App_SalesInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_SalesInvoice', 'ExchangeRate') IS NULL
-    ALTER TABLE [dbo].[App_SalesInvoice] ADD [ExchangeRate] [decimal](18, 6) NOT NULL CONSTRAINT [DF_App_SalesInvoice_ExchangeRate_Alt] DEFAULT (1);
+    ALTER TABLE [dbo].[App_SalesInvoice] ADD [ExchangeRate] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_SalesInvoice_ExchangeRate_Alt] DEFAULT (1);
 GO
 IF OBJECT_ID(N'dbo.App_SalesInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_SalesInvoice', 'NetAmount') IS NULL
-    ALTER TABLE [dbo].[App_SalesInvoice] ADD [NetAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_SalesInvoice_NetAmount_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_SalesInvoice] ADD [NetAmount] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_SalesInvoice_NetAmount_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_SalesInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_SalesInvoice', 'VatAmount') IS NULL
-    ALTER TABLE [dbo].[App_SalesInvoice] ADD [VatAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_SalesInvoice_VatAmount_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_SalesInvoice] ADD [VatAmount] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_SalesInvoice_VatAmount_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_SalesInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_SalesInvoice', 'TotalAmount') IS NULL
-    ALTER TABLE [dbo].[App_SalesInvoice] ADD [TotalAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_SalesInvoice_TotalAmount_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_SalesInvoice] ADD [TotalAmount] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_SalesInvoice_TotalAmount_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_SalesInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_SalesInvoice', 'NetAmountTRY') IS NULL
-    ALTER TABLE [dbo].[App_SalesInvoice] ADD [NetAmountTRY] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_SalesInvoice_NetAmountTRY_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_SalesInvoice] ADD [NetAmountTRY] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_SalesInvoice_NetAmountTRY_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_SalesInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_SalesInvoice', 'VatAmountTRY') IS NULL
-    ALTER TABLE [dbo].[App_SalesInvoice] ADD [VatAmountTRY] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_SalesInvoice_VatAmountTRY_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_SalesInvoice] ADD [VatAmountTRY] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_SalesInvoice_VatAmountTRY_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_SalesInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_SalesInvoice', 'TotalAmountTRY') IS NULL
-    ALTER TABLE [dbo].[App_SalesInvoice] ADD [TotalAmountTRY] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_SalesInvoice_TotalAmountTRY_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_SalesInvoice] ADD [TotalAmountTRY] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_SalesInvoice_TotalAmountTRY_Alt] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_SalesInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_SalesInvoice', 'IsReturn') IS NULL
+    ALTER TABLE [dbo].[App_SalesInvoice] ADD [IsReturn] [bit] NOT NULL CONSTRAINT [DF_App_SalesInvoice_IsReturn_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_SalesInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_SalesInvoice', 'IsActive') IS NULL
     ALTER TABLE [dbo].[App_SalesInvoice] ADD [IsActive] [bit] NULL CONSTRAINT [DF_App_SalesInvoice_IsActive_Alt] DEFAULT (1);
@@ -1493,6 +1502,7 @@ END
 GO
 
 IF OBJECT_ID(N'dbo.App_SalesInvoice', N'U') IS NOT NULL
+   AND COL_LENGTH('dbo.App_SalesInvoice', 'IsReturn') IS NULL
    AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UX_App_SalesInvoice_InvoiceNo' AND object_id = OBJECT_ID(N'dbo.App_SalesInvoice'))
 BEGIN
     CREATE UNIQUE NONCLUSTERED INDEX [UX_App_SalesInvoice_InvoiceNo]
@@ -1511,12 +1521,12 @@ BEGIN
         [LineNo]       [int] NOT NULL CONSTRAINT [DF_App_SalesInvoiceLine_LineNo] DEFAULT (1),
         [StockId]      [int] NOT NULL,
         [Description]  [nvarchar](500) NULL,
-        [Quantity]     [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_SalesInvoiceLine_Quantity] DEFAULT (0),
-        [UnitPrice]    [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_SalesInvoiceLine_UnitPrice] DEFAULT (0),
-        [VatRate]      [decimal](5, 2) NOT NULL CONSTRAINT [DF_App_SalesInvoiceLine_VatRate] DEFAULT (0),
-        [NetAmount]    [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_SalesInvoiceLine_NetAmount] DEFAULT (0),
-        [VatAmount]    [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_SalesInvoiceLine_VatAmount] DEFAULT (0),
-        [TotalAmount]  [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_SalesInvoiceLine_TotalAmount] DEFAULT (0),
+        [Quantity]     [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_SalesInvoiceLine_Quantity] DEFAULT (0),
+        [UnitPrice]    [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_SalesInvoiceLine_UnitPrice] DEFAULT (0),
+        [VatRate]      [decimal](13, 10) NOT NULL CONSTRAINT [DF_App_SalesInvoiceLine_VatRate] DEFAULT (0),
+        [NetAmount]    [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_SalesInvoiceLine_NetAmount] DEFAULT (0),
+        [VatAmount]    [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_SalesInvoiceLine_VatAmount] DEFAULT (0),
+        [TotalAmount]  [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_SalesInvoiceLine_TotalAmount] DEFAULT (0),
         [CreatedDate]  [datetime2](0) NULL CONSTRAINT [DF_App_SalesInvoiceLine_CreatedDate] DEFAULT (SYSUTCDATETIME()),
         CONSTRAINT [PK_App_SalesInvoiceLine] PRIMARY KEY CLUSTERED ([RecId] ASC)
     ) ON [PRIMARY];
@@ -1536,22 +1546,22 @@ IF OBJECT_ID(N'dbo.App_SalesInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.
     ALTER TABLE [dbo].[App_SalesInvoiceLine] ADD [Description] [nvarchar](500) NULL;
 GO
 IF OBJECT_ID(N'dbo.App_SalesInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_SalesInvoiceLine', 'Quantity') IS NULL
-    ALTER TABLE [dbo].[App_SalesInvoiceLine] ADD [Quantity] [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_SalesInvoiceLine_Quantity_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_SalesInvoiceLine] ADD [Quantity] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_SalesInvoiceLine_Quantity_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_SalesInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_SalesInvoiceLine', 'UnitPrice') IS NULL
-    ALTER TABLE [dbo].[App_SalesInvoiceLine] ADD [UnitPrice] [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_SalesInvoiceLine_UnitPrice_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_SalesInvoiceLine] ADD [UnitPrice] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_SalesInvoiceLine_UnitPrice_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_SalesInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_SalesInvoiceLine', 'VatRate') IS NULL
-    ALTER TABLE [dbo].[App_SalesInvoiceLine] ADD [VatRate] [decimal](5, 2) NOT NULL CONSTRAINT [DF_App_SalesInvoiceLine_VatRate_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_SalesInvoiceLine] ADD [VatRate] [decimal](13, 10) NOT NULL CONSTRAINT [DF_App_SalesInvoiceLine_VatRate_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_SalesInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_SalesInvoiceLine', 'NetAmount') IS NULL
-    ALTER TABLE [dbo].[App_SalesInvoiceLine] ADD [NetAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_SalesInvoiceLine_NetAmount_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_SalesInvoiceLine] ADD [NetAmount] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_SalesInvoiceLine_NetAmount_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_SalesInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_SalesInvoiceLine', 'VatAmount') IS NULL
-    ALTER TABLE [dbo].[App_SalesInvoiceLine] ADD [VatAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_SalesInvoiceLine_VatAmount_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_SalesInvoiceLine] ADD [VatAmount] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_SalesInvoiceLine_VatAmount_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_SalesInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_SalesInvoiceLine', 'TotalAmount') IS NULL
-    ALTER TABLE [dbo].[App_SalesInvoiceLine] ADD [TotalAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_SalesInvoiceLine_TotalAmount_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_SalesInvoiceLine] ADD [TotalAmount] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_SalesInvoiceLine_TotalAmount_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_SalesInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_SalesInvoiceLine', 'CreatedDate') IS NULL
     ALTER TABLE [dbo].[App_SalesInvoiceLine] ADD [CreatedDate] [datetime2](0) NULL CONSTRAINT [DF_App_SalesInvoiceLine_CreatedDate_Alt] DEFAULT (SYSUTCDATETIME());
@@ -1613,13 +1623,13 @@ BEGIN
         [InvoiceNo]                [nvarchar](50) NOT NULL,
         [SpecialCode]              [nvarchar](50) NULL,
         [LinkedPurchaseInvoiceId]  [int] NULL,
-        [NetAmount]                [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoice_NetAmount] DEFAULT (0),
-        [VatAmount]                [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoice_VatAmount] DEFAULT (0),
-        [WithholdingAmount]        [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoice_WithholdingAmount] DEFAULT (0),
-        [NetVatAmount]             [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoice_NetVatAmount] DEFAULT (0),
-        [TotalAmount]              [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoice_TotalAmount] DEFAULT (0),
-        [CurrencyAmount]           [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoice_CurrencyAmount] DEFAULT (0),
-        [ExchangeRate]             [decimal](18, 6) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoice_ExchangeRate] DEFAULT (1),
+        [NetAmount]                [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoice_NetAmount] DEFAULT (0),
+        [VatAmount]                [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoice_VatAmount] DEFAULT (0),
+        [WithholdingAmount]        [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoice_WithholdingAmount] DEFAULT (0),
+        [NetVatAmount]             [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoice_NetVatAmount] DEFAULT (0),
+        [TotalAmount]              [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoice_TotalAmount] DEFAULT (0),
+        [CurrencyAmount]           [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoice_CurrencyAmount] DEFAULT (0),
+        [ExchangeRate]             [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoice_ExchangeRate] DEFAULT (1),
         [CurrencyCode]             [nvarchar](3) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoice_CurrencyCode] DEFAULT (N'TRY'),
         [IsActive]                 [bit] NULL CONSTRAINT [DF_App_CustomsFreightInvoice_IsActive] DEFAULT (1),
         [CreatedDate]              [datetime2](0) NULL CONSTRAINT [DF_App_CustomsFreightInvoice_CreatedDate] DEFAULT (SYSUTCDATETIME()),
@@ -1650,25 +1660,25 @@ IF OBJECT_ID(N'dbo.App_CustomsFreightInvoice', N'U') IS NOT NULL AND COL_LENGTH(
     ALTER TABLE [dbo].[App_CustomsFreightInvoice] ADD [LinkedPurchaseInvoiceId] [int] NULL;
 GO
 IF OBJECT_ID(N'dbo.App_CustomsFreightInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_CustomsFreightInvoice', 'NetAmount') IS NULL
-    ALTER TABLE [dbo].[App_CustomsFreightInvoice] ADD [NetAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoice_NetAmount_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_CustomsFreightInvoice] ADD [NetAmount] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoice_NetAmount_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_CustomsFreightInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_CustomsFreightInvoice', 'VatAmount') IS NULL
-    ALTER TABLE [dbo].[App_CustomsFreightInvoice] ADD [VatAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoice_VatAmount_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_CustomsFreightInvoice] ADD [VatAmount] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoice_VatAmount_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_CustomsFreightInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_CustomsFreightInvoice', 'WithholdingAmount') IS NULL
-    ALTER TABLE [dbo].[App_CustomsFreightInvoice] ADD [WithholdingAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoice_WithholdingAmount_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_CustomsFreightInvoice] ADD [WithholdingAmount] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoice_WithholdingAmount_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_CustomsFreightInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_CustomsFreightInvoice', 'NetVatAmount') IS NULL
-    ALTER TABLE [dbo].[App_CustomsFreightInvoice] ADD [NetVatAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoice_NetVatAmount_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_CustomsFreightInvoice] ADD [NetVatAmount] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoice_NetVatAmount_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_CustomsFreightInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_CustomsFreightInvoice', 'TotalAmount') IS NULL
-    ALTER TABLE [dbo].[App_CustomsFreightInvoice] ADD [TotalAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoice_TotalAmount_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_CustomsFreightInvoice] ADD [TotalAmount] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoice_TotalAmount_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_CustomsFreightInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_CustomsFreightInvoice', 'CurrencyAmount') IS NULL
-    ALTER TABLE [dbo].[App_CustomsFreightInvoice] ADD [CurrencyAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoice_CurrencyAmount_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_CustomsFreightInvoice] ADD [CurrencyAmount] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoice_CurrencyAmount_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_CustomsFreightInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_CustomsFreightInvoice', 'ExchangeRate') IS NULL
-    ALTER TABLE [dbo].[App_CustomsFreightInvoice] ADD [ExchangeRate] [decimal](18, 6) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoice_ExchangeRate_Alt] DEFAULT (1);
+    ALTER TABLE [dbo].[App_CustomsFreightInvoice] ADD [ExchangeRate] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoice_ExchangeRate_Alt] DEFAULT (1);
 GO
 IF OBJECT_ID(N'dbo.App_CustomsFreightInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_CustomsFreightInvoice', 'CurrencyCode') IS NULL
     ALTER TABLE [dbo].[App_CustomsFreightInvoice] ADD [CurrencyCode] [nvarchar](3) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoice_CurrencyCode_Alt] DEFAULT (N'TRY');
@@ -1737,13 +1747,13 @@ BEGIN
         [InvoiceId]          [int] NOT NULL,
         [LineNo]             [int] NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoiceLine_LineNo] DEFAULT (1),
         [AccountId]          [int] NOT NULL,
-        [Amount]             [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoiceLine_Amount] DEFAULT (0),
-        [VatRate]            [decimal](5, 2) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoiceLine_VatRate] DEFAULT (0),
-        [WithholdingRate]    [decimal](5, 2) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoiceLine_WithholdingRate] DEFAULT (0),
-        [VatAmount]          [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoiceLine_VatAmount] DEFAULT (0),
-        [WithholdingAmount]  [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoiceLine_WithholdingAmount] DEFAULT (0),
-        [NetVatAmount]       [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoiceLine_NetVatAmount] DEFAULT (0),
-        [TotalAmount]        [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoiceLine_TotalAmount] DEFAULT (0),
+        [Amount]             [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoiceLine_Amount] DEFAULT (0),
+        [VatRate]            [decimal](13, 10) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoiceLine_VatRate] DEFAULT (0),
+        [WithholdingRate]    [decimal](13, 10) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoiceLine_WithholdingRate] DEFAULT (0),
+        [VatAmount]          [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoiceLine_VatAmount] DEFAULT (0),
+        [WithholdingAmount]  [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoiceLine_WithholdingAmount] DEFAULT (0),
+        [NetVatAmount]       [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoiceLine_NetVatAmount] DEFAULT (0),
+        [TotalAmount]        [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoiceLine_TotalAmount] DEFAULT (0),
         [CreatedDate]        [datetime2](0) NULL CONSTRAINT [DF_App_CustomsFreightInvoiceLine_CreatedDate] DEFAULT (SYSUTCDATETIME()),
         CONSTRAINT [PK_App_CustomsFreightInvoiceLine] PRIMARY KEY CLUSTERED ([RecId] ASC)
     ) ON [PRIMARY];
@@ -1760,25 +1770,25 @@ IF OBJECT_ID(N'dbo.App_CustomsFreightInvoiceLine', N'U') IS NOT NULL AND COL_LEN
     ALTER TABLE [dbo].[App_CustomsFreightInvoiceLine] ADD [AccountId] [int] NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoiceLine_AccountId] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_CustomsFreightInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_CustomsFreightInvoiceLine', 'Amount') IS NULL
-    ALTER TABLE [dbo].[App_CustomsFreightInvoiceLine] ADD [Amount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoiceLine_Amount_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_CustomsFreightInvoiceLine] ADD [Amount] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoiceLine_Amount_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_CustomsFreightInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_CustomsFreightInvoiceLine', 'VatRate') IS NULL
-    ALTER TABLE [dbo].[App_CustomsFreightInvoiceLine] ADD [VatRate] [decimal](5, 2) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoiceLine_VatRate_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_CustomsFreightInvoiceLine] ADD [VatRate] [decimal](13, 10) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoiceLine_VatRate_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_CustomsFreightInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_CustomsFreightInvoiceLine', 'WithholdingRate') IS NULL
-    ALTER TABLE [dbo].[App_CustomsFreightInvoiceLine] ADD [WithholdingRate] [decimal](5, 2) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoiceLine_WithholdingRate_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_CustomsFreightInvoiceLine] ADD [WithholdingRate] [decimal](13, 10) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoiceLine_WithholdingRate_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_CustomsFreightInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_CustomsFreightInvoiceLine', 'VatAmount') IS NULL
-    ALTER TABLE [dbo].[App_CustomsFreightInvoiceLine] ADD [VatAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoiceLine_VatAmount_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_CustomsFreightInvoiceLine] ADD [VatAmount] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoiceLine_VatAmount_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_CustomsFreightInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_CustomsFreightInvoiceLine', 'WithholdingAmount') IS NULL
-    ALTER TABLE [dbo].[App_CustomsFreightInvoiceLine] ADD [WithholdingAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoiceLine_WithholdingAmount_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_CustomsFreightInvoiceLine] ADD [WithholdingAmount] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoiceLine_WithholdingAmount_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_CustomsFreightInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_CustomsFreightInvoiceLine', 'NetVatAmount') IS NULL
-    ALTER TABLE [dbo].[App_CustomsFreightInvoiceLine] ADD [NetVatAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoiceLine_NetVatAmount_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_CustomsFreightInvoiceLine] ADD [NetVatAmount] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoiceLine_NetVatAmount_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_CustomsFreightInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_CustomsFreightInvoiceLine', 'TotalAmount') IS NULL
-    ALTER TABLE [dbo].[App_CustomsFreightInvoiceLine] ADD [TotalAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoiceLine_TotalAmount_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_CustomsFreightInvoiceLine] ADD [TotalAmount] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoiceLine_TotalAmount_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_CustomsFreightInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_CustomsFreightInvoiceLine', 'CreatedDate') IS NULL
     ALTER TABLE [dbo].[App_CustomsFreightInvoiceLine] ADD [CreatedDate] [datetime2](0) NULL CONSTRAINT [DF_App_CustomsFreightInvoiceLine_CreatedDate_Alt] DEFAULT (SYSUTCDATETIME());
@@ -1833,8 +1843,8 @@ BEGIN
         [RecId]              [int] IDENTITY(1,1) NOT NULL,
         [WithholdingCode]    [nvarchar](20) NOT NULL,
         [WithholdingName]    [nvarchar](100) NOT NULL,
-        [VatRate]            [decimal](5, 2) NOT NULL,
-        [WithholdingRate]    [decimal](5, 2) NOT NULL,
+        [VatRate]            [decimal](13, 10) NOT NULL,
+        [WithholdingRate]    [decimal](13, 10) NOT NULL,
         [AccountCode]        [nvarchar](50) NULL,
         [IsActive]           [bit] NULL CONSTRAINT [DF_App_VatWithholdingDefinition_IsActive] DEFAULT (1),
         [CreatedDate]        [datetime2](0) NULL CONSTRAINT [DF_App_VatWithholdingDefinition_CreatedDate] DEFAULT (SYSUTCDATETIME()),
@@ -1850,10 +1860,10 @@ IF OBJECT_ID(N'dbo.App_VatWithholdingDefinition', N'U') IS NOT NULL AND COL_LENG
     ALTER TABLE [dbo].[App_VatWithholdingDefinition] ADD [WithholdingName] [nvarchar](100) NOT NULL CONSTRAINT [DF_App_VatWithholdingDefinition_WithholdingName] DEFAULT (N'');
 GO
 IF OBJECT_ID(N'dbo.App_VatWithholdingDefinition', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_VatWithholdingDefinition', 'VatRate') IS NULL
-    ALTER TABLE [dbo].[App_VatWithholdingDefinition] ADD [VatRate] [decimal](5, 2) NOT NULL CONSTRAINT [DF_App_VatWithholdingDefinition_VatRate] DEFAULT (0);
+    ALTER TABLE [dbo].[App_VatWithholdingDefinition] ADD [VatRate] [decimal](13, 10) NOT NULL CONSTRAINT [DF_App_VatWithholdingDefinition_VatRate] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_VatWithholdingDefinition', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_VatWithholdingDefinition', 'WithholdingRate') IS NULL
-    ALTER TABLE [dbo].[App_VatWithholdingDefinition] ADD [WithholdingRate] [decimal](5, 2) NOT NULL CONSTRAINT [DF_App_VatWithholdingDefinition_WithholdingRate] DEFAULT (0);
+    ALTER TABLE [dbo].[App_VatWithholdingDefinition] ADD [WithholdingRate] [decimal](13, 10) NOT NULL CONSTRAINT [DF_App_VatWithholdingDefinition_WithholdingRate] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_VatWithholdingDefinition', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_VatWithholdingDefinition', 'AccountCode') IS NULL
     ALTER TABLE [dbo].[App_VatWithholdingDefinition] ADD [AccountCode] [nvarchar](50) NULL;
@@ -1892,29 +1902,29 @@ IF OBJECT_ID(N'dbo.App_PurchaseInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('d
     ALTER TABLE [dbo].[App_PurchaseInvoiceLine] ADD [WithholdingDefinitionId] [int] NULL;
 GO
 IF OBJECT_ID(N'dbo.App_PurchaseInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_PurchaseInvoiceLine', 'WithholdingRate') IS NULL
-    ALTER TABLE [dbo].[App_PurchaseInvoiceLine] ADD [WithholdingRate] [decimal](5, 2) NOT NULL CONSTRAINT [DF_App_PurchaseInvoiceLine_WithholdingRate] DEFAULT (0);
+    ALTER TABLE [dbo].[App_PurchaseInvoiceLine] ADD [WithholdingRate] [decimal](13, 10) NOT NULL CONSTRAINT [DF_App_PurchaseInvoiceLine_WithholdingRate] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_PurchaseInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_PurchaseInvoiceLine', 'WithholdingAmount') IS NULL
-    ALTER TABLE [dbo].[App_PurchaseInvoiceLine] ADD [WithholdingAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_PurchaseInvoiceLine_WithholdingAmount] DEFAULT (0);
+    ALTER TABLE [dbo].[App_PurchaseInvoiceLine] ADD [WithholdingAmount] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_PurchaseInvoiceLine_WithholdingAmount] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_PurchaseInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_PurchaseInvoiceLine', 'NetVatAmount') IS NULL
-    ALTER TABLE [dbo].[App_PurchaseInvoiceLine] ADD [NetVatAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_PurchaseInvoiceLine_NetVatAmount] DEFAULT (0);
+    ALTER TABLE [dbo].[App_PurchaseInvoiceLine] ADD [NetVatAmount] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_PurchaseInvoiceLine_NetVatAmount] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_PurchaseInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_PurchaseInvoiceLine', 'NetVatAmount') IS NOT NULL
     UPDATE [dbo].[App_PurchaseInvoiceLine] SET [NetVatAmount] = [VatAmount] WHERE [WithholdingRate] = 0;
 GO
 
 IF OBJECT_ID(N'dbo.App_PurchaseInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_PurchaseInvoice', 'WithholdingAmount') IS NULL
-    ALTER TABLE [dbo].[App_PurchaseInvoice] ADD [WithholdingAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_WithholdingAmount] DEFAULT (0);
+    ALTER TABLE [dbo].[App_PurchaseInvoice] ADD [WithholdingAmount] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_WithholdingAmount] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_PurchaseInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_PurchaseInvoice', 'NetVatAmount') IS NULL
-    ALTER TABLE [dbo].[App_PurchaseInvoice] ADD [NetVatAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_NetVatAmount] DEFAULT (0);
+    ALTER TABLE [dbo].[App_PurchaseInvoice] ADD [NetVatAmount] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_NetVatAmount] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_PurchaseInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_PurchaseInvoice', 'WithholdingAmountTRY') IS NULL
-    ALTER TABLE [dbo].[App_PurchaseInvoice] ADD [WithholdingAmountTRY] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_WithholdingAmountTRY] DEFAULT (0);
+    ALTER TABLE [dbo].[App_PurchaseInvoice] ADD [WithholdingAmountTRY] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_WithholdingAmountTRY] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_PurchaseInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_PurchaseInvoice', 'NetVatAmountTRY') IS NULL
-    ALTER TABLE [dbo].[App_PurchaseInvoice] ADD [NetVatAmountTRY] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_NetVatAmountTRY] DEFAULT (0);
+    ALTER TABLE [dbo].[App_PurchaseInvoice] ADD [NetVatAmountTRY] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_NetVatAmountTRY] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_PurchaseInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_PurchaseInvoice', 'NetVatAmountTRY') IS NOT NULL
     UPDATE [dbo].[App_PurchaseInvoice] SET [NetVatAmount] = [VatAmount], [NetVatAmountTRY] = [VatAmountTRY] WHERE [WithholdingAmount] = 0;
@@ -1924,29 +1934,29 @@ IF OBJECT_ID(N'dbo.App_SalesInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.
     ALTER TABLE [dbo].[App_SalesInvoiceLine] ADD [WithholdingDefinitionId] [int] NULL;
 GO
 IF OBJECT_ID(N'dbo.App_SalesInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_SalesInvoiceLine', 'WithholdingRate') IS NULL
-    ALTER TABLE [dbo].[App_SalesInvoiceLine] ADD [WithholdingRate] [decimal](5, 2) NOT NULL CONSTRAINT [DF_App_SalesInvoiceLine_WithholdingRate] DEFAULT (0);
+    ALTER TABLE [dbo].[App_SalesInvoiceLine] ADD [WithholdingRate] [decimal](13, 10) NOT NULL CONSTRAINT [DF_App_SalesInvoiceLine_WithholdingRate] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_SalesInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_SalesInvoiceLine', 'WithholdingAmount') IS NULL
-    ALTER TABLE [dbo].[App_SalesInvoiceLine] ADD [WithholdingAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_SalesInvoiceLine_WithholdingAmount] DEFAULT (0);
+    ALTER TABLE [dbo].[App_SalesInvoiceLine] ADD [WithholdingAmount] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_SalesInvoiceLine_WithholdingAmount] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_SalesInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_SalesInvoiceLine', 'NetVatAmount') IS NULL
-    ALTER TABLE [dbo].[App_SalesInvoiceLine] ADD [NetVatAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_SalesInvoiceLine_NetVatAmount] DEFAULT (0);
+    ALTER TABLE [dbo].[App_SalesInvoiceLine] ADD [NetVatAmount] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_SalesInvoiceLine_NetVatAmount] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_SalesInvoiceLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_SalesInvoiceLine', 'NetVatAmount') IS NOT NULL
     UPDATE [dbo].[App_SalesInvoiceLine] SET [NetVatAmount] = [VatAmount] WHERE [WithholdingRate] = 0;
 GO
 
 IF OBJECT_ID(N'dbo.App_SalesInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_SalesInvoice', 'WithholdingAmount') IS NULL
-    ALTER TABLE [dbo].[App_SalesInvoice] ADD [WithholdingAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_SalesInvoice_WithholdingAmount] DEFAULT (0);
+    ALTER TABLE [dbo].[App_SalesInvoice] ADD [WithholdingAmount] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_SalesInvoice_WithholdingAmount] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_SalesInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_SalesInvoice', 'NetVatAmount') IS NULL
-    ALTER TABLE [dbo].[App_SalesInvoice] ADD [NetVatAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_SalesInvoice_NetVatAmount] DEFAULT (0);
+    ALTER TABLE [dbo].[App_SalesInvoice] ADD [NetVatAmount] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_SalesInvoice_NetVatAmount] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_SalesInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_SalesInvoice', 'WithholdingAmountTRY') IS NULL
-    ALTER TABLE [dbo].[App_SalesInvoice] ADD [WithholdingAmountTRY] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_SalesInvoice_WithholdingAmountTRY] DEFAULT (0);
+    ALTER TABLE [dbo].[App_SalesInvoice] ADD [WithholdingAmountTRY] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_SalesInvoice_WithholdingAmountTRY] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_SalesInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_SalesInvoice', 'NetVatAmountTRY') IS NULL
-    ALTER TABLE [dbo].[App_SalesInvoice] ADD [NetVatAmountTRY] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_SalesInvoice_NetVatAmountTRY] DEFAULT (0);
+    ALTER TABLE [dbo].[App_SalesInvoice] ADD [NetVatAmountTRY] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_SalesInvoice_NetVatAmountTRY] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_SalesInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_SalesInvoice', 'NetVatAmountTRY') IS NOT NULL
     UPDATE [dbo].[App_SalesInvoice] SET [NetVatAmount] = [VatAmount], [NetVatAmountTRY] = [VatAmountTRY] WHERE [WithholdingAmount] = 0;
@@ -2010,7 +2020,7 @@ BEGIN
         [WorkPlaceId]     [int] NULL,
         [TransactionType] [nvarchar](30) NOT NULL CONSTRAINT [DF_App_StockOpening_TransactionType] DEFAULT (N'İlk Giriş'),
         [SpecialCode]     [nvarchar](50) NULL,
-        [TotalAmount]     [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_StockOpening_TotalAmount] DEFAULT (0),
+        [TotalAmount]     [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_StockOpening_TotalAmount] DEFAULT (0),
         [IsActive]        [bit] NULL CONSTRAINT [DF_App_StockOpening_IsActive] DEFAULT (1),
         [CreatedDate]     [datetime2](0) NULL CONSTRAINT [DF_App_StockOpening_CreatedDate] DEFAULT (SYSUTCDATETIME()),
         CONSTRAINT [PK_App_StockOpening] PRIMARY KEY CLUSTERED ([RecId] ASC)
@@ -2034,7 +2044,7 @@ IF OBJECT_ID(N'dbo.App_StockOpening', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_
     ALTER TABLE [dbo].[App_StockOpening] ADD [SpecialCode] [nvarchar](50) NULL;
 GO
 IF OBJECT_ID(N'dbo.App_StockOpening', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockOpening', 'TotalAmount') IS NULL
-    ALTER TABLE [dbo].[App_StockOpening] ADD [TotalAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_StockOpening_TotalAmount_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_StockOpening] ADD [TotalAmount] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_StockOpening_TotalAmount_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_StockOpening', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockOpening', 'IsActive') IS NULL
     ALTER TABLE [dbo].[App_StockOpening] ADD [IsActive] [bit] NULL CONSTRAINT [DF_App_StockOpening_IsActive_Alt] DEFAULT (1);
@@ -2072,9 +2082,9 @@ BEGIN
         [LineNo]       [int] NOT NULL CONSTRAINT [DF_App_StockOpeningLine_LineNo] DEFAULT (1),
         [StockId]      [int] NOT NULL,
         [StockUnitId]  [int] NULL,
-        [Quantity]     [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_StockOpeningLine_Quantity] DEFAULT (0),
-        [UnitPrice]    [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_StockOpeningLine_UnitPrice] DEFAULT (0),
-        [TotalPrice]   [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_StockOpeningLine_TotalPrice] DEFAULT (0),
+        [Quantity]     [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_StockOpeningLine_Quantity] DEFAULT (0),
+        [UnitPrice]    [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_StockOpeningLine_UnitPrice] DEFAULT (0),
+        [TotalPrice]   [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_StockOpeningLine_TotalPrice] DEFAULT (0),
         [CreatedDate]  [datetime2](0) NULL CONSTRAINT [DF_App_StockOpeningLine_CreatedDate] DEFAULT (SYSUTCDATETIME()),
         CONSTRAINT [PK_App_StockOpeningLine] PRIMARY KEY CLUSTERED ([RecId] ASC)
     ) ON [PRIMARY];
@@ -2094,13 +2104,13 @@ IF OBJECT_ID(N'dbo.App_StockOpeningLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.
     ALTER TABLE [dbo].[App_StockOpeningLine] ADD [StockUnitId] [int] NULL;
 GO
 IF OBJECT_ID(N'dbo.App_StockOpeningLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockOpeningLine', 'Quantity') IS NULL
-    ALTER TABLE [dbo].[App_StockOpeningLine] ADD [Quantity] [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_StockOpeningLine_Quantity_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_StockOpeningLine] ADD [Quantity] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_StockOpeningLine_Quantity_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_StockOpeningLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockOpeningLine', 'UnitPrice') IS NULL
-    ALTER TABLE [dbo].[App_StockOpeningLine] ADD [UnitPrice] [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_StockOpeningLine_UnitPrice_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_StockOpeningLine] ADD [UnitPrice] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_StockOpeningLine_UnitPrice_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_StockOpeningLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockOpeningLine', 'TotalPrice') IS NULL
-    ALTER TABLE [dbo].[App_StockOpeningLine] ADD [TotalPrice] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_StockOpeningLine_TotalPrice_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_StockOpeningLine] ADD [TotalPrice] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_StockOpeningLine_TotalPrice_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_StockOpeningLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockOpeningLine', 'CreatedDate') IS NULL
     ALTER TABLE [dbo].[App_StockOpeningLine] ADD [CreatedDate] [datetime2](0) NULL CONSTRAINT [DF_App_StockOpeningLine_CreatedDate_Alt] DEFAULT (SYSUTCDATETIME());
@@ -2165,7 +2175,7 @@ BEGIN
         [RecId]              [int] IDENTITY(1,1) NOT NULL,
         [ProductStockId]     [int] NOT NULL,
         [RawMaterialStockId] [int] NOT NULL,
-        [ProductionQuantity] [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_ProductionDefinition_ProductionQuantity] DEFAULT (1),
+        [ProductionQuantity] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_ProductionDefinition_ProductionQuantity] DEFAULT (1),
         [WorkPlaceId]        [int] NOT NULL,
         [IsActive]           [bit] NULL CONSTRAINT [DF_App_ProductionDefinition_IsActive] DEFAULT (1),
         [CreatedDate]        [datetime2](0) NULL CONSTRAINT [DF_App_ProductionDefinition_CreatedDate] DEFAULT (SYSUTCDATETIME()),
@@ -2181,7 +2191,7 @@ IF OBJECT_ID(N'dbo.App_ProductionDefinition', N'U') IS NOT NULL AND COL_LENGTH('
     ALTER TABLE [dbo].[App_ProductionDefinition] ADD [RawMaterialStockId] [int] NOT NULL CONSTRAINT [DF_App_ProductionDefinition_RawMaterialStockId] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_ProductionDefinition', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductionDefinition', 'ProductionQuantity') IS NULL
-    ALTER TABLE [dbo].[App_ProductionDefinition] ADD [ProductionQuantity] [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_ProductionDefinition_ProductionQuantity_Alt] DEFAULT (1);
+    ALTER TABLE [dbo].[App_ProductionDefinition] ADD [ProductionQuantity] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_ProductionDefinition_ProductionQuantity_Alt] DEFAULT (1);
 GO
 IF OBJECT_ID(N'dbo.App_ProductionDefinition', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductionDefinition', 'WorkPlaceId') IS NULL
     ALTER TABLE [dbo].[App_ProductionDefinition] ADD [WorkPlaceId] [int] NOT NULL CONSTRAINT [DF_App_ProductionDefinition_WorkPlaceId] DEFAULT (0);
@@ -2256,7 +2266,7 @@ BEGIN
         [OutWorkPlaceId]  [int] NULL,
         [TransactionType] [nvarchar](30) NOT NULL CONSTRAINT [DF_App_StockTransfer_TransactionType] DEFAULT (N'Transfer'),
         [SpecialCode]     [nvarchar](50) NULL,
-        [TotalAmount]     [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_StockTransfer_TotalAmount] DEFAULT (0),
+        [TotalAmount]     [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_StockTransfer_TotalAmount] DEFAULT (0),
         [IsActive]        [bit] NULL CONSTRAINT [DF_App_StockTransfer_IsActive] DEFAULT (1),
         [CreatedDate]     [datetime2](0) NULL CONSTRAINT [DF_App_StockTransfer_CreatedDate] DEFAULT (SYSUTCDATETIME()),
         CONSTRAINT [PK_App_StockTransfer] PRIMARY KEY CLUSTERED ([RecId] ASC)
@@ -2283,7 +2293,7 @@ IF OBJECT_ID(N'dbo.App_StockTransfer', N'U') IS NOT NULL AND COL_LENGTH('dbo.App
     ALTER TABLE [dbo].[App_StockTransfer] ADD [SpecialCode] [nvarchar](50) NULL;
 GO
 IF OBJECT_ID(N'dbo.App_StockTransfer', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockTransfer', 'TotalAmount') IS NULL
-    ALTER TABLE [dbo].[App_StockTransfer] ADD [TotalAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_StockTransfer_TotalAmount_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_StockTransfer] ADD [TotalAmount] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_StockTransfer_TotalAmount_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_StockTransfer', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockTransfer', 'IsActive') IS NULL
     ALTER TABLE [dbo].[App_StockTransfer] ADD [IsActive] [bit] NULL CONSTRAINT [DF_App_StockTransfer_IsActive_Alt] DEFAULT (1);
@@ -2331,9 +2341,9 @@ BEGIN
         [LineNo]       [int] NOT NULL CONSTRAINT [DF_App_StockTransferLine_LineNo] DEFAULT (1),
         [StockId]      [int] NOT NULL,
         [StockUnitId]  [int] NULL,
-        [Quantity]     [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_StockTransferLine_Quantity] DEFAULT (0),
-        [UnitPrice]    [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_StockTransferLine_UnitPrice] DEFAULT (0),
-        [TotalPrice]   [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_StockTransferLine_TotalPrice] DEFAULT (0),
+        [Quantity]     [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_StockTransferLine_Quantity] DEFAULT (0),
+        [UnitPrice]    [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_StockTransferLine_UnitPrice] DEFAULT (0),
+        [TotalPrice]   [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_StockTransferLine_TotalPrice] DEFAULT (0),
         [CreatedDate]  [datetime2](0) NULL CONSTRAINT [DF_App_StockTransferLine_CreatedDate] DEFAULT (SYSUTCDATETIME()),
         CONSTRAINT [PK_App_StockTransferLine] PRIMARY KEY CLUSTERED ([RecId] ASC)
     ) ON [PRIMARY];
@@ -2353,13 +2363,13 @@ IF OBJECT_ID(N'dbo.App_StockTransferLine', N'U') IS NOT NULL AND COL_LENGTH('dbo
     ALTER TABLE [dbo].[App_StockTransferLine] ADD [StockUnitId] [int] NULL;
 GO
 IF OBJECT_ID(N'dbo.App_StockTransferLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockTransferLine', 'Quantity') IS NULL
-    ALTER TABLE [dbo].[App_StockTransferLine] ADD [Quantity] [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_StockTransferLine_Quantity_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_StockTransferLine] ADD [Quantity] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_StockTransferLine_Quantity_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_StockTransferLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockTransferLine', 'UnitPrice') IS NULL
-    ALTER TABLE [dbo].[App_StockTransferLine] ADD [UnitPrice] [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_StockTransferLine_UnitPrice_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_StockTransferLine] ADD [UnitPrice] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_StockTransferLine_UnitPrice_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_StockTransferLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockTransferLine', 'TotalPrice') IS NULL
-    ALTER TABLE [dbo].[App_StockTransferLine] ADD [TotalPrice] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_StockTransferLine_TotalPrice_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_StockTransferLine] ADD [TotalPrice] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_StockTransferLine_TotalPrice_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_StockTransferLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockTransferLine', 'CreatedDate') IS NULL
     ALTER TABLE [dbo].[App_StockTransferLine] ADD [CreatedDate] [datetime2](0) NULL CONSTRAINT [DF_App_StockTransferLine_CreatedDate_Alt] DEFAULT (SYSUTCDATETIME());
@@ -2486,7 +2496,7 @@ BEGIN
         [OutWorkPlaceId]  [int] NULL,
         [TransactionType] [nvarchar](40) NOT NULL CONSTRAINT [DF_App_ProductTransfer_TransactionType] DEFAULT (N'Farklı Ürün Transfer'),
         [SpecialCode]     [nvarchar](50) NULL,
-        [TotalAmount]     [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_ProductTransfer_TotalAmount] DEFAULT (0),
+        [TotalAmount]     [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_ProductTransfer_TotalAmount] DEFAULT (0),
         [IsActive]        [bit] NULL CONSTRAINT [DF_App_ProductTransfer_IsActive] DEFAULT (1),
         [CreatedDate]     [datetime2](0) NULL CONSTRAINT [DF_App_ProductTransfer_CreatedDate] DEFAULT (SYSUTCDATETIME()),
         CONSTRAINT [PK_App_ProductTransfer] PRIMARY KEY CLUSTERED ([RecId] ASC)
@@ -2513,7 +2523,7 @@ IF OBJECT_ID(N'dbo.App_ProductTransfer', N'U') IS NOT NULL AND COL_LENGTH('dbo.A
     ALTER TABLE [dbo].[App_ProductTransfer] ADD [SpecialCode] [nvarchar](50) NULL;
 GO
 IF OBJECT_ID(N'dbo.App_ProductTransfer', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductTransfer', 'TotalAmount') IS NULL
-    ALTER TABLE [dbo].[App_ProductTransfer] ADD [TotalAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_ProductTransfer_TotalAmount_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_ProductTransfer] ADD [TotalAmount] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_ProductTransfer_TotalAmount_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_ProductTransfer', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductTransfer', 'IsActive') IS NULL
     ALTER TABLE [dbo].[App_ProductTransfer] ADD [IsActive] [bit] NULL CONSTRAINT [DF_App_ProductTransfer_IsActive_Alt] DEFAULT (1);
@@ -2562,9 +2572,9 @@ BEGIN
         [OutStockId]   [int] NOT NULL,
         [InStockId]    [int] NOT NULL,
         [StockUnitId]  [int] NULL,
-        [Quantity]     [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_ProductTransferLine_Quantity] DEFAULT (0),
-        [UnitPrice]    [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_ProductTransferLine_UnitPrice] DEFAULT (0),
-        [TotalPrice]   [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_ProductTransferLine_TotalPrice] DEFAULT (0),
+        [Quantity]     [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_ProductTransferLine_Quantity] DEFAULT (0),
+        [UnitPrice]    [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_ProductTransferLine_UnitPrice] DEFAULT (0),
+        [TotalPrice]   [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_ProductTransferLine_TotalPrice] DEFAULT (0),
         [CreatedDate]  [datetime2](0) NULL CONSTRAINT [DF_App_ProductTransferLine_CreatedDate] DEFAULT (SYSUTCDATETIME()),
         CONSTRAINT [PK_App_ProductTransferLine] PRIMARY KEY CLUSTERED ([RecId] ASC)
     ) ON [PRIMARY];
@@ -2587,13 +2597,13 @@ IF OBJECT_ID(N'dbo.App_ProductTransferLine', N'U') IS NOT NULL AND COL_LENGTH('d
     ALTER TABLE [dbo].[App_ProductTransferLine] ADD [StockUnitId] [int] NULL;
 GO
 IF OBJECT_ID(N'dbo.App_ProductTransferLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductTransferLine', 'Quantity') IS NULL
-    ALTER TABLE [dbo].[App_ProductTransferLine] ADD [Quantity] [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_ProductTransferLine_Quantity_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_ProductTransferLine] ADD [Quantity] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_ProductTransferLine_Quantity_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_ProductTransferLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductTransferLine', 'UnitPrice') IS NULL
-    ALTER TABLE [dbo].[App_ProductTransferLine] ADD [UnitPrice] [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_ProductTransferLine_UnitPrice_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_ProductTransferLine] ADD [UnitPrice] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_ProductTransferLine_UnitPrice_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_ProductTransferLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductTransferLine', 'TotalPrice') IS NULL
-    ALTER TABLE [dbo].[App_ProductTransferLine] ADD [TotalPrice] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_ProductTransferLine_TotalPrice_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_ProductTransferLine] ADD [TotalPrice] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_ProductTransferLine_TotalPrice_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_ProductTransferLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductTransferLine', 'CreatedDate') IS NULL
     ALTER TABLE [dbo].[App_ProductTransferLine] ADD [CreatedDate] [datetime2](0) NULL CONSTRAINT [DF_App_ProductTransferLine_CreatedDate_Alt] DEFAULT (SYSUTCDATETIME());
@@ -2672,7 +2682,7 @@ BEGIN
         [WorkPlaceId]     [int] NULL,
         [TransactionType] [nvarchar](30) NOT NULL CONSTRAINT [DF_App_StockIssue_TransactionType] DEFAULT (N'Sarf Çıkışı'),
         [SpecialCode]     [nvarchar](50) NULL,
-        [TotalAmount]     [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_StockIssue_TotalAmount] DEFAULT (0),
+        [TotalAmount]     [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_StockIssue_TotalAmount] DEFAULT (0),
         [IsActive]        [bit] NULL CONSTRAINT [DF_App_StockIssue_IsActive] DEFAULT (1),
         [CreatedDate]     [datetime2](0) NULL CONSTRAINT [DF_App_StockIssue_CreatedDate] DEFAULT (SYSUTCDATETIME()),
         CONSTRAINT [PK_App_StockIssue] PRIMARY KEY CLUSTERED ([RecId] ASC)
@@ -2696,7 +2706,7 @@ IF OBJECT_ID(N'dbo.App_StockIssue', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_St
     ALTER TABLE [dbo].[App_StockIssue] ADD [SpecialCode] [nvarchar](50) NULL;
 GO
 IF OBJECT_ID(N'dbo.App_StockIssue', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockIssue', 'TotalAmount') IS NULL
-    ALTER TABLE [dbo].[App_StockIssue] ADD [TotalAmount] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_StockIssue_TotalAmount_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_StockIssue] ADD [TotalAmount] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_StockIssue_TotalAmount_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_StockIssue', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockIssue', 'IsActive') IS NULL
     ALTER TABLE [dbo].[App_StockIssue] ADD [IsActive] [bit] NULL CONSTRAINT [DF_App_StockIssue_IsActive_Alt] DEFAULT (1);
@@ -2734,9 +2744,9 @@ BEGIN
         [LineNo]       [int] NOT NULL CONSTRAINT [DF_App_StockIssueLine_LineNo] DEFAULT (1),
         [StockId]      [int] NOT NULL,
         [StockUnitId]  [int] NULL,
-        [Quantity]     [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_StockIssueLine_Quantity] DEFAULT (0),
-        [UnitPrice]    [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_StockIssueLine_UnitPrice] DEFAULT (0),
-        [TotalPrice]   [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_StockIssueLine_TotalPrice] DEFAULT (0),
+        [Quantity]     [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_StockIssueLine_Quantity] DEFAULT (0),
+        [UnitPrice]    [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_StockIssueLine_UnitPrice] DEFAULT (0),
+        [TotalPrice]   [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_StockIssueLine_TotalPrice] DEFAULT (0),
         [CreatedDate]  [datetime2](0) NULL CONSTRAINT [DF_App_StockIssueLine_CreatedDate] DEFAULT (SYSUTCDATETIME()),
         CONSTRAINT [PK_App_StockIssueLine] PRIMARY KEY CLUSTERED ([RecId] ASC)
     ) ON [PRIMARY];
@@ -2756,13 +2766,13 @@ IF OBJECT_ID(N'dbo.App_StockIssueLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.Ap
     ALTER TABLE [dbo].[App_StockIssueLine] ADD [StockUnitId] [int] NULL;
 GO
 IF OBJECT_ID(N'dbo.App_StockIssueLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockIssueLine', 'Quantity') IS NULL
-    ALTER TABLE [dbo].[App_StockIssueLine] ADD [Quantity] [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_StockIssueLine_Quantity_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_StockIssueLine] ADD [Quantity] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_StockIssueLine_Quantity_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_StockIssueLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockIssueLine', 'UnitPrice') IS NULL
-    ALTER TABLE [dbo].[App_StockIssueLine] ADD [UnitPrice] [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_StockIssueLine_UnitPrice_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_StockIssueLine] ADD [UnitPrice] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_StockIssueLine_UnitPrice_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_StockIssueLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockIssueLine', 'TotalPrice') IS NULL
-    ALTER TABLE [dbo].[App_StockIssueLine] ADD [TotalPrice] [decimal](18, 2) NOT NULL CONSTRAINT [DF_App_StockIssueLine_TotalPrice_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_StockIssueLine] ADD [TotalPrice] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_StockIssueLine_TotalPrice_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_StockIssueLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockIssueLine', 'CreatedDate') IS NULL
     ALTER TABLE [dbo].[App_StockIssueLine] ADD [CreatedDate] [datetime2](0) NULL CONSTRAINT [DF_App_StockIssueLine_CreatedDate_Alt] DEFAULT (SYSUTCDATETIME());
@@ -2893,9 +2903,13 @@ BEGIN
         [VoucherId]           [int] NOT NULL,
         [LineNo]              [int] NOT NULL CONSTRAINT [DF_App_ProductionVoucherLine_LineNo] DEFAULT (1),
         [RawMaterialStockId]  [int] NOT NULL,
-        [RawMaterialQuantity] [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_ProductionVoucherLine_RawQty] DEFAULT (0),
-        [WasteRate]           [decimal](5, 2) NOT NULL CONSTRAINT [DF_App_ProductionVoucherLine_WasteRate] DEFAULT (0),
-        [ProductQuantity]     [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_ProductionVoucherLine_ProdQty] DEFAULT (0),
+        [RawMaterialQuantity] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_ProductionVoucherLine_RawQty] DEFAULT (0),
+        [RawMaterialUnitPrice] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_ProductionVoucherLine_RawUnitPrice] DEFAULT (0),
+        [RawMaterialNetAmount] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_ProductionVoucherLine_RawNetAmount] DEFAULT (0),
+        [WasteRate]           [decimal](13, 10) NOT NULL CONSTRAINT [DF_App_ProductionVoucherLine_WasteRate] DEFAULT (0),
+        [ProductQuantity]     [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_ProductionVoucherLine_ProdQty] DEFAULT (0),
+        [ProductUnitPrice]    [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_ProductionVoucherLine_ProdUnitPrice] DEFAULT (0),
+        [ProductNetAmount]    [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_ProductionVoucherLine_ProdNetAmount] DEFAULT (0),
         [ProductStockId]      [int] NOT NULL,
         [CreatedDate]         [datetime2](0) NULL CONSTRAINT [DF_App_ProductionVoucherLine_CreatedDate] DEFAULT (SYSUTCDATETIME()),
         CONSTRAINT [PK_App_ProductionVoucherLine] PRIMARY KEY CLUSTERED ([RecId] ASC)
@@ -2913,13 +2927,25 @@ IF OBJECT_ID(N'dbo.App_ProductionVoucherLine', N'U') IS NOT NULL AND COL_LENGTH(
     ALTER TABLE [dbo].[App_ProductionVoucherLine] ADD [RawMaterialStockId] [int] NOT NULL CONSTRAINT [DF_App_ProductionVoucherLine_RawStockId] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_ProductionVoucherLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductionVoucherLine', 'RawMaterialQuantity') IS NULL
-    ALTER TABLE [dbo].[App_ProductionVoucherLine] ADD [RawMaterialQuantity] [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_ProductionVoucherLine_RawQty_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_ProductionVoucherLine] ADD [RawMaterialQuantity] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_ProductionVoucherLine_RawQty_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_ProductionVoucherLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductionVoucherLine', 'WasteRate') IS NULL
-    ALTER TABLE [dbo].[App_ProductionVoucherLine] ADD [WasteRate] [decimal](5, 2) NOT NULL CONSTRAINT [DF_App_ProductionVoucherLine_WasteRate_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_ProductionVoucherLine] ADD [WasteRate] [decimal](13, 10) NOT NULL CONSTRAINT [DF_App_ProductionVoucherLine_WasteRate_Alt] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_ProductionVoucherLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductionVoucherLine', 'RawMaterialUnitPrice') IS NULL
+    ALTER TABLE [dbo].[App_ProductionVoucherLine] ADD [RawMaterialUnitPrice] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_ProductionVoucherLine_RawUnitPrice_Alt] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_ProductionVoucherLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductionVoucherLine', 'RawMaterialNetAmount') IS NULL
+    ALTER TABLE [dbo].[App_ProductionVoucherLine] ADD [RawMaterialNetAmount] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_ProductionVoucherLine_RawNetAmount_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_ProductionVoucherLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductionVoucherLine', 'ProductQuantity') IS NULL
-    ALTER TABLE [dbo].[App_ProductionVoucherLine] ADD [ProductQuantity] [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_ProductionVoucherLine_ProdQty_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_ProductionVoucherLine] ADD [ProductQuantity] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_ProductionVoucherLine_ProdQty_Alt] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_ProductionVoucherLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductionVoucherLine', 'ProductUnitPrice') IS NULL
+    ALTER TABLE [dbo].[App_ProductionVoucherLine] ADD [ProductUnitPrice] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_ProductionVoucherLine_ProdUnitPrice_Alt] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_ProductionVoucherLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductionVoucherLine', 'ProductNetAmount') IS NULL
+    ALTER TABLE [dbo].[App_ProductionVoucherLine] ADD [ProductNetAmount] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_ProductionVoucherLine_ProdNetAmount_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_ProductionVoucherLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_ProductionVoucherLine', 'ProductStockId') IS NULL
     ALTER TABLE [dbo].[App_ProductionVoucherLine] ADD [ProductStockId] [int] NOT NULL CONSTRAINT [DF_App_ProductionVoucherLine_ProdStockId] DEFAULT (0);
@@ -3033,7 +3059,7 @@ BEGIN
         [CountId]       [int] NOT NULL,
         [LineNo]        [int] NOT NULL CONSTRAINT [DF_App_StockCountLine_LineNo] DEFAULT (1),
         [StockId]       [int] NOT NULL,
-        [CountQuantity] [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_StockCountLine_CountQuantity] DEFAULT (0),
+        [CountQuantity] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_StockCountLine_CountQuantity] DEFAULT (0),
         [CreatedDate]   [datetime2](0) NULL CONSTRAINT [DF_App_StockCountLine_CreatedDate] DEFAULT (SYSUTCDATETIME()),
         CONSTRAINT [PK_App_StockCountLine] PRIMARY KEY CLUSTERED ([RecId] ASC)
     ) ON [PRIMARY];
@@ -3050,7 +3076,7 @@ IF OBJECT_ID(N'dbo.App_StockCountLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.Ap
     ALTER TABLE [dbo].[App_StockCountLine] ADD [StockId] [int] NOT NULL CONSTRAINT [DF_App_StockCountLine_StockId] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_StockCountLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockCountLine', 'CountQuantity') IS NULL
-    ALTER TABLE [dbo].[App_StockCountLine] ADD [CountQuantity] [decimal](18, 4) NOT NULL CONSTRAINT [DF_App_StockCountLine_CountQuantity_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_StockCountLine] ADD [CountQuantity] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_StockCountLine_CountQuantity_Alt] DEFAULT (0);
 GO
 IF OBJECT_ID(N'dbo.App_StockCountLine', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_StockCountLine', 'CreatedDate') IS NULL
     ALTER TABLE [dbo].[App_StockCountLine] ADD [CreatedDate] [datetime2](0) NULL CONSTRAINT [DF_App_StockCountLine_CreatedDate_Alt] DEFAULT (SYSUTCDATETIME());
@@ -3105,7 +3131,7 @@ BEGIN
         [RecId]        [int] IDENTITY(1,1) NOT NULL,
         [SettingGroup] [nvarchar](100) NOT NULL CONSTRAINT [DF_App_Setting_SettingGroup] DEFAULT (N''),
         [Explanation]  [nvarchar](200) NOT NULL CONSTRAINT [DF_App_Setting_Explanation] DEFAULT (N''),
-        [Value]        [int] NOT NULL CONSTRAINT [DF_App_Setting_Value] DEFAULT (0),
+        [Value]        [nvarchar](200) NOT NULL CONSTRAINT [DF_App_Setting_Value] DEFAULT (N''),
         [IsActive]     [bit] NULL CONSTRAINT [DF_App_Setting_IsActive] DEFAULT (1),
         [CreatedDate]  [datetime2](0) NULL CONSTRAINT [DF_App_Setting_CreatedDate] DEFAULT (SYSUTCDATETIME()),
         CONSTRAINT [PK_App_Setting] PRIMARY KEY CLUSTERED ([RecId] ASC)
@@ -3120,7 +3146,7 @@ IF OBJECT_ID(N'dbo.App_Setting', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_Setti
     ALTER TABLE [dbo].[App_Setting] ADD [Explanation] [nvarchar](200) NOT NULL CONSTRAINT [DF_App_Setting_Explanation_Alt] DEFAULT (N'');
 GO
 IF OBJECT_ID(N'dbo.App_Setting', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_Setting', 'Value') IS NULL
-    ALTER TABLE [dbo].[App_Setting] ADD [Value] [int] NOT NULL CONSTRAINT [DF_App_Setting_Value_Alt] DEFAULT (0);
+    ALTER TABLE [dbo].[App_Setting] ADD [Value] [nvarchar](200) NOT NULL CONSTRAINT [DF_App_Setting_Value_Alt] DEFAULT (N'');
 GO
 IF OBJECT_ID(N'dbo.App_Setting', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_Setting', 'IsActive') IS NULL
     ALTER TABLE [dbo].[App_Setting] ADD [IsActive] [bit] NULL CONSTRAINT [DF_App_Setting_IsActive_Alt] DEFAULT (1);
@@ -3137,5 +3163,275 @@ IF OBJECT_ID(N'dbo.App_SchemaVersion', N'U') IS NOT NULL
 BEGIN
     INSERT INTO [dbo].[App_SchemaVersion] ([VersionNo], [ScriptName], [Description], [AppliedUtc])
     VALUES (27, N'YamanCam.Core', N'App_Setting ayarlar (kusurat haneleri) tablosu', SYSUTCDATETIME());
+END
+GO
+
+/* ------------------------------------------------------------------ */
+/* Surum 28 - App_Setting.Value alanini metin (nvarchar) yap           */
+/*            (sayisal ve metinsel deger girilebilsin)                 */
+/* ------------------------------------------------------------------ */
+IF OBJECT_ID(N'dbo.App_Setting', N'U') IS NOT NULL
+   AND EXISTS (
+       SELECT 1
+       FROM sys.columns c
+       JOIN sys.types t ON t.user_type_id = c.user_type_id
+       WHERE c.object_id = OBJECT_ID(N'dbo.App_Setting') AND c.name = N'Value' AND t.name <> N'nvarchar'
+   )
+BEGIN
+    DECLARE @ValueDefaultConstraint sysname;
+    SELECT @ValueDefaultConstraint = dc.name
+    FROM sys.default_constraints dc
+    JOIN sys.columns c ON c.object_id = dc.parent_object_id AND c.column_id = dc.parent_column_id
+    WHERE dc.parent_object_id = OBJECT_ID(N'dbo.App_Setting') AND c.name = N'Value';
+
+    IF @ValueDefaultConstraint IS NOT NULL
+        EXEC(N'ALTER TABLE [dbo].[App_Setting] DROP CONSTRAINT [' + @ValueDefaultConstraint + N']');
+
+    ALTER TABLE [dbo].[App_Setting] ALTER COLUMN [Value] [nvarchar](200) NOT NULL;
+
+    EXEC(N'ALTER TABLE [dbo].[App_Setting] ADD CONSTRAINT [DF_App_Setting_Value] DEFAULT (N''0'') FOR [Value]');
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_SchemaVersion', N'U') IS NOT NULL
+   AND NOT EXISTS (
+       SELECT 1 FROM [dbo].[App_SchemaVersion]
+       WHERE [ScriptName] = N'YamanCam.Core' AND [VersionNo] = 28
+   )
+BEGIN
+    INSERT INTO [dbo].[App_SchemaVersion] ([VersionNo], [ScriptName], [Description], [AppliedUtc])
+    VALUES (28, N'YamanCam.Core', N'App_Setting.Value alani nvarchar yapildi (metin+sayi destegi)', SYSUTCDATETIME());
+END
+GO
+
+/* ------------------------------------------------------------------ */
+/* Surum 29 - Tum miktar/tutar/oran decimal kolonlarinin olcegi        */
+/*            (scale) 10 haneye genisletildi. Kusurat ayarlari artik   */
+/*            yalnizca ekranda kac hane gosterilecegini belirler;      */
+/*            veritabaninda deger her zaman tam hassasiyetle saklanir. */
+/* ------------------------------------------------------------------ */
+IF OBJECT_ID(N'dbo.App_PurchaseInvoice', N'U') IS NOT NULL
+BEGIN
+    DECLARE @DecimalMigrations TABLE (
+        TableName sysname,
+        ColumnName sysname,
+        TargetPrecision int,
+        TargetScale int
+    );
+
+    INSERT INTO @DecimalMigrations (TableName, ColumnName, TargetPrecision, TargetScale)
+    VALUES
+        (N'App_CustomsFreightInvoiceLine', N'Amount', 28, 10),
+        (N'App_CustomsFreightInvoiceLine', N'VatRate', 13, 10),
+        (N'App_CustomsFreightInvoiceLine', N'WithholdingRate', 13, 10),
+        (N'App_CustomsFreightInvoiceLine', N'VatAmount', 28, 10),
+        (N'App_CustomsFreightInvoiceLine', N'WithholdingAmount', 28, 10),
+        (N'App_CustomsFreightInvoiceLine', N'NetVatAmount', 28, 10),
+        (N'App_CustomsFreightInvoiceLine', N'TotalAmount', 28, 10),
+        (N'App_CustomsFreightInvoice', N'NetAmount', 28, 10),
+        (N'App_CustomsFreightInvoice', N'VatAmount', 28, 10),
+        (N'App_CustomsFreightInvoice', N'WithholdingAmount', 28, 10),
+        (N'App_CustomsFreightInvoice', N'NetVatAmount', 28, 10),
+        (N'App_CustomsFreightInvoice', N'TotalAmount', 28, 10),
+        (N'App_CustomsFreightInvoice', N'CurrencyAmount', 28, 10),
+        (N'App_CustomsFreightInvoice', N'ExchangeRate', 28, 10),
+        (N'App_JournalVoucherLine', N'DebitAmount', 28, 10),
+        (N'App_JournalVoucherLine', N'CreditAmount', 28, 10),
+        (N'App_JournalVoucher', N'TotalDebit', 28, 10),
+        (N'App_JournalVoucher', N'TotalCredit', 28, 10),
+        (N'App_ProductionDefinition', N'ProductionQuantity', 28, 10),
+        (N'App_ProductionVoucherLine', N'RawMaterialQuantity', 28, 10),
+        (N'App_ProductionVoucherLine', N'WasteRate', 13, 10),
+        (N'App_ProductionVoucherLine', N'ProductQuantity', 28, 10),
+        (N'App_ProductTransferLine', N'Quantity', 28, 10),
+        (N'App_ProductTransferLine', N'UnitPrice', 28, 10),
+        (N'App_ProductTransferLine', N'TotalPrice', 28, 10),
+        (N'App_ProductTransfer', N'TotalAmount', 28, 10),
+        (N'App_PurchaseInvoiceLine', N'Quantity', 28, 10),
+        (N'App_PurchaseInvoiceLine', N'UnitPrice', 28, 10),
+        (N'App_PurchaseInvoiceLine', N'VatRate', 13, 10),
+        (N'App_PurchaseInvoiceLine', N'WithholdingRate', 13, 10),
+        (N'App_PurchaseInvoiceLine', N'NetAmount', 28, 10),
+        (N'App_PurchaseInvoiceLine', N'VatAmount', 28, 10),
+        (N'App_PurchaseInvoiceLine', N'WithholdingAmount', 28, 10),
+        (N'App_PurchaseInvoiceLine', N'NetVatAmount', 28, 10),
+        (N'App_PurchaseInvoiceLine', N'TotalAmount', 28, 10),
+        (N'App_PurchaseInvoice', N'ExchangeRate', 28, 10),
+        (N'App_PurchaseInvoice', N'NetAmount', 28, 10),
+        (N'App_PurchaseInvoice', N'VatAmount', 28, 10),
+        (N'App_PurchaseInvoice', N'WithholdingAmount', 28, 10),
+        (N'App_PurchaseInvoice', N'NetVatAmount', 28, 10),
+        (N'App_PurchaseInvoice', N'TotalAmount', 28, 10),
+        (N'App_PurchaseInvoice', N'NetAmountTRY', 28, 10),
+        (N'App_PurchaseInvoice', N'VatAmountTRY', 28, 10),
+        (N'App_PurchaseInvoice', N'WithholdingAmountTRY', 28, 10),
+        (N'App_PurchaseInvoice', N'NetVatAmountTRY', 28, 10),
+        (N'App_PurchaseInvoice', N'TotalAmountTRY', 28, 10),
+        (N'App_SalesInvoiceLine', N'Quantity', 28, 10),
+        (N'App_SalesInvoiceLine', N'UnitPrice', 28, 10),
+        (N'App_SalesInvoiceLine', N'VatRate', 13, 10),
+        (N'App_SalesInvoiceLine', N'WithholdingRate', 13, 10),
+        (N'App_SalesInvoiceLine', N'NetAmount', 28, 10),
+        (N'App_SalesInvoiceLine', N'VatAmount', 28, 10),
+        (N'App_SalesInvoiceLine', N'WithholdingAmount', 28, 10),
+        (N'App_SalesInvoiceLine', N'NetVatAmount', 28, 10),
+        (N'App_SalesInvoiceLine', N'TotalAmount', 28, 10),
+        (N'App_SalesInvoice', N'ExchangeRate', 28, 10),
+        (N'App_SalesInvoice', N'NetAmount', 28, 10),
+        (N'App_SalesInvoice', N'VatAmount', 28, 10),
+        (N'App_SalesInvoice', N'WithholdingAmount', 28, 10),
+        (N'App_SalesInvoice', N'NetVatAmount', 28, 10),
+        (N'App_SalesInvoice', N'TotalAmount', 28, 10),
+        (N'App_SalesInvoice', N'NetAmountTRY', 28, 10),
+        (N'App_SalesInvoice', N'VatAmountTRY', 28, 10),
+        (N'App_SalesInvoice', N'WithholdingAmountTRY', 28, 10),
+        (N'App_SalesInvoice', N'NetVatAmountTRY', 28, 10),
+        (N'App_SalesInvoice', N'TotalAmountTRY', 28, 10),
+        (N'App_StockIssue', N'TotalAmount', 28, 10),
+        (N'App_StockCountLine', N'CountQuantity', 28, 10),
+        (N'App_Stock', N'ProductionWeight', 28, 10),
+        (N'App_StockOpeningLine', N'Quantity', 28, 10),
+        (N'App_StockOpeningLine', N'UnitPrice', 28, 10),
+        (N'App_StockOpeningLine', N'TotalPrice', 28, 10),
+        (N'App_StockIssueLine', N'Quantity', 28, 10),
+        (N'App_StockIssueLine', N'UnitPrice', 28, 10),
+        (N'App_StockIssueLine', N'TotalPrice', 28, 10),
+        (N'App_StockTransferLine', N'Quantity', 28, 10),
+        (N'App_StockTransferLine', N'UnitPrice', 28, 10),
+        (N'App_StockTransferLine', N'TotalPrice', 28, 10),
+        (N'App_VatWithholdingDefinition', N'VatRate', 13, 10),
+        (N'App_VatWithholdingDefinition', N'WithholdingRate', 13, 10),
+        (N'App_StockOpening', N'TotalAmount', 28, 10),
+        (N'App_StockTransfer', N'TotalAmount', 28, 10),
+        (N'App_VatDefinition', N'VatRate', 13, 10);
+
+    DECLARE @MigTableName sysname, @MigColumnName sysname, @MigTargetPrecision int, @MigTargetScale int;
+    DECLARE @MigIsNullable bit, @MigSql nvarchar(max);
+
+    DECLARE decimalMigrationCursor CURSOR LOCAL FAST_FORWARD FOR
+        SELECT TableName, ColumnName, TargetPrecision, TargetScale FROM @DecimalMigrations;
+
+    OPEN decimalMigrationCursor;
+    FETCH NEXT FROM decimalMigrationCursor INTO @MigTableName, @MigColumnName, @MigTargetPrecision, @MigTargetScale;
+
+    WHILE @@FETCH_STATUS = 0
+    BEGIN
+        IF EXISTS (
+            SELECT 1
+            FROM sys.columns c
+            JOIN sys.types ty ON ty.user_type_id = c.user_type_id
+            WHERE c.object_id = OBJECT_ID(N'dbo.' + @MigTableName)
+              AND c.name = @MigColumnName
+              AND ty.name = N'decimal'
+              AND (c.precision <> @MigTargetPrecision OR c.scale <> @MigTargetScale)
+        )
+        BEGIN
+            SELECT @MigIsNullable = c.is_nullable
+            FROM sys.columns c
+            WHERE c.object_id = OBJECT_ID(N'dbo.' + @MigTableName) AND c.name = @MigColumnName;
+
+            SET @MigSql = N'ALTER TABLE [dbo].[' + @MigTableName + N'] ALTER COLUMN [' + @MigColumnName + N'] [decimal](' +
+                CAST(@MigTargetPrecision AS nvarchar(10)) + N', ' + CAST(@MigTargetScale AS nvarchar(10)) + N') ' +
+                CASE WHEN @MigIsNullable = 1 THEN N'NULL' ELSE N'NOT NULL' END;
+            EXEC sp_executesql @MigSql;
+        END
+
+        FETCH NEXT FROM decimalMigrationCursor INTO @MigTableName, @MigColumnName, @MigTargetPrecision, @MigTargetScale;
+    END
+
+    CLOSE decimalMigrationCursor;
+    DEALLOCATE decimalMigrationCursor;
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_SchemaVersion', N'U') IS NOT NULL
+   AND NOT EXISTS (
+       SELECT 1 FROM [dbo].[App_SchemaVersion]
+       WHERE [ScriptName] = N'YamanCam.Core' AND [VersionNo] = 29
+   )
+BEGIN
+    INSERT INTO [dbo].[App_SchemaVersion] ([VersionNo], [ScriptName], [Description], [AppliedUtc])
+    VALUES (29, N'YamanCam.Core', N'Decimal kolonlarin olcegi (scale) 10 haneye genisletildi', SYSUTCDATETIME());
+END
+GO
+
+/* ------------------------------------------------------------------ */
+/* Surum 30 - App_SalesInvoice.IsReturn alani (Satis Iade Faturasi)    */
+/*            InvoiceNo benzersizligi artık (InvoiceNo, IsReturn)     */
+/*            ikilisine gore kontrol edilir; boylece Satis Faturasi    */
+/*            ve Satis Iade Faturasi kendi ayri numara serilerini      */
+/*            kullanabilir.                                            */
+/* ------------------------------------------------------------------ */
+IF OBJECT_ID(N'dbo.App_SalesInvoice', N'U') IS NOT NULL
+   AND EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UX_App_SalesInvoice_InvoiceNo' AND object_id = OBJECT_ID(N'dbo.App_SalesInvoice'))
+BEGIN
+    DROP INDEX [UX_App_SalesInvoice_InvoiceNo] ON [dbo].[App_SalesInvoice];
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_SalesInvoice', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UX_App_SalesInvoice_InvoiceNo_IsReturn' AND object_id = OBJECT_ID(N'dbo.App_SalesInvoice'))
+BEGIN
+    CREATE UNIQUE NONCLUSTERED INDEX [UX_App_SalesInvoice_InvoiceNo_IsReturn]
+    ON [dbo].[App_SalesInvoice]([InvoiceNo], [IsReturn]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_SchemaVersion', N'U') IS NOT NULL
+   AND NOT EXISTS (
+       SELECT 1 FROM [dbo].[App_SchemaVersion]
+       WHERE [ScriptName] = N'YamanCam.Core' AND [VersionNo] = 30
+   )
+BEGIN
+    INSERT INTO [dbo].[App_SchemaVersion] ([VersionNo], [ScriptName], [Description], [AppliedUtc])
+    VALUES (30, N'YamanCam.Core', N'App_SalesInvoice.IsReturn alani eklendi (Satis Iade Faturasi)', SYSUTCDATETIME());
+END
+GO
+
+/* ------------------------------------------------------------------ */
+/* Surum 31 - App_PurchaseInvoice.IsReturn alani (Alis Iade Faturasi)  */
+/*            InvoiceNo benzersizligi artık (InvoiceNo, IsReturn)     */
+/*            ikilisine gore kontrol edilir; boylece Alis Faturasi    */
+/*            ve Alis Iade Faturasi kendi ayri numara serilerini       */
+/*            kullanabilir.                                            */
+/* ------------------------------------------------------------------ */
+IF OBJECT_ID(N'dbo.App_PurchaseInvoice', N'U') IS NOT NULL
+   AND EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UX_App_PurchaseInvoice_InvoiceNo' AND object_id = OBJECT_ID(N'dbo.App_PurchaseInvoice'))
+BEGIN
+    DROP INDEX [UX_App_PurchaseInvoice_InvoiceNo] ON [dbo].[App_PurchaseInvoice];
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_PurchaseInvoice', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'UX_App_PurchaseInvoice_InvoiceNo_IsReturn' AND object_id = OBJECT_ID(N'dbo.App_PurchaseInvoice'))
+BEGIN
+    CREATE UNIQUE NONCLUSTERED INDEX [UX_App_PurchaseInvoice_InvoiceNo_IsReturn]
+    ON [dbo].[App_PurchaseInvoice]([InvoiceNo], [IsReturn]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_SchemaVersion', N'U') IS NOT NULL
+   AND NOT EXISTS (
+       SELECT 1 FROM [dbo].[App_SchemaVersion]
+       WHERE [ScriptName] = N'YamanCam.Core' AND [VersionNo] = 31
+   )
+BEGIN
+    INSERT INTO [dbo].[App_SchemaVersion] ([VersionNo], [ScriptName], [Description], [AppliedUtc])
+    VALUES (31, N'YamanCam.Core', N'App_PurchaseInvoice.IsReturn alani eklendi (Alis Iade Faturasi)', SYSUTCDATETIME());
+END
+GO
+
+/* ------------------------------------------------------------------ */
+/* Surum 32 - App_ProductionVoucherLine hammadde/mamul birim fiyat ve  */
+/*            tutar alanlari eklendi (otomatik uretim satiri hesabi)   */
+/* ------------------------------------------------------------------ */
+IF OBJECT_ID(N'dbo.App_SchemaVersion', N'U') IS NOT NULL
+   AND NOT EXISTS (
+       SELECT 1 FROM [dbo].[App_SchemaVersion]
+       WHERE [ScriptName] = N'YamanCam.Core' AND [VersionNo] = 32
+   )
+BEGIN
+    INSERT INTO [dbo].[App_SchemaVersion] ([VersionNo], [ScriptName], [Description], [AppliedUtc])
+    VALUES (32, N'YamanCam.Core', N'App_ProductionVoucherLine.RawMaterialUnitPrice/NetAmount, ProductUnitPrice/NetAmount alanlari eklendi', SYSUTCDATETIME());
 END
 GO

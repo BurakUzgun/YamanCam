@@ -437,8 +437,8 @@ public class AppCustomsFreightInvoicesController : Controller
                 ModelState.AddModelError($"Lines[{i}].WithholdingDefinitionId", "Geçersiz tevkifat tanımı seçildi.");
             }
 
-            line.VatAmount = Math.Round(line.Amount * line.VatRate / 100m, 2, MidpointRounding.AwayFromZero);
-            line.WithholdingAmount = Math.Round(line.VatAmount * line.WithholdingRate / 100m, 2, MidpointRounding.AwayFromZero);
+            line.VatAmount = Math.Round(line.Amount * line.VatRate / 100m, 10, MidpointRounding.AwayFromZero);
+            line.WithholdingAmount = Math.Round(line.VatAmount * line.WithholdingRate / 100m, 10, MidpointRounding.AwayFromZero);
             line.NetVatAmount = line.VatAmount - line.WithholdingAmount;
             line.TotalAmount = line.Amount + line.NetVatAmount;
         }
@@ -449,7 +449,7 @@ public class AppCustomsFreightInvoicesController : Controller
         vm.NetVatAmount = vm.VatAmount - vm.WithholdingAmount;
         vm.TotalAmount = vm.NetAmount + vm.NetVatAmount;
         vm.CurrencyAmount = vm.ExchangeRate > 0
-            ? Math.Round(vm.TotalAmount / vm.ExchangeRate, 2, MidpointRounding.AwayFromZero)
+            ? Math.Round(vm.TotalAmount / vm.ExchangeRate, 10, MidpointRounding.AwayFromZero)
             : 0m;
 
         if (vm.TotalAmount <= 0)

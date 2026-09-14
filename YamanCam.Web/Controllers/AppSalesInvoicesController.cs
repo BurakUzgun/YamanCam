@@ -47,7 +47,7 @@ public class AppSalesInvoicesController : Controller
             return denied;
         }
 
-        var query = _context.AppSalesInvoices.AsNoTracking();
+        var query = _context.AppSalesInvoices.AsNoTracking().Where(x => x.IsReturn != true);
 
         query = showDeleted
             ? query.Where(x => x.IsActive == false)
@@ -146,7 +146,7 @@ public class AppSalesInvoicesController : Controller
         var entity = await _context.AppSalesInvoices
             .AsNoTracking()
             .Include(x => x.Lines)
-            .FirstOrDefaultAsync(x => x.RecId == id);
+            .FirstOrDefaultAsync(x => x.RecId == id && x.IsReturn != true);
 
         if (entity is null)
         {
@@ -176,7 +176,7 @@ public class AppSalesInvoicesController : Controller
 
         var entity = await _context.AppSalesInvoices
             .Include(x => x.Lines)
-            .FirstOrDefaultAsync(x => x.RecId == id);
+            .FirstOrDefaultAsync(x => x.RecId == id && x.IsReturn != true);
 
         if (entity is null)
         {
@@ -223,7 +223,7 @@ public class AppSalesInvoicesController : Controller
 
         var entity = await _context.AppSalesInvoices
             .Include(x => x.Lines)
-            .FirstOrDefaultAsync(x => x.RecId == id);
+            .FirstOrDefaultAsync(x => x.RecId == id && x.IsReturn != true);
 
         if (entity is null)
         {
@@ -257,7 +257,7 @@ public class AppSalesInvoicesController : Controller
 
         var entity = await _context.AppSalesInvoices
             .Include(x => x.Lines)
-            .FirstOrDefaultAsync(x => x.RecId == id);
+            .FirstOrDefaultAsync(x => x.RecId == id && x.IsReturn != true);
 
         if (entity is null)
         {
@@ -374,7 +374,7 @@ public class AppSalesInvoicesController : Controller
         }
 
         var codeExists = await _context.AppSalesInvoices.AnyAsync(x =>
-            x.InvoiceNo == vm.InvoiceNo && x.RecId != vm.RecId);
+            x.InvoiceNo == vm.InvoiceNo && x.IsReturn != true && x.RecId != vm.RecId);
         if (codeExists)
         {
             ModelState.AddModelError(nameof(vm.InvoiceNo), "Bu fatura no zaten kullanılıyor.");
@@ -442,9 +442,9 @@ public class AppSalesInvoicesController : Controller
                 ModelState.AddModelError($"Lines[{i}].WithholdingRate", "Tevkifat oranı 0-100 arasında olmalıdır.");
             }
 
-            line.NetAmount = Math.Round(line.Quantity * line.UnitPrice, 2, MidpointRounding.AwayFromZero);
-            line.VatAmount = Math.Round(line.NetAmount * line.VatRate / 100m, 2, MidpointRounding.AwayFromZero);
-            line.WithholdingAmount = Math.Round(line.VatAmount * line.WithholdingRate / 100m, 2, MidpointRounding.AwayFromZero);
+            line.NetAmount = Math.Round(line.Quantity * line.UnitPrice, 10, MidpointRounding.AwayFromZero);
+            line.VatAmount = Math.Round(line.NetAmount * line.VatRate / 100m, 10, MidpointRounding.AwayFromZero);
+            line.WithholdingAmount = Math.Round(line.VatAmount * line.WithholdingRate / 100m, 10, MidpointRounding.AwayFromZero);
             line.NetVatAmount = line.VatAmount - line.WithholdingAmount;
             line.TotalAmount = line.NetAmount + line.NetVatAmount;
         }
@@ -455,9 +455,9 @@ public class AppSalesInvoicesController : Controller
         vm.NetVatAmount = vm.VatAmount - vm.WithholdingAmount;
         vm.TotalAmount = vm.NetAmount + vm.NetVatAmount;
 
-        vm.NetAmountTRY = Math.Round(vm.NetAmount * vm.ExchangeRate, 2, MidpointRounding.AwayFromZero);
-        vm.VatAmountTRY = Math.Round(vm.VatAmount * vm.ExchangeRate, 2, MidpointRounding.AwayFromZero);
-        vm.WithholdingAmountTRY = Math.Round(vm.WithholdingAmount * vm.ExchangeRate, 2, MidpointRounding.AwayFromZero);
+        vm.NetAmountTRY = Math.Round(vm.NetAmount * vm.ExchangeRate, 10, MidpointRounding.AwayFromZero);
+        vm.VatAmountTRY = Math.Round(vm.VatAmount * vm.ExchangeRate, 10, MidpointRounding.AwayFromZero);
+        vm.WithholdingAmountTRY = Math.Round(vm.WithholdingAmount * vm.ExchangeRate, 10, MidpointRounding.AwayFromZero);
         vm.NetVatAmountTRY = vm.VatAmountTRY - vm.WithholdingAmountTRY;
         vm.TotalAmountTRY = vm.NetAmountTRY + vm.NetVatAmountTRY;
 

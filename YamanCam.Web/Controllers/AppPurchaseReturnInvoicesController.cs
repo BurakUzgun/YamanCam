@@ -10,11 +10,18 @@ using Microsoft.EntityFrameworkCore;
 namespace YamanCam.Web.Controllers;
 
 /// <summary>
-/// Alış Faturası giriş ekranı. Fatura carisi App_AccountPlan'da AccountType = "Cari"
-/// olan hesaplardan seçilir, satırlar App_Stock (malzeme kartları) referans alır.
-/// Döviz ile girilen tutarlar, fatura kuru ile TL karşılığına çevrilip ayrıca saklanır.
+/// Alış İade Faturası giriş ekranı. Stoktan çıkış olduğu için Satış Faturası ile aynı
+/// mantıkla ele alınır: satır KDV varsayılanı stok kartındaki Satış KDV'sinden gelir
+/// (AppSalesInvoicesController ile aynı), Stok Detay ekranında da Satış gibi negatif
+/// miktar/maliyet olarak işlenir (bkz. AppStocksController.BuildStockMovementsAsync).
+/// Yapısal olarak AppPurchaseInvoicesController (Alış Faturası) ile birebir aynıdır —
+/// aynı App_PurchaseInvoice/App_PurchaseInvoiceLine tablolarını ve aynı view model'leri
+/// kullanır; tek fark App_PurchaseInvoice.IsReturn = true olarak kaydedilmesi ve
+/// sorguların bu bayrağa göre filtrelenmesidir. Fatura no benzersizliği (InvoiceNo,
+/// IsReturn) ikilisine göre kontrol edildiğinden Alış Faturası ile Alış İade Faturası
+/// kendi ayrı numara serilerini kullanabilir.
 /// </summary>
-public class AppPurchaseInvoicesController : Controller
+public class AppPurchaseReturnInvoicesController : Controller
 {
     private const string CariAccountType = "Cari";
     private static readonly string[] AllowedCurrencyCodes = { "TRY", "USD", "EUR", "GBP" };
@@ -24,7 +31,7 @@ public class AppPurchaseInvoicesController : Controller
     private readonly IUserRightService _userRightService;
     private readonly IAppSettingService _appSettingService;
 
-    public AppPurchaseInvoicesController(
+    public AppPurchaseReturnInvoicesController(
         ApplicationDbContext context,
         IAppLogService appLogService,
         IUserRightService userRightService,
@@ -45,7 +52,7 @@ public class AppPurchaseInvoicesController : Controller
             return denied;
         }
 
-        var query = _context.AppPurchaseInvoices.AsNoTracking().Where(x => x.IsReturn != true);
+        var query = _context.AppPurchaseInvoices.AsNoTracking().Where(x => x.IsReturn == true);
 
         query = showDeleted
             ? query.Where(x => x.IsActive == false)
@@ -114,7 +121,7 @@ public class AppPurchaseInvoicesController : Controller
             return View("Edit", vm);
         }
 
-        var entity = new AppPurchaseInvoice { IsActive = true };
+        var entity = new AppPurchaseInvoice { IsActive = true, IsReturn = true };
         ApplyViewModel(entity, vm);
         entity.CreatedDate = DateTime.UtcNow;
         ApplyLines(entity, vm);
@@ -123,12 +130,12 @@ public class AppPurchaseInvoicesController : Controller
         await _context.SaveChangesAsync();
 
         await _appLogService.WriteInfoAsync(
-            "PurchaseInvoice",
+            "PurchaseReturnInvoice",
             "Created",
-            $"Alış Faturası oluşturuldu. No={entity.InvoiceNo}",
+            $"Alış İade Faturası oluşturuldu. No={entity.InvoiceNo}",
             newValue: BuildAuditValue(entity));
 
-        TempData["SuccessMessage"] = "Alış Faturası kaydedildi.";
+        TempData["SuccessMessage"] = "Alış İade Faturası kaydedildi.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -144,7 +151,7 @@ public class AppPurchaseInvoicesController : Controller
         var entity = await _context.AppPurchaseInvoices
             .AsNoTracking()
             .Include(x => x.Lines)
-            .FirstOrDefaultAsync(x => x.RecId == id && x.IsReturn != true);
+            .FirstOrDefaultAsync(x => x.RecId == id && x.IsReturn == true);
 
         if (entity is null)
         {
@@ -174,7 +181,7 @@ public class AppPurchaseInvoicesController : Controller
 
         var entity = await _context.AppPurchaseInvoices
             .Include(x => x.Lines)
-            .FirstOrDefaultAsync(x => x.RecId == id && x.IsReturn != true);
+            .FirstOrDefaultAsync(x => x.RecId == id && x.IsReturn == true);
 
         if (entity is null)
         {
@@ -199,13 +206,13 @@ public class AppPurchaseInvoicesController : Controller
         await _context.SaveChangesAsync();
 
         await _appLogService.WriteInfoAsync(
-            "PurchaseInvoice",
+            "PurchaseReturnInvoice",
             "Updated",
-            $"Alış Faturası güncellendi. No={entity.InvoiceNo}",
+            $"Alış İade Faturası güncellendi. No={entity.InvoiceNo}",
             oldValue: oldAudit,
             newValue: BuildAuditValue(entity));
 
-        TempData["SuccessMessage"] = "Alış Faturası güncellendi.";
+        TempData["SuccessMessage"] = "Alış İade Faturası güncellendi.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -221,7 +228,7 @@ public class AppPurchaseInvoicesController : Controller
 
         var entity = await _context.AppPurchaseInvoices
             .Include(x => x.Lines)
-            .FirstOrDefaultAsync(x => x.RecId == id && x.IsReturn != true);
+            .FirstOrDefaultAsync(x => x.RecId == id && x.IsReturn == true);
 
         if (entity is null)
         {
@@ -233,13 +240,13 @@ public class AppPurchaseInvoicesController : Controller
         await _context.SaveChangesAsync();
 
         await _appLogService.WriteInfoAsync(
-            "PurchaseInvoice",
+            "PurchaseReturnInvoice",
             "Deleted",
-            $"Alış Faturası silindi. No={entity.InvoiceNo}",
+            $"Alış İade Faturası silindi. No={entity.InvoiceNo}",
             oldValue: oldAudit,
             newValue: BuildAuditValue(entity));
 
-        TempData["SuccessMessage"] = "Alış Faturası silindi.";
+        TempData["SuccessMessage"] = "Alış İade Faturası silindi.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -255,7 +262,7 @@ public class AppPurchaseInvoicesController : Controller
 
         var entity = await _context.AppPurchaseInvoices
             .Include(x => x.Lines)
-            .FirstOrDefaultAsync(x => x.RecId == id && x.IsReturn != true);
+            .FirstOrDefaultAsync(x => x.RecId == id && x.IsReturn == true);
 
         if (entity is null)
         {
@@ -267,13 +274,13 @@ public class AppPurchaseInvoicesController : Controller
         await _context.SaveChangesAsync();
 
         await _appLogService.WriteInfoAsync(
-            "PurchaseInvoice",
+            "PurchaseReturnInvoice",
             "Restored",
-            $"Alış Faturası geri yüklendi. No={entity.InvoiceNo}",
+            $"Alış İade Faturası geri yüklendi. No={entity.InvoiceNo}",
             oldValue: oldAudit,
             newValue: BuildAuditValue(entity));
 
-        TempData["SuccessMessage"] = "Alış Faturası geri yüklendi.";
+        TempData["SuccessMessage"] = "Alış İade Faturası geri yüklendi.";
         return RedirectToAction(nameof(Index), new { showDeleted = true });
     }
 
@@ -324,7 +331,7 @@ public class AppPurchaseInvoicesController : Controller
                 x.RecId,
                 x.StockCode,
                 x.StockName,
-                VatRate = x.PurchaseVat != null ? x.PurchaseVat.VatRate : (decimal?)null
+                VatRate = x.SalesVat != null ? x.SalesVat.VatRate : (decimal?)null
             })
             .ToListAsync();
 
@@ -372,7 +379,7 @@ public class AppPurchaseInvoicesController : Controller
         }
 
         var codeExists = await _context.AppPurchaseInvoices.AnyAsync(x =>
-            x.InvoiceNo == vm.InvoiceNo && x.IsReturn != true && x.RecId != vm.RecId);
+            x.InvoiceNo == vm.InvoiceNo && x.IsReturn == true && x.RecId != vm.RecId);
         if (codeExists)
         {
             ModelState.AddModelError(nameof(vm.InvoiceNo), "Bu fatura no zaten kullanılıyor.");

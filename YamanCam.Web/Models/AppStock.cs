@@ -29,7 +29,7 @@ public class AppStock
     [StringLength(30)]
     public string? StockType { get; set; }
 
-    [Column(TypeName = "decimal(18,4)")]
+    [Column(TypeName = "decimal(28,10)")]
     public decimal? ProductionWeight { get; set; }
 
     public bool? IsActive { get; set; }

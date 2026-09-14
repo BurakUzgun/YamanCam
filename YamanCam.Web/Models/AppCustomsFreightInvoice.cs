@@ -26,25 +26,25 @@ public class AppCustomsFreightInvoice
 
     public int? LinkedPurchaseInvoiceId { get; set; }
 
-    [Column(TypeName = "decimal(18,2)")]
+    [Column(TypeName = "decimal(28,10)")]
     public decimal NetAmount { get; set; }
 
-    [Column(TypeName = "decimal(18,2)")]
+    [Column(TypeName = "decimal(28,10)")]
     public decimal VatAmount { get; set; }
 
-    [Column(TypeName = "decimal(18,2)")]
+    [Column(TypeName = "decimal(28,10)")]
     public decimal WithholdingAmount { get; set; }
 
-    [Column(TypeName = "decimal(18,2)")]
+    [Column(TypeName = "decimal(28,10)")]
     public decimal NetVatAmount { get; set; }
 
-    [Column(TypeName = "decimal(18,2)")]
+    [Column(TypeName = "decimal(28,10)")]
     public decimal TotalAmount { get; set; }
 
-    [Column(TypeName = "decimal(18,2)")]
+    [Column(TypeName = "decimal(28,10)")]
     public decimal CurrencyAmount { get; set; }
 
-    [Column(TypeName = "decimal(18,6)")]
+    [Column(TypeName = "decimal(28,10)")]
     public decimal ExchangeRate { get; set; } = 1m;
 
     [StringLength(3)]

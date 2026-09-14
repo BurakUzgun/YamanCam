@@ -16,7 +16,7 @@ public class AppStockCountLine
     public int StockId { get; set; }
 
     /// <summary>Sayım miktarı.</summary>
-    [Column(TypeName = "decimal(18,4)")]
+    [Column(TypeName = "decimal(28,10)")]
     public decimal CountQuantity { get; set; }
 
     public DateTime? CreatedDate { get; set; }

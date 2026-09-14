@@ -17,13 +17,13 @@ public class AppStockTransferLine
 
     public int? StockUnitId { get; set; }
 
-    [Column(TypeName = "decimal(18,4)")]
+    [Column(TypeName = "decimal(28,10)")]
     public decimal Quantity { get; set; }
 
-    [Column(TypeName = "decimal(18,4)")]
+    [Column(TypeName = "decimal(28,10)")]
     public decimal UnitPrice { get; set; }
 
-    [Column(TypeName = "decimal(18,2)")]
+    [Column(TypeName = "decimal(28,10)")]
     public decimal TotalPrice { get; set; }
 
     public DateTime? CreatedDate { get; set; }

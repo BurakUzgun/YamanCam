@@ -1,0 +1,280 @@
+@using System.Globalization
+@model YamanCam.Web.Models.AppStockDetailViewModel
+@{
+    ViewData["Title"] = "Stok Detay";
+}
+
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <div>
+                <h1 class="h4 mb-1">Stok Detay</h1>
+                <p class="text-muted mb-0">Stoğun açılış, alış, alış iade, satış, satış iade, çıkış ve şubeler arası transfer fişi/faturalarından hesaplanan hareketleri.</p>
+            </div>
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Listeye Dön</a>
+        </div>
+
+        <div class="row g-2">
+            <div class="col-md-3">
+                <div class="border rounded p-2 h-100">
+                    <div class="text-muted small">Stok Kodu</div>
+                    <div class="fw-semibold">@Model.StockCode</div>
+                </div>
+            </div>
+            <div class="col-md-5">
+                <div class="border rounded p-2 h-100">
+                    <div class="text-muted small">Stok Adı</div>
+                    <div class="fw-semibold">@Model.StockName</div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="border rounded p-2 h-100">
+                    <div class="text-muted small">Stok Grubu</div>
+                    <div class="fw-semibold">@(Model.StockGroupName ?? "-")</div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="border rounded p-2 h-100">
+                    <div class="text-muted small">Birim</div>
+                    <div class="fw-semibold">@(Model.StockUnitCode ?? "-")</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-3">
+    <div class="card-body">
+        <h2 class="h6 text-muted mb-3">Şube Bazında Giren / Çıkan</h2>
+        <div class="table-responsive">
+            <table class="table table-sm table-bordered mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Şube</th>
+                        <th class="text-end">Giren Miktar</th>
+                        <th class="text-end">Çıkan Miktar</th>
+                        <th class="text-end">Kalan Miktar</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.BranchSummaries.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">Hareket bulunamadı.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var branch in Model.BranchSummaries)
+                        {
+                            <tr>
+                                <td>@branch.WorkPlaceName</td>
+                                <td class="text-end">@branch.TotalIn.ToString("N4", CultureInfo.InvariantCulture)</td>
+                                <td class="text-end">@branch.TotalOut.ToString("N4", CultureInfo.InvariantCulture)</td>
+                                <td class="text-end fw-semibold">@branch.Balance.ToString("N4", CultureInfo.InvariantCulture)</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-end mb-3">
+            <input type="hidden" name="id" value="@Model.StockId" />
+            <div class="col-md-4">
+                <label asp-for="WorkPlaceId" class="form-label">Şube</label>
+                <select asp-for="WorkPlaceId" asp-items="Model.WorkPlaceOptions" class="form-select">
+                    <option value="">Tümü</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="TransactionType" class="form-label">İşlem Türü</label>
+                <select asp-for="TransactionType" asp-items="Model.TransactionTypeOptions" class="form-select">
+                    <option value="">Tümü</option>
+                </select>
+            </div>
+            <div class="col-md-4 d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Filtrele</button>
+                <a asp-action="Detail" asp-route-id="@Model.StockId" class="btn btn-outline-secondary">Temizle</a>
+            </div>
+        </form>
+
+        <div class="border rounded overflow-hidden">
+            <div class="d-flex justify-content-end p-2 border-bottom bg-light">
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="stockDetailClearFilters">Filtreleri Temizle</button>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle mb-0" id="stockDetailGrid">
+                    <thead>
+                        <tr>
+                            <th>Şube</th>
+                            <th>Tarih</th>
+                            <th>Evrak No</th>
+                            <th>İşlem Türü</th>
+                            <th>Cari Hesap</th>
+                            <th class="text-end">Miktar</th>
+                            <th class="text-end">Birim Fiyat</th>
+                            <th class="text-end">Net Tutar</th>
+                            <th class="text-end">Bakiye Adet</th>
+                            <th class="text-end">Yürüyen Maliyet</th>
+                            <th>Döviz</th>
+                            <th class="text-end">Döviz Kuru</th>
+                            <th class="text-end">Döviz Tutar</th>
+                        </tr>
+                        <tr class="table-light">
+                            <th><input type="text" class="form-control form-control-sm column-filter" data-col="0" placeholder="Ara..." /></th>
+                            <th><input type="text" class="form-control form-control-sm column-filter" data-col="1" placeholder="Ara..." /></th>
+                            <th><input type="text" class="form-control form-control-sm column-filter" data-col="2" placeholder="Ara..." /></th>
+                            <th><input type="text" class="form-control form-control-sm column-filter" data-col="3" placeholder="Ara..." /></th>
+                            <th><input type="text" class="form-control form-control-sm column-filter" data-col="4" placeholder="Ara..." /></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th><input type="text" class="form-control form-control-sm column-filter" data-col="10" placeholder="Ara..." /></th>
+                            <th></th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.LineCount == 0)
+                        {
+                            <tr class="empty-data-row">
+                                <td colspan="13" class="text-center text-muted">Kayıt bulunamadı.</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            for (var g = 0; g < Model.BranchGroups.Count; g++)
+                            {
+                                var group = Model.BranchGroups[g];
+                                <tr class="branch-group-header table-secondary" data-group="@g">
+                                    <td colspan="13">
+                                        <strong>@group.WorkPlaceName</strong>
+                                        <span class="text-muted small">(@group.Lines.Count hareket, Miktar Toplamı: @group.TotalQuantity.ToString("N4", CultureInfo.InvariantCulture))</span>
+                                    </td>
+                                </tr>
+                                foreach (var line in group.Lines)
+                                {
+                                    <tr class="data-row @(line.Quantity < 0 ? "text-danger" : "")" data-group="@g">
+                                        <td>@line.WorkPlaceName</td>
+                                        <td>@line.TransactionDate.ToString("dd.MM.yyyy")</td>
+                                        <td>@line.DocumentNo</td>
+                                        <td>@line.TransactionType</td>
+                                        <td>@(line.AccountName ?? "-")</td>
+                                        <td class="text-end">@line.Quantity.ToString("N4", CultureInfo.InvariantCulture)</td>
+                                        <td class="text-end">@line.UnitPrice.ToString("N4", CultureInfo.InvariantCulture)</td>
+                                        <td class="text-end">@line.NetAmount.ToString("N2", CultureInfo.InvariantCulture)</td>
+                                        <td class="text-end">@line.BalanceQuantity.ToString("N4", CultureInfo.InvariantCulture)</td>
+                                        <td class="text-end">@line.RunningUnitCost.ToString("N4", CultureInfo.InvariantCulture)</td>
+                                        <td>@line.CurrencyCode</td>
+                                        <td class="text-end">@line.ExchangeRate.ToString("N4", CultureInfo.InvariantCulture)</td>
+                                        <td class="text-end">@line.CurrencyNetAmount.ToString("N2", CultureInfo.InvariantCulture)</td>
+                                    </tr>
+                                }
+                                <tr class="branch-group-subtotal table-light fw-semibold" data-group="@g">
+                                    <td colspan="5" class="text-end">@group.WorkPlaceName Ara Toplam</td>
+                                    <td class="text-end">@group.TotalQuantity.ToString("N4", CultureInfo.InvariantCulture)</td>
+                                    <td></td>
+                                    <td class="text-end">@group.TotalNetAmount.ToString("N2", CultureInfo.InvariantCulture)</td>
+                                    <td class="text-end">@(group.Lines.Count > 0 ? group.Lines[^1].BalanceQuantity.ToString("N4", CultureInfo.InvariantCulture) : "-")</td>
+                                    <td class="text-end">@(group.Lines.Count > 0 ? group.Lines[^1].RunningUnitCost.ToString("N4", CultureInfo.InvariantCulture) : "-")</td>
+                                    <td colspan="3"></td>
+                                </tr>
+                            }
+                            <tr id="stockDetailNoFilterResults" class="d-none">
+                                <td colspan="13" class="text-center text-muted">Filtreye uygun kayıt bulunamadı.</td>
+                            </tr>
+                        }
+                    </tbody>
+                    @if (Model.LineCount > 0)
+                    {
+                        <tfoot>
+                            <tr class="table-light fw-semibold">
+                                <td colspan="5" class="text-end">Toplam</td>
+                                <td class="text-end">@Model.TotalQuantity.ToString("N4", CultureInfo.InvariantCulture)</td>
+                                <td></td>
+                                <td class="text-end">@Model.TotalNetAmount.ToString("N2", CultureInfo.InvariantCulture)</td>
+                                <td colspan="5"></td>
+                            </tr>
+                        </tfoot>
+                    }
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            var grid = document.getElementById('stockDetailGrid');
+            if (!grid) return;
+
+            var filters = grid.querySelectorAll('.column-filter');
+            var dataRows = grid.querySelectorAll('tbody tr.data-row');
+            var groupHeaderRows = grid.querySelectorAll('tbody tr.branch-group-header');
+            var groupSubtotalRows = grid.querySelectorAll('tbody tr.branch-group-subtotal');
+            var noResultsRow = document.getElementById('stockDetailNoFilterResults');
+            var clearButton = document.getElementById('stockDetailClearFilters');
+
+            function applyFilters() {
+                var visibleCount = 0;
+                var visibleGroups = {};
+
+                dataRows.forEach(function (row) {
+                    var visible = true;
+
+                    filters.forEach(function (input) {
+                        var query = (input.value || '').toLowerCase().trim();
+                        if (!query) return;
+
+                        var colIndex = parseInt(input.getAttribute('data-col'), 10);
+                        var cell = row.cells[colIndex];
+                        var text = (cell ? cell.textContent : '').toLowerCase();
+                        if (text.indexOf(query) === -1) {
+                            visible = false;
+                        }
+                    });
+
+                    row.classList.toggle('d-none', !visible);
+                    if (visible) {
+                        visibleCount++;
+                        visibleGroups[row.getAttribute('data-group')] = true;
+                    }
+                });
+
+                groupHeaderRows.forEach(function (row) {
+                    row.classList.toggle('d-none', !visibleGroups[row.getAttribute('data-group')]);
+                });
+
+                groupSubtotalRows.forEach(function (row) {
+                    row.classList.toggle('d-none', !visibleGroups[row.getAttribute('data-group')]);
+                });
+
+                if (noResultsRow) {
+                    noResultsRow.classList.toggle('d-none', visibleCount > 0);
+                }
+            }
+
+            filters.forEach(function (input) {
+                input.addEventListener('input', applyFilters);
+            });
+
+            if (clearButton) {
+                clearButton.addEventListener('click', function () {
+                    filters.forEach(function (input) {
+                        input.value = '';
+                    });
+                    applyFilters();
+                });
+            }
+        })();
+    </script>
+}

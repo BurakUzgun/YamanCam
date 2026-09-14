@@ -13,7 +13,7 @@ public class AppProductionDefinition
 
     public int RawMaterialStockId { get; set; }
 
-    [Column(TypeName = "decimal(18,4)")]
+    [Column(TypeName = "decimal(28,10)")]
     public decimal ProductionQuantity { get; set; }
 
     public int WorkPlaceId { get; set; }

@@ -1,4 +1,5 @@
 @model YamanCam.Web.Models.AppCustomsFreightInvoiceEditViewModel
+@using System.Globalization
 @using YamanCam.Web.Services
 @{
     var isNew = Model.RecId == 0;
@@ -121,7 +122,7 @@
                         </div>
                         <div class="col-12">
                             <label asp-for="ExchangeRate" class="form-label"></label>
-                            <input asp-for="ExchangeRate" id="exchangeRateInput" type="number" step="@NumberFormatHelper.Step(kurDec)" min="0.000001" class="form-control" />
+                            <input asp-for="ExchangeRate" id="exchangeRateInput" type="number" step="any" min="0.000001" class="form-control" value="@Model.ExchangeRate.ToString("F" + kurDec, CultureInfo.InvariantCulture)" />
                             <span asp-validation-for="ExchangeRate" class="text-danger"></span>
                         </div>
                         <div class="col-12">
@@ -161,11 +162,11 @@
                         </div>
                         <div class="col-md-2">
                             <label class="form-label">Tutar</label>
-                            <input id="lineAmountInput" type="number" step="@NumberFormatHelper.Step(tutarDec)" min="0" class="form-control form-control-sm text-end" value="0" />
+                            <input id="lineAmountInput" type="number" step="any" min="0" class="form-control form-control-sm text-end" value="0" />
                         </div>
                         <div class="col-md-2">
                             <label class="form-label">Kdv</label>
-                            <input id="lineVatRateInput" type="number" step="@NumberFormatHelper.Step(kdvOranTevkifatDec)" min="0" class="form-control form-control-sm text-end" value="0" />
+                            <input id="lineVatRateInput" type="number" step="any" min="0" class="form-control form-control-sm text-end" value="0" />
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Tevkifat</label>
@@ -179,7 +180,7 @@
                         </div>
                         <div class="col-md-2">
                             <label class="form-label">Kdv İnd. Oran</label>
-                            <input id="lineWithholdingRateInput" type="number" step="@NumberFormatHelper.Step(kdvIndOranDec)" min="0" max="100" class="form-control form-control-sm text-end" value="0" />
+                            <input id="lineWithholdingRateInput" type="number" step="any" min="0" max="100" class="form-control form-control-sm text-end" value="0" />
                         </div>
                     </div>
                     <div class="d-flex gap-2 mt-2 mb-3">

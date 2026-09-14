@@ -18,33 +18,33 @@ public class AppPurchaseInvoiceLine
     [StringLength(500)]
     public string? Description { get; set; }
 
-    [Column(TypeName = "decimal(18,4)")]
+    [Column(TypeName = "decimal(28,10)")]
     public decimal Quantity { get; set; }
 
-    [Column(TypeName = "decimal(18,4)")]
+    [Column(TypeName = "decimal(28,10)")]
     public decimal UnitPrice { get; set; }
 
-    [Column(TypeName = "decimal(5,2)")]
+    [Column(TypeName = "decimal(13,10)")]
     public decimal VatRate { get; set; }
 
     public int? WithholdingDefinitionId { get; set; }
 
-    [Column(TypeName = "decimal(5,2)")]
+    [Column(TypeName = "decimal(13,10)")]
     public decimal WithholdingRate { get; set; }
 
-    [Column(TypeName = "decimal(18,2)")]
+    [Column(TypeName = "decimal(28,10)")]
     public decimal NetAmount { get; set; }
 
-    [Column(TypeName = "decimal(18,2)")]
+    [Column(TypeName = "decimal(28,10)")]
     public decimal VatAmount { get; set; }
 
-    [Column(TypeName = "decimal(18,2)")]
+    [Column(TypeName = "decimal(28,10)")]
     public decimal WithholdingAmount { get; set; }
 
-    [Column(TypeName = "decimal(18,2)")]
+    [Column(TypeName = "decimal(28,10)")]
     public decimal NetVatAmount { get; set; }
 
-    [Column(TypeName = "decimal(18,2)")]
+    [Column(TypeName = "decimal(28,10)")]
     public decimal TotalAmount { get; set; }
 
     public DateTime? CreatedDate { get; set; }

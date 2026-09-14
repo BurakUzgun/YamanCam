@@ -18,10 +18,10 @@ public class AppJournalVoucherLine
     [StringLength(500)]
     public string? Description { get; set; }
 
-    [Column(TypeName = "decimal(18,2)")]
+    [Column(TypeName = "decimal(28,10)")]
     public decimal DebitAmount { get; set; }
 
-    [Column(TypeName = "decimal(18,2)")]
+    [Column(TypeName = "decimal(28,10)")]
     public decimal CreditAmount { get; set; }
 
     public DateTime? CreatedDate { get; set; }

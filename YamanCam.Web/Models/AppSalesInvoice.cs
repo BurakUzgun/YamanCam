@@ -26,38 +26,45 @@ public class AppSalesInvoice
     [StringLength(3)]
     public string CurrencyCode { get; set; } = "TRY";
 
-    [Column(TypeName = "decimal(18,6)")]
+    [Column(TypeName = "decimal(28,10)")]
     public decimal ExchangeRate { get; set; } = 1m;
 
-    [Column(TypeName = "decimal(18,2)")]
+    [Column(TypeName = "decimal(28,10)")]
     public decimal NetAmount { get; set; }
 
-    [Column(TypeName = "decimal(18,2)")]
+    [Column(TypeName = "decimal(28,10)")]
     public decimal VatAmount { get; set; }
 
-    [Column(TypeName = "decimal(18,2)")]
+    [Column(TypeName = "decimal(28,10)")]
     public decimal WithholdingAmount { get; set; }
 
-    [Column(TypeName = "decimal(18,2)")]
+    [Column(TypeName = "decimal(28,10)")]
     public decimal NetVatAmount { get; set; }
 
-    [Column(TypeName = "decimal(18,2)")]
+    [Column(TypeName = "decimal(28,10)")]
     public decimal TotalAmount { get; set; }
 
-    [Column(TypeName = "decimal(18,2)")]
+    [Column(TypeName = "decimal(28,10)")]
     public decimal NetAmountTRY { get; set; }
 
-    [Column(TypeName = "decimal(18,2)")]
+    [Column(TypeName = "decimal(28,10)")]
     public decimal VatAmountTRY { get; set; }
 
-    [Column(TypeName = "decimal(18,2)")]
+    [Column(TypeName = "decimal(28,10)")]
     public decimal WithholdingAmountTRY { get; set; }
 
-    [Column(TypeName = "decimal(18,2)")]
+    [Column(TypeName = "decimal(28,10)")]
     public decimal NetVatAmountTRY { get; set; }
 
-    [Column(TypeName = "decimal(18,2)")]
+    [Column(TypeName = "decimal(28,10)")]
     public decimal TotalAmountTRY { get; set; }
+
+    /// <summary>
+    /// true ise bu kayıt Satış İade Faturası'dır (AppSalesReturnInvoicesController), aksi
+    /// halde normal Satış Faturası'dır (AppSalesInvoicesController). Aynı tablo/alanları
+    /// paylaşırlar, yalnızca bu bayrakla ayrılırlar.
+    /// </summary>
+    public bool IsReturn { get; set; }
 
     public bool? IsActive { get; set; }
 

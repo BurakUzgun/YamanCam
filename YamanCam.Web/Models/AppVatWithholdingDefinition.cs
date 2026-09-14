@@ -15,10 +15,10 @@ public class AppVatWithholdingDefinition
     [StringLength(100)]
     public string WithholdingName { get; set; } = string.Empty;
 
-    [Column(TypeName = "decimal(5,2)")]
+    [Column(TypeName = "decimal(13,10)")]
     public decimal VatRate { get; set; }
 
-    [Column(TypeName = "decimal(5,2)")]
+    [Column(TypeName = "decimal(13,10)")]
     public decimal WithholdingRate { get; set; }
 
     [StringLength(50)]

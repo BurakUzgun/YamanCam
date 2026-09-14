@@ -379,7 +379,7 @@ public class AppStockOpeningsController : Controller
                 ModelState.AddModelError($"Lines[{i}].UnitPrice", "Birim fiyat negatif olamaz.");
             }
 
-            line.TotalPrice = Math.Round(line.Quantity * line.UnitPrice, 2, MidpointRounding.AwayFromZero);
+            line.TotalPrice = Math.Round(line.Quantity * line.UnitPrice, 10, MidpointRounding.AwayFromZero);
         }
 
         vm.TotalAmount = vm.Lines.Sum(x => x.TotalPrice);

@@ -1,4 +1,5 @@
 @model YamanCam.Web.Models.AppVatWithholdingDefinitionEditViewModel
+@using System.Globalization
 @{
     var isNew = Model.RecId == 0;
     ViewData["Title"] = isNew ? "Yeni Tevkifat KDV" : "Tevkifat KDV Düzenle";
@@ -34,12 +35,12 @@
                 </div>
                 <div class="col-md-3">
                     <label asp-for="VatRate" class="form-label"></label>
-                    <input asp-for="VatRate" class="form-control" type="number" step="0.01" min="0" max="100" />
+                    <input asp-for="VatRate" class="form-control" type="number" step="any" min="0" max="100" value="@Model.VatRate.ToString(CultureInfo.InvariantCulture)" />
                     <span asp-validation-for="VatRate" class="text-danger"></span>
                 </div>
                 <div class="col-md-3">
                     <label asp-for="WithholdingRate" class="form-label"></label>
-                    <input asp-for="WithholdingRate" class="form-control" type="number" step="0.01" min="0" max="100" />
+                    <input asp-for="WithholdingRate" class="form-control" type="number" step="any" min="0" max="100" value="@Model.WithholdingRate.ToString(CultureInfo.InvariantCulture)" />
                     <span asp-validation-for="WithholdingRate" class="text-danger"></span>
                 </div>
             </div>

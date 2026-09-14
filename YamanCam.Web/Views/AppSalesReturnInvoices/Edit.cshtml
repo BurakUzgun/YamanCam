@@ -1,9 +1,9 @@
-@model YamanCam.Web.Models.AppPurchaseInvoiceEditViewModel
+@model YamanCam.Web.Models.AppSalesInvoiceEditViewModel
 @using System.Globalization
 @using YamanCam.Web.Services
 @{
     var isNew = Model.RecId == 0;
-    ViewData["Title"] = isNew ? "Yeni Alış Faturası" : "Alış Faturası Düzenle";
+    ViewData["Title"] = isNew ? "Yeni Satış İade Faturası" : "Satış İade Faturası Düzenle";
     var stockOptionsJson = System.Text.Json.JsonSerializer.Serialize(
         Model.StockOptions.Select(o => new { value = o.Value, text = o.Text }));
     var stockVatRates = ViewData["StockVatRates"] as Dictionary<string, decimal> ?? new Dictionary<string, decimal>();
@@ -15,23 +15,23 @@
 
     var kusurat = ViewData["Kusurat"] as IReadOnlyDictionary<string, int>;
     int Dec(string key) => NumberFormatHelper.Get(kusurat, key);
-    var kurDec = Dec("Alış Faturaları Kur");
-    var qtyDec = Dec("Yeni Alış Faturası Miktar");
-    var priceDec = Dec("Yeni Alış Faturası Birim Fiyat");
-    var vatRateDec = Dec("Yeni Alış Faturası KDV %");
-    var withholdingRateDec = Dec("Yeni Alış Faturası Tev. %");
-    var netDec = Dec("Yeni Alış Faturası Net (Döviz)");
-    var vatDec = Dec("Yeni Alış Faturası KDV (Döviz)");
-    var withholdingDec = Dec("Yeni Alış Faturası Tevkifat");
-    var netVatDec = Dec("Yeni Alış Faturası Net KDV");
-    var totalDec = Dec("Yeni Alış Faturası Toplam (Döviz)");
-    var malBedeliDec = Dec("Yeni Alış Faturası Mal Bedeli");
-    var genelToplamDec = Dec("Yeni Alış Faturası Genel Toplam");
+    var kurDec = Dec("Satış Faturaları Kur");
+    var qtyDec = Dec("Yeni Satış Faturası Miktar");
+    var priceDec = Dec("Yeni Satış Faturası Birim Fiyat");
+    var vatRateDec = Dec("Yeni Satış Faturası KDV %");
+    var withholdingRateDec = Dec("Yeni Satış Faturası Tev. %");
+    var netDec = Dec("Yeni Satış Faturası Net (Döviz)");
+    var vatDec = Dec("Yeni Satış Faturası KDV (Döviz)");
+    var withholdingDec = Dec("Yeni Satış Faturası Tevkifat");
+    var netVatDec = Dec("Yeni Satış Faturası Net KDV");
+    var totalDec = Dec("Yeni Satış Faturası Toplam (Döviz)");
+    var malBedeliDec = Dec("Yeni Satış Faturası Mal Bedeli");
+    var genelToplamDec = Dec("Yeni Satış Faturası Genel Toplam");
 }
 
 <div class="card border-0 shadow-sm">
     <div class="card-body">
-        <form asp-action="@(isNew ? "Create" : "Edit")" method="post" id="purchaseInvoiceForm">
+        <form asp-action="@(isNew ? "Create" : "Edit")" method="post" id="salesReturnInvoiceForm">
             @Html.AntiForgeryToken()
             <input asp-for="RecId" type="hidden" />
 

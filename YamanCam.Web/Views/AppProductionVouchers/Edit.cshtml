@@ -12,8 +12,12 @@
     var kusurat = ViewData["Kusurat"] as IReadOnlyDictionary<string, int>;
     int Dec(string key) => NumberFormatHelper.Get(kusurat, key);
     var rawQtyDec = Dec("Yeni Stok Ürün Üretim Fişi Miktar");
+    var rawPriceDec = Dec("Yeni Stok Ürün Üretim Fişi Hammadde Birim Fiyat");
+    var rawAmountDec = Dec("Yeni Stok Ürün Üretim Fişi Hammadde Tutar");
     var wasteDec = Dec("Yeni Stok Ürün Üretim Fişi Fire Oran %");
     var prodQtyDec = Dec("Yeni Stok Ürün Üretim Fişi Miktar (Mamül)");
+    var prodPriceDec = Dec("Yeni Stok Ürün Üretim Fişi Mamul Birim Fiyat");
+    var prodAmountDec = Dec("Yeni Stok Ürün Üretim Fişi Mamul Tutar");
 }
 
 <div class="card border-0 shadow-sm">
@@ -27,6 +31,11 @@
             </div>
 
             <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            @if (TempData["ErrorMessage"] is string errorMessage)
+            {
+                <div class="alert alert-warning">@errorMessage</div>
+            }
 
             <h2 class="h6 text-muted mb-3">Fiş Bilgileri</h2>
             <div class="row g-3">
@@ -69,12 +78,15 @@
                 <table class="table table-sm align-middle mb-2" id="linesTable">
                     <thead>
                         <tr>
-                            <th style="min-width:240px;">Hammadde Adı</th>
-                            <th style="width:130px;" class="text-end">Miktar</th>
-                            <th style="width:110px;" class="text-end">Fire Oran %</th>
-                            <th style="width:130px;" class="text-end">Miktar (Mamül)</th>
-                            <th style="min-width:240px;">Mamul Adı</th>
-                            <th style="width:50px;"></th>
+                            <th style="min-width:220px;">Hammadde Adı</th>
+                            <th style="width:120px;" class="text-end">Miktar</th>
+                            <th style="width:130px;" class="text-end">Hammadde Birim Fiyat</th>
+                            <th style="width:130px;" class="text-end">Hammadde Tutar</th>
+                            <th style="width:100px;" class="text-end">Fire Oran %</th>
+                            <th style="width:120px;" class="text-end">Miktar (Mamül)</th>
+                            <th style="width:130px;" class="text-end">Mamul Birim Fiyat</th>
+                            <th style="width:130px;" class="text-end">Mamul Tutar</th>
+                            <th style="min-width:220px;">Mamul Adı</th>
                         </tr>
                     </thead>
                     <tbody id="linesBody">
@@ -91,9 +103,13 @@
                                         }
                                     </select>
                                 </td>
-                                <td><input type="number" step="@NumberFormatHelper.Step(rawQtyDec)" min="0" name="Lines[@i].RawMaterialQuantity" class="form-control form-control-sm text-end line-raw-qty" value="@Model.Lines[i].RawMaterialQuantity.ToString(CultureInfo.InvariantCulture)" /></td>
-                                <td><input type="number" step="@NumberFormatHelper.Step(wasteDec)" min="0" max="100" name="Lines[@i].WasteRate" class="form-control form-control-sm text-end line-waste" value="@Model.Lines[i].WasteRate.ToString(CultureInfo.InvariantCulture)" /></td>
-                                <td><input type="number" step="@NumberFormatHelper.Step(prodQtyDec)" min="0" name="Lines[@i].ProductQuantity" class="form-control form-control-sm text-end line-prod-qty" value="@Model.Lines[i].ProductQuantity.ToString(CultureInfo.InvariantCulture)" /></td>
+                                <td><input type="number" step="any" min="0" name="Lines[@i].RawMaterialQuantity" class="form-control form-control-sm text-end line-raw-qty" value="@Model.Lines[i].RawMaterialQuantity.ToString("F" + rawQtyDec, CultureInfo.InvariantCulture)" /></td>
+                                <td><input type="number" step="any" min="0" name="Lines[@i].RawMaterialUnitPrice" class="form-control form-control-sm text-end line-raw-price" value="@Model.Lines[i].RawMaterialUnitPrice.ToString("F" + rawPriceDec, CultureInfo.InvariantCulture)" /></td>
+                                <td><input type="number" step="any" min="0" name="Lines[@i].RawMaterialNetAmount" class="form-control form-control-sm text-end line-raw-amount" value="@Model.Lines[i].RawMaterialNetAmount.ToString("F" + rawAmountDec, CultureInfo.InvariantCulture)" /></td>
+                                <td><input type="number" step="any" min="0" max="100" name="Lines[@i].WasteRate" class="form-control form-control-sm text-end line-waste" value="@Model.Lines[i].WasteRate.ToString("F" + wasteDec, CultureInfo.InvariantCulture)" /></td>
+                                <td><input type="number" step="any" min="0" name="Lines[@i].ProductQuantity" class="form-control form-control-sm text-end line-prod-qty" value="@Model.Lines[i].ProductQuantity.ToString("F" + prodQtyDec, CultureInfo.InvariantCulture)" /></td>
+                                <td><input type="number" step="any" min="0" name="Lines[@i].ProductUnitPrice" class="form-control form-control-sm text-end line-prod-price" value="@Model.Lines[i].ProductUnitPrice.ToString("F" + prodPriceDec, CultureInfo.InvariantCulture)" /></td>
+                                <td><input type="number" step="any" min="0" name="Lines[@i].ProductNetAmount" class="form-control form-control-sm text-end line-prod-amount" value="@Model.Lines[i].ProductNetAmount.ToString("F" + prodAmountDec, CultureInfo.InvariantCulture)" /></td>
                                 <td>
                                     <select name="Lines[@i].ProductStockId" class="form-select form-select-sm line-product">
                                         <option value="0">Seçiniz</option>
@@ -103,17 +119,16 @@
                                         }
                                     </select>
                                 </td>
-                                <td class="text-center">
-                                    <button type="button" class="btn btn-sm btn-outline-danger line-remove">&times;</button>
-                                </td>
                             </tr>
                         }
                     </tbody>
                 </table>
             </div>
             <div class="d-flex gap-2 mb-4">
-                <button type="button" class="btn btn-sm btn-outline-secondary" id="addLineBtn">Üretim Satır Oluştur</button>
-                <button type="button" class="btn btn-sm btn-outline-danger" id="removeLastLineBtn">Satır Sil</button>
+                <button type="submit" formaction="@Url.Action("GenerateLines")" formnovalidate class="btn btn-sm btn-outline-secondary" id="generateLinesBtn">Üretim Satır Oluştur</button>
+            </div>
+            <div class="form-text mb-4">
+                "Üretim Satır Oluştur" butonu, seçili şubedeki Üretim Tanımları'nı tarayıp satılan (satış iade düşülmüş) mamül miktarına göre gereken hammadde miktarını ve birim fiyatını (Alış + Satış İade Faturaları'ndan) otomatik hesaplar. Sonrasında satırları elle düzenleyebilirsiniz.
             </div>
 
             <div class="d-flex flex-wrap gap-2 mt-4">
@@ -141,30 +156,18 @@
     <script>
         (function () {
             var linesBody = document.getElementById('linesBody');
-            var addBtn = document.getElementById('addLineBtn');
-            var removeLastBtn = document.getElementById('removeLastLineBtn');
-            var stockOptions = @Html.Raw(stockOptionsJson);
             var productRawMap = @Html.Raw(productRawMapJson);
+            var rawAmountDec = @rawAmountDec;
+            var prodAmountDec = @prodAmountDec;
 
-            var rawQtyStep = '@NumberFormatHelper.Step(rawQtyDec)';
-            var wasteStep = '@NumberFormatHelper.Step(wasteDec)';
-            var prodQtyStep = '@NumberFormatHelper.Step(prodQtyDec)';
+            function recalcRow(row) {
+                var rawQty = parseFloat(row.querySelector('.line-raw-qty').value) || 0;
+                var rawPrice = parseFloat(row.querySelector('.line-raw-price').value) || 0;
+                var prodQty = parseFloat(row.querySelector('.line-prod-qty').value) || 0;
+                var prodPrice = parseFloat(row.querySelector('.line-prod-price').value) || 0;
 
-            function buildStockOptionsHtml() {
-                var html = '<option value="0">Seçiniz</option>';
-                stockOptions.forEach(function (opt) {
-                    html += '<option value="' + opt.value + '">' + opt.text + '</option>';
-                });
-                return html;
-            }
-
-            function reindex() {
-                var rows = linesBody.querySelectorAll('tr.line-row');
-                rows.forEach(function (row, idx) {
-                    row.querySelectorAll('[name]').forEach(function (el) {
-                        el.name = el.name.replace(/Lines\[\d+\]/, 'Lines[' + idx + ']');
-                    });
-                });
+                row.querySelector('.line-raw-amount').value = (rawQty * rawPrice).toFixed(rawAmountDec);
+                row.querySelector('.line-prod-amount').value = (prodQty * prodPrice).toFixed(prodAmountDec);
             }
 
             function bindRowEvents(row) {
@@ -176,37 +179,14 @@
                     }
                 });
 
-                row.querySelector('.line-remove').addEventListener('click', function () {
-                    if (linesBody.querySelectorAll('tr.line-row').length <= 1) return;
-                    row.remove();
-                    reindex();
+                row.querySelectorAll('.line-raw-qty, .line-raw-price, .line-prod-qty, .line-prod-price').forEach(function (el) {
+                    el.addEventListener('input', function () {
+                        recalcRow(row);
+                    });
                 });
             }
 
-            function addRow() {
-                var idx = linesBody.querySelectorAll('tr.line-row').length;
-                var tr = document.createElement('tr');
-                tr.className = 'line-row';
-                tr.innerHTML =
-                    '<td><input type="hidden" name="Lines[' + idx + '].RecId" value="0" />' +
-                    '<select name="Lines[' + idx + '].RawMaterialStockId" class="form-select form-select-sm line-raw">' + buildStockOptionsHtml() + '</select></td>' +
-                    '<td><input type="number" step="' + rawQtyStep + '" min="0" name="Lines[' + idx + '].RawMaterialQuantity" class="form-control form-control-sm text-end line-raw-qty" value="0" /></td>' +
-                    '<td><input type="number" step="' + wasteStep + '" min="0" max="100" name="Lines[' + idx + '].WasteRate" class="form-control form-control-sm text-end line-waste" value="0" /></td>' +
-                    '<td><input type="number" step="' + prodQtyStep + '" min="0" name="Lines[' + idx + '].ProductQuantity" class="form-control form-control-sm text-end line-prod-qty" value="0" /></td>' +
-                    '<td><select name="Lines[' + idx + '].ProductStockId" class="form-select form-select-sm line-product">' + buildStockOptionsHtml() + '</select></td>' +
-                    '<td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger line-remove">&times;</button></td>';
-                linesBody.appendChild(tr);
-                bindRowEvents(tr);
-            }
-
             linesBody.querySelectorAll('tr.line-row').forEach(bindRowEvents);
-            addBtn.addEventListener('click', addRow);
-            removeLastBtn.addEventListener('click', function () {
-                var rows = linesBody.querySelectorAll('tr.line-row');
-                if (rows.length <= 1) return;
-                rows[rows.length - 1].remove();
-                reindex();
-            });
         })();
     </script>
 }

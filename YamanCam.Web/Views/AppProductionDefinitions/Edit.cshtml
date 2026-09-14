@@ -1,4 +1,5 @@
 @model YamanCam.Web.Models.AppProductionDefinitionEditViewModel
+@using System.Globalization
 @{
     var isNew = Model.RecId == 0;
     ViewData["Title"] = isNew ? "Yeni Üretim Tanımı" : "Üretim Tanımı Düzenle";
@@ -44,7 +45,7 @@
                 </div>
                 <div class="col-md-4">
                     <label asp-for="ProductionQuantity" class="form-label"></label>
-                    <input asp-for="ProductionQuantity" class="form-control" type="number" step="0.0001" min="0" />
+                    <input asp-for="ProductionQuantity" class="form-control" type="number" step="any" min="0" value="@Model.ProductionQuantity.ToString(CultureInfo.InvariantCulture)" />
                     <span asp-validation-for="ProductionQuantity" class="text-danger"></span>
                 </div>
             </div>

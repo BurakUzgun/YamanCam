@@ -65,7 +65,7 @@
                 </div>
                 <div class="col-md-4">
                     <label asp-for="ExchangeRate" class="form-label"></label>
-                    <input asp-for="ExchangeRate" id="exchangeRateInput" type="number" step="@NumberFormatHelper.Step(kurDec)" min="0.0001" class="form-control" />
+                    <input asp-for="ExchangeRate" id="exchangeRateInput" type="number" step="any" min="0.0001" class="form-control" value="@Model.ExchangeRate.ToString("F" + kurDec, CultureInfo.InvariantCulture)" />
                     <span asp-validation-for="ExchangeRate" class="text-danger"></span>
                     <div class="form-text">TRY seçiliyken kur otomatik olarak 1 kabul edilir.</div>
                 </div>
@@ -133,9 +133,9 @@
                                     </select>
                                 </td>
                                 <td><input type="text" name="Lines[@i].Description" class="form-control form-control-sm" value="@Model.Lines[i].Description" /></td>
-                                <td><input type="number" step="@NumberFormatHelper.Step(qtyDec)" min="0" name="Lines[@i].Quantity" class="form-control form-control-sm text-end line-qty" value="@Model.Lines[i].Quantity.ToString(CultureInfo.InvariantCulture)" /></td>
-                                <td><input type="number" step="@NumberFormatHelper.Step(priceDec)" min="0" name="Lines[@i].UnitPrice" class="form-control form-control-sm text-end line-price" value="@Model.Lines[i].UnitPrice.ToString(CultureInfo.InvariantCulture)" /></td>
-                                <td><input type="number" step="@NumberFormatHelper.Step(vatRateDec)" min="0" name="Lines[@i].VatRate" class="form-control form-control-sm text-end line-vatrate" value="@Model.Lines[i].VatRate.ToString(CultureInfo.InvariantCulture)" /></td>
+                                <td><input type="number" step="any" min="0" name="Lines[@i].Quantity" class="form-control form-control-sm text-end line-qty" value="@Model.Lines[i].Quantity.ToString("F" + qtyDec, CultureInfo.InvariantCulture)" /></td>
+                                <td><input type="number" step="any" min="0" name="Lines[@i].UnitPrice" class="form-control form-control-sm text-end line-price" value="@Model.Lines[i].UnitPrice.ToString("F" + priceDec, CultureInfo.InvariantCulture)" /></td>
+                                <td><input type="number" step="any" min="0" name="Lines[@i].VatRate" class="form-control form-control-sm text-end line-vatrate" value="@Model.Lines[i].VatRate.ToString("F" + vatRateDec, CultureInfo.InvariantCulture)" /></td>
                                 <td>
                                     <select name="Lines[@i].WithholdingDefinitionId" class="form-select form-select-sm line-withholding-select">
                                         <option value="">Yok</option>
@@ -145,12 +145,12 @@
                                         }
                                     </select>
                                 </td>
-                                <td><input type="number" step="@NumberFormatHelper.Step(withholdingRateDec)" min="0" max="100" name="Lines[@i].WithholdingRate" class="form-control form-control-sm text-end line-withholding-rate" value="@Model.Lines[i].WithholdingRate.ToString(CultureInfo.InvariantCulture)" /></td>
+                                <td><input type="number" step="any" min="0" max="100" name="Lines[@i].WithholdingRate" class="form-control form-control-sm text-end line-withholding-rate" value="@Model.Lines[i].WithholdingRate.ToString("F" + withholdingRateDec, CultureInfo.InvariantCulture)" /></td>
                                 <td class="text-end line-net">0,00</td>
                                 <td class="text-end line-vat">0,00</td>
                                 <td class="text-end line-withholding-amount">0,00</td>
                                 <td class="text-end line-net-vat">0,00</td>
-                                <td><input type="number" step="@NumberFormatHelper.Step(totalDec)" min="0" class="form-control form-control-sm text-end line-total" value="0" /></td>
+                                <td><input type="number" step="any" min="0" class="form-control form-control-sm text-end line-total" value="0" /></td>
                                 <td class="text-center">
                                     <button type="button" class="btn btn-sm btn-outline-danger line-remove">&times;</button>
                                 </td>
@@ -226,13 +226,15 @@
                 netVat: @netVatDec,
                 total: @totalDec,
                 malBedeli: @malBedeliDec,
-                genelToplam: @genelToplamDec
+                genelToplam: @genelToplamDec,
+                qty: @qtyDec,
+                price: @priceDec
             };
-            var qtyStep = '@NumberFormatHelper.Step(qtyDec)';
-            var priceStep = '@NumberFormatHelper.Step(priceDec)';
-            var vatRateStep = '@NumberFormatHelper.Step(vatRateDec)';
-            var withholdingRateStep = '@NumberFormatHelper.Step(withholdingRateDec)';
-            var totalStep = '@NumberFormatHelper.Step(totalDec)';
+            var qtyStep = 'any';
+            var priceStep = 'any';
+            var vatRateStep = 'any';
+            var withholdingRateStep = 'any';
+            var totalStep = 'any';
 
             function formatAmount(value, decimals) {
                 var d = (decimals === undefined || decimals === null) ? 2 : decimals;
@@ -264,8 +266,9 @@
                 });
             }
 
-            function roundValue(value) {
-                return Math.round(value * 10000) / 10000;
+            function roundValue(value, decimals) {
+                var d = (decimals === undefined || decimals === null) ? 4 : decimals;
+                return value.toFixed(d);
             }
 
             function setRowAmounts(row, net, vat, withholding, netVat, total) {
@@ -293,7 +296,7 @@
                 var total = net + netVat;
 
                 setRowAmounts(row, net, vat, withholding, netVat, total);
-                row.querySelector('.line-total').value = roundValue(total);
+                row.querySelector('.line-total').value = roundValue(total, kusuratDecimals.total);
 
                 return { net: net, vat: vat, withholding: withholding, netVat: netVat, total: total };
             }
@@ -311,7 +314,7 @@
                 var netVat = vat - withholding;
 
                 if (qty) {
-                    row.querySelector('.line-price').value = roundValue(net / qty);
+                    row.querySelector('.line-price').value = roundValue(net / qty, kusuratDecimals.price);
                 }
 
                 setRowAmounts(row, net, vat, withholding, netVat, total);

@@ -15,7 +15,7 @@ public class AppVatDefinition
     [StringLength(100)]
     public string VatName { get; set; } = string.Empty;
 
-    [Column(TypeName = "decimal(5,2)")]
+    [Column(TypeName = "decimal(13,10)")]
     public decimal VatRate { get; set; }
 
     [StringLength(50)]

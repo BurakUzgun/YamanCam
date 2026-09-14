@@ -34,11 +34,7 @@ public class AppProductionVoucherEditViewModel
     [Display(Name = "Özel Kod")]
     public string? SpecialCode { get; set; }
 
-    public List<AppProductionVoucherLineEditViewModel> Lines { get; set; } = new()
-    {
-        new AppProductionVoucherLineEditViewModel(),
-        new AppProductionVoucherLineEditViewModel()
-    };
+    public List<AppProductionVoucherLineEditViewModel> Lines { get; set; } = new();
 
     public IReadOnlyList<SelectListItem> WorkPlaceOptions { get; set; } = Array.Empty<SelectListItem>();
     public IReadOnlyList<SelectListItem> TransactionTypeOptions { get; set; } = Array.Empty<SelectListItem>();
@@ -57,11 +53,23 @@ public class AppProductionVoucherLineEditViewModel
     [Display(Name = "Miktar")]
     public decimal RawMaterialQuantity { get; set; }
 
+    [Display(Name = "Hammadde Birim Fiyat")]
+    public decimal RawMaterialUnitPrice { get; set; }
+
+    [Display(Name = "Hammadde Tutar")]
+    public decimal RawMaterialNetAmount { get; set; }
+
     [Display(Name = "Fire Oran")]
     public decimal WasteRate { get; set; }
 
     [Display(Name = "Miktar")]
     public decimal ProductQuantity { get; set; }
+
+    [Display(Name = "Mamul Birim Fiyat")]
+    public decimal ProductUnitPrice { get; set; }
+
+    [Display(Name = "Mamul Tutar")]
+    public decimal ProductNetAmount { get; set; }
 
     [Display(Name = "Mamul Adı")]
     public int ProductStockId { get; set; }

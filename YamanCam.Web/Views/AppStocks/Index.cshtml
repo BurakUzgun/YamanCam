@@ -90,6 +90,7 @@
                                     <td>@(item.StockType ?? "-")</td>
                                     <td>@(item.ProductionWeight.HasValue ? item.ProductionWeight.Value.ToString("0.####") : "-")</td>
                                     <td class="text-end text-nowrap">
+                                        <a asp-action="Detail" asp-route-id="@item.RecId" class="btn btn-sm btn-outline-info">Detay</a>
                                         <a asp-action="Edit" asp-route-id="@item.RecId" class="btn btn-sm btn-outline-primary">Düzenle</a>
                                         <form asp-action="Delete" asp-route-id="@item.RecId" method="post" class="d-inline">
                                             @Html.AntiForgeryToken()

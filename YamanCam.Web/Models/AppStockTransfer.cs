@@ -30,7 +30,7 @@ public class AppStockTransfer
     [StringLength(50)]
     public string? SpecialCode { get; set; }
 
-    [Column(TypeName = "decimal(18,2)")]
+    [Column(TypeName = "decimal(28,10)")]
     public decimal TotalAmount { get; set; }
 
     public bool? IsActive { get; set; }

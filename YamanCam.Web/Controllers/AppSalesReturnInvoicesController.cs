@@ -10,11 +10,18 @@ using Microsoft.EntityFrameworkCore;
 namespace YamanCam.Web.Controllers;
 
 /// <summary>
-/// Alış Faturası giriş ekranı. Fatura carisi App_AccountPlan'da AccountType = "Cari"
-/// olan hesaplardan seçilir, satırlar App_Stock (malzeme kartları) referans alır.
-/// Döviz ile girilen tutarlar, fatura kuru ile TL karşılığına çevrilip ayrıca saklanır.
+/// Satış İade Faturası giriş ekranı. Stoğa geri giriş olduğu için Alış Faturası ile aynı
+/// mantıkla ele alınır: satır KDV varsayılanı stok kartındaki Alış KDV'sinden gelir
+/// (AppPurchaseInvoicesController ile aynı), Stok Detay ekranında da Alış gibi pozitif
+/// miktar/maliyet olarak işlenir (bkz. AppStocksController.BuildStockMovementsAsync).
+/// Yapısal olarak AppSalesInvoicesController (Satış Faturası) ile birebir aynıdır — aynı
+/// App_SalesInvoice/App_SalesInvoiceLine tablolarını ve aynı view model'leri kullanır;
+/// tek fark App_SalesInvoice.IsReturn = true olarak kaydedilmesi ve sorguların bu bayrağa
+/// göre filtrelenmesidir. Fatura no benzersizliği (InvoiceNo, IsReturn) ikilisine göre
+/// kontrol edildiğinden Satış Faturası ile Satış İade Faturası kendi ayrı numara
+/// serilerini kullanabilir.
 /// </summary>
-public class AppPurchaseInvoicesController : Controller
+public class AppSalesReturnInvoicesController : Controller
 {
     private const string CariAccountType = "Cari";
     private static readonly string[] AllowedCurrencyCodes = { "TRY", "USD", "EUR", "GBP" };
@@ -24,7 +31,7 @@ public class AppPurchaseInvoicesController : Controller
     private readonly IUserRightService _userRightService;
     private readonly IAppSettingService _appSettingService;
 
-    public AppPurchaseInvoicesController(
+    public AppSalesReturnInvoicesController(
         ApplicationDbContext context,
         IAppLogService appLogService,
         IUserRightService userRightService,
@@ -45,7 +52,7 @@ public class AppPurchaseInvoicesController : Controller
             return denied;
         }
 
-        var query = _context.AppPurchaseInvoices.AsNoTracking().Where(x => x.IsReturn != true);
+        var query = _context.AppSalesInvoices.AsNoTracking().Where(x => x.IsReturn == true);
 
         query = showDeleted
             ? query.Where(x => x.IsActive == false)
@@ -54,7 +61,7 @@ public class AppPurchaseInvoicesController : Controller
         var items = await query
             .OrderByDescending(x => x.InvoiceDate)
             .ThenByDescending(x => x.RecId)
-            .Select(x => new AppPurchaseInvoiceListItemViewModel
+            .Select(x => new AppSalesInvoiceListItemViewModel
             {
                 RecId = x.RecId,
                 InvoiceNo = x.InvoiceNo,
@@ -72,7 +79,7 @@ public class AppPurchaseInvoicesController : Controller
 
         ViewData["Kusurat"] = await _appSettingService.GetKusuratMapAsync();
 
-        return View(new AppPurchaseInvoiceListViewModel
+        return View(new AppSalesInvoiceListViewModel
         {
             ShowDeleted = showDeleted,
             Items = items
@@ -88,7 +95,7 @@ public class AppPurchaseInvoicesController : Controller
             return denied;
         }
 
-        var vm = new AppPurchaseInvoiceEditViewModel();
+        var vm = new AppSalesInvoiceEditViewModel();
         await PopulateSelectListsAsync(vm);
         ViewData["Kusurat"] = await _appSettingService.GetKusuratMapAsync();
         return View("Edit", vm);
@@ -96,7 +103,7 @@ public class AppPurchaseInvoicesController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(AppPurchaseInvoiceEditViewModel vm)
+    public async Task<IActionResult> Create(AppSalesInvoiceEditViewModel vm)
     {
         var denied = await EnsureAdmin();
         if (denied is not null)
@@ -114,21 +121,21 @@ public class AppPurchaseInvoicesController : Controller
             return View("Edit", vm);
         }
 
-        var entity = new AppPurchaseInvoice { IsActive = true };
+        var entity = new AppSalesInvoice { IsActive = true, IsReturn = true };
         ApplyViewModel(entity, vm);
         entity.CreatedDate = DateTime.UtcNow;
         ApplyLines(entity, vm);
 
-        _context.AppPurchaseInvoices.Add(entity);
+        _context.AppSalesInvoices.Add(entity);
         await _context.SaveChangesAsync();
 
         await _appLogService.WriteInfoAsync(
-            "PurchaseInvoice",
+            "SalesReturnInvoice",
             "Created",
-            $"Alış Faturası oluşturuldu. No={entity.InvoiceNo}",
+            $"Satış İade Faturası oluşturuldu. No={entity.InvoiceNo}",
             newValue: BuildAuditValue(entity));
 
-        TempData["SuccessMessage"] = "Alış Faturası kaydedildi.";
+        TempData["SuccessMessage"] = "Satış İade Faturası kaydedildi.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -141,10 +148,10 @@ public class AppPurchaseInvoicesController : Controller
             return denied;
         }
 
-        var entity = await _context.AppPurchaseInvoices
+        var entity = await _context.AppSalesInvoices
             .AsNoTracking()
             .Include(x => x.Lines)
-            .FirstOrDefaultAsync(x => x.RecId == id && x.IsReturn != true);
+            .FirstOrDefaultAsync(x => x.RecId == id && x.IsReturn == true);
 
         if (entity is null)
         {
@@ -159,7 +166,7 @@ public class AppPurchaseInvoicesController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, AppPurchaseInvoiceEditViewModel vm)
+    public async Task<IActionResult> Edit(int id, AppSalesInvoiceEditViewModel vm)
     {
         var denied = await EnsureAdmin();
         if (denied is not null)
@@ -172,9 +179,9 @@ public class AppPurchaseInvoicesController : Controller
             return NotFound();
         }
 
-        var entity = await _context.AppPurchaseInvoices
+        var entity = await _context.AppSalesInvoices
             .Include(x => x.Lines)
-            .FirstOrDefaultAsync(x => x.RecId == id && x.IsReturn != true);
+            .FirstOrDefaultAsync(x => x.RecId == id && x.IsReturn == true);
 
         if (entity is null)
         {
@@ -192,20 +199,20 @@ public class AppPurchaseInvoicesController : Controller
         }
 
         ApplyViewModel(entity, vm);
-        _context.AppPurchaseInvoiceLines.RemoveRange(entity.Lines);
+        _context.AppSalesInvoiceLines.RemoveRange(entity.Lines);
         entity.Lines.Clear();
         ApplyLines(entity, vm);
 
         await _context.SaveChangesAsync();
 
         await _appLogService.WriteInfoAsync(
-            "PurchaseInvoice",
+            "SalesReturnInvoice",
             "Updated",
-            $"Alış Faturası güncellendi. No={entity.InvoiceNo}",
+            $"Satış İade Faturası güncellendi. No={entity.InvoiceNo}",
             oldValue: oldAudit,
             newValue: BuildAuditValue(entity));
 
-        TempData["SuccessMessage"] = "Alış Faturası güncellendi.";
+        TempData["SuccessMessage"] = "Satış İade Faturası güncellendi.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -219,9 +226,9 @@ public class AppPurchaseInvoicesController : Controller
             return denied;
         }
 
-        var entity = await _context.AppPurchaseInvoices
+        var entity = await _context.AppSalesInvoices
             .Include(x => x.Lines)
-            .FirstOrDefaultAsync(x => x.RecId == id && x.IsReturn != true);
+            .FirstOrDefaultAsync(x => x.RecId == id && x.IsReturn == true);
 
         if (entity is null)
         {
@@ -233,13 +240,13 @@ public class AppPurchaseInvoicesController : Controller
         await _context.SaveChangesAsync();
 
         await _appLogService.WriteInfoAsync(
-            "PurchaseInvoice",
+            "SalesReturnInvoice",
             "Deleted",
-            $"Alış Faturası silindi. No={entity.InvoiceNo}",
+            $"Satış İade Faturası silindi. No={entity.InvoiceNo}",
             oldValue: oldAudit,
             newValue: BuildAuditValue(entity));
 
-        TempData["SuccessMessage"] = "Alış Faturası silindi.";
+        TempData["SuccessMessage"] = "Satış İade Faturası silindi.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -253,9 +260,9 @@ public class AppPurchaseInvoicesController : Controller
             return denied;
         }
 
-        var entity = await _context.AppPurchaseInvoices
+        var entity = await _context.AppSalesInvoices
             .Include(x => x.Lines)
-            .FirstOrDefaultAsync(x => x.RecId == id && x.IsReturn != true);
+            .FirstOrDefaultAsync(x => x.RecId == id && x.IsReturn == true);
 
         if (entity is null)
         {
@@ -267,13 +274,13 @@ public class AppPurchaseInvoicesController : Controller
         await _context.SaveChangesAsync();
 
         await _appLogService.WriteInfoAsync(
-            "PurchaseInvoice",
+            "SalesReturnInvoice",
             "Restored",
-            $"Alış Faturası geri yüklendi. No={entity.InvoiceNo}",
+            $"Satış İade Faturası geri yüklendi. No={entity.InvoiceNo}",
             oldValue: oldAudit,
             newValue: BuildAuditValue(entity));
 
-        TempData["SuccessMessage"] = "Alış Faturası geri yüklendi.";
+        TempData["SuccessMessage"] = "Satış İade Faturası geri yüklendi.";
         return RedirectToAction(nameof(Index), new { showDeleted = true });
     }
 
@@ -284,7 +291,7 @@ public class AppPurchaseInvoicesController : Controller
         return allowed ? null : RedirectToAction("Index", "Home");
     }
 
-    private async Task PopulateSelectListsAsync(AppPurchaseInvoiceEditViewModel vm)
+    private async Task PopulateSelectListsAsync(AppSalesInvoiceEditViewModel vm)
     {
         var companies = await _context.AppCompanies.AsNoTracking()
             .Where(x => x.IsActive != false)
@@ -351,7 +358,7 @@ public class AppPurchaseInvoicesController : Controller
             x => x.WithholdingRate);
     }
 
-    private async Task ValidateInvoiceAsync(AppPurchaseInvoiceEditViewModel vm)
+    private async Task ValidateInvoiceAsync(AppSalesInvoiceEditViewModel vm)
     {
         vm.InvoiceNo = vm.InvoiceNo.Trim().ToUpperInvariant();
         vm.CurrencyCode = string.IsNullOrWhiteSpace(vm.CurrencyCode) ? "TRY" : vm.CurrencyCode.Trim().ToUpperInvariant();
@@ -371,8 +378,8 @@ public class AppPurchaseInvoicesController : Controller
             ModelState.AddModelError(nameof(vm.ExchangeRate), "Döviz kuru sıfırdan büyük olmalıdır.");
         }
 
-        var codeExists = await _context.AppPurchaseInvoices.AnyAsync(x =>
-            x.InvoiceNo == vm.InvoiceNo && x.IsReturn != true && x.RecId != vm.RecId);
+        var codeExists = await _context.AppSalesInvoices.AnyAsync(x =>
+            x.InvoiceNo == vm.InvoiceNo && x.IsReturn == true && x.RecId != vm.RecId);
         if (codeExists)
         {
             ModelState.AddModelError(nameof(vm.InvoiceNo), "Bu fatura no zaten kullanılıyor.");
@@ -465,9 +472,9 @@ public class AppPurchaseInvoicesController : Controller
         }
     }
 
-    private AppPurchaseInvoiceEditViewModel MapToViewModel(AppPurchaseInvoice entity)
+    private AppSalesInvoiceEditViewModel MapToViewModel(AppSalesInvoice entity)
     {
-        return new AppPurchaseInvoiceEditViewModel
+        return new AppSalesInvoiceEditViewModel
         {
             RecId = entity.RecId,
             InvoiceNo = entity.InvoiceNo,
@@ -490,7 +497,7 @@ public class AppPurchaseInvoicesController : Controller
             TotalAmountTRY = entity.TotalAmountTRY,
             Lines = entity.Lines
                 .OrderBy(x => x.LineNo)
-                .Select(x => new AppPurchaseInvoiceLineEditViewModel
+                .Select(x => new AppSalesInvoiceLineEditViewModel
                 {
                     RecId = x.RecId,
                     LineNo = x.LineNo,
@@ -511,7 +518,7 @@ public class AppPurchaseInvoicesController : Controller
         };
     }
 
-    private static void ApplyViewModel(AppPurchaseInvoice entity, AppPurchaseInvoiceEditViewModel vm)
+    private static void ApplyViewModel(AppSalesInvoice entity, AppSalesInvoiceEditViewModel vm)
     {
         entity.InvoiceNo = vm.InvoiceNo.Trim().ToUpperInvariant();
         entity.InvoiceDate = vm.InvoiceDate;
@@ -533,11 +540,11 @@ public class AppPurchaseInvoicesController : Controller
         entity.TotalAmountTRY = vm.TotalAmountTRY;
     }
 
-    private static void ApplyLines(AppPurchaseInvoice entity, AppPurchaseInvoiceEditViewModel vm)
+    private static void ApplyLines(AppSalesInvoice entity, AppSalesInvoiceEditViewModel vm)
     {
         foreach (var line in vm.Lines)
         {
-            entity.Lines.Add(new AppPurchaseInvoiceLine
+            entity.Lines.Add(new AppSalesInvoiceLine
             {
                 LineNo = line.LineNo,
                 StockId = line.StockId,
@@ -557,7 +564,7 @@ public class AppPurchaseInvoicesController : Controller
         }
     }
 
-    private static string BuildAuditValue(AppPurchaseInvoice entity)
+    private static string BuildAuditValue(AppSalesInvoice entity)
     {
         var sb = new StringBuilder();
         sb.Append($"No={entity.InvoiceNo}, Tarih={entity.InvoiceDate:yyyy-MM-dd}");

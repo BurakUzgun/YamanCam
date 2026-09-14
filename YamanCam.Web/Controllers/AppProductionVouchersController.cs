@@ -272,6 +272,165 @@ public class AppProductionVouchersController : Controller
         return RedirectToAction(nameof(Index), new { showDeleted = true });
     }
 
+    /// <summary>
+    /// "Üretim Satır Oluştur" butonu: seçili şubedeki tüm aktif Üretim Tanımları'nı tarar,
+    /// her biri için üretilmesi gereken mamül miktarını ve gereken hammaddeyi hesaplayıp
+    /// fişin satırlarını otomatik doldurur. Fişi kaydetmez, sadece formu yeniden render eder.
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> GenerateLines(AppProductionVoucherEditViewModel vm)
+    {
+        var denied = await EnsureAdmin();
+        if (denied is not null)
+        {
+            return denied;
+        }
+
+        ModelState.Clear();
+
+        if (!vm.WorkPlaceId.HasValue)
+        {
+            ModelState.AddModelError(nameof(vm.WorkPlaceId), "Satır oluşturmak için önce şube seçilmelidir.");
+        }
+        else
+        {
+            vm.Lines = await BuildGeneratedLinesAsync(vm.WorkPlaceId.Value);
+
+            if (vm.Lines.Count == 0)
+            {
+                TempData["ErrorMessage"] = "Bu şube için üretilmesi gereken bir malzeme bulunamadı (satılan miktar, daha önce üretilmiş miktara eşit ya da daha az).";
+            }
+        }
+
+        await PopulateSelectListsAsync(vm);
+        ViewData["Kusurat"] = await _appSettingService.GetKusuratMapAsync();
+        return View("Edit", vm);
+    }
+
+    /// <summary>
+    /// Şubedeki her aktif Üretim Tanımı için: o mamül daha önce üretildiyse son üretim
+    /// tarihinden sonraki, hiç üretilmediyse tüm zamanlardaki Satış Faturaları (Satış İade
+    /// düşülerek) toplam miktarı "üretilecek mamül miktarı" olarak alınır. Gereken hammadde
+    /// miktarı bu miktarın Üretim Tanımı'ndaki dönüşüm oranıyla çarpımıdır. Hammadde birim
+    /// fiyatı, aynı tarih aralığındaki Alış Faturaları + Satış İade Faturaları net
+    /// tutar/miktar toplamlarının ağırlıklı ortalamasıdır; bu fiyat hem hammadde hem mamül
+    /// birim fiyatı olarak kullanılır.
+    /// </summary>
+    private async Task<List<AppProductionVoucherLineEditViewModel>> BuildGeneratedLinesAsync(int workPlaceId)
+    {
+        var definitions = await _context.AppProductionDefinitions
+            .AsNoTracking()
+            .Where(x => x.IsActive != false && x.WorkPlaceId == workPlaceId)
+            .ToListAsync();
+
+        var lines = new List<AppProductionVoucherLineEditViewModel>();
+        var lineNo = 1;
+
+        foreach (var def in definitions)
+        {
+            var lastProductionDate = await _context.AppProductionVoucherLines
+                .AsNoTracking()
+                .Where(l => l.ProductStockId == def.ProductStockId
+                    && l.Voucher != null
+                    && l.Voucher.WorkPlaceId == workPlaceId
+                    && l.Voucher.IsActive != false)
+                .OrderByDescending(l => l.Voucher!.ProductionDate)
+                .Select(l => (DateTime?)l.Voucher!.ProductionDate)
+                .FirstOrDefaultAsync();
+
+            var soldQty = await _context.AppSalesInvoiceLines
+                .AsNoTracking()
+                .Where(l => l.StockId == def.ProductStockId
+                    && l.Invoice != null
+                    && l.Invoice.WorkPlaceId == workPlaceId
+                    && l.Invoice.IsActive != false
+                    && l.Invoice.IsReturn != true
+                    && (lastProductionDate == null || l.Invoice.InvoiceDate > lastProductionDate.Value))
+                .SumAsync(l => (decimal?)l.Quantity) ?? 0m;
+
+            var returnedQty = await _context.AppSalesInvoiceLines
+                .AsNoTracking()
+                .Where(l => l.StockId == def.ProductStockId
+                    && l.Invoice != null
+                    && l.Invoice.WorkPlaceId == workPlaceId
+                    && l.Invoice.IsActive != false
+                    && l.Invoice.IsReturn == true
+                    && (lastProductionDate == null || l.Invoice.InvoiceDate > lastProductionDate.Value))
+                .SumAsync(l => (decimal?)l.Quantity) ?? 0m;
+
+            var productQuantity = soldQty - returnedQty;
+            if (productQuantity <= 0)
+            {
+                continue;
+            }
+
+            var rawMaterialQuantity = Math.Round(productQuantity * def.ProductionQuantity, 10, MidpointRounding.AwayFromZero);
+
+            var purchaseNet = await _context.AppPurchaseInvoiceLines
+                .AsNoTracking()
+                .Where(l => l.StockId == def.RawMaterialStockId
+                    && l.Invoice != null
+                    && l.Invoice.WorkPlaceId == workPlaceId
+                    && l.Invoice.IsActive != false
+                    && l.Invoice.IsReturn != true
+                    && (lastProductionDate == null || l.Invoice.InvoiceDate > lastProductionDate.Value))
+                .SumAsync(l => (decimal?)l.NetAmount) ?? 0m;
+
+            var purchaseQty = await _context.AppPurchaseInvoiceLines
+                .AsNoTracking()
+                .Where(l => l.StockId == def.RawMaterialStockId
+                    && l.Invoice != null
+                    && l.Invoice.WorkPlaceId == workPlaceId
+                    && l.Invoice.IsActive != false
+                    && l.Invoice.IsReturn != true
+                    && (lastProductionDate == null || l.Invoice.InvoiceDate > lastProductionDate.Value))
+                .SumAsync(l => (decimal?)l.Quantity) ?? 0m;
+
+            var salesReturnOfRawMaterialNet = await _context.AppSalesInvoiceLines
+                .AsNoTracking()
+                .Where(l => l.StockId == def.RawMaterialStockId
+                    && l.Invoice != null
+                    && l.Invoice.WorkPlaceId == workPlaceId
+                    && l.Invoice.IsActive != false
+                    && l.Invoice.IsReturn == true
+                    && (lastProductionDate == null || l.Invoice.InvoiceDate > lastProductionDate.Value))
+                .SumAsync(l => (decimal?)l.NetAmount) ?? 0m;
+
+            var salesReturnOfRawMaterialQty = await _context.AppSalesInvoiceLines
+                .AsNoTracking()
+                .Where(l => l.StockId == def.RawMaterialStockId
+                    && l.Invoice != null
+                    && l.Invoice.WorkPlaceId == workPlaceId
+                    && l.Invoice.IsActive != false
+                    && l.Invoice.IsReturn == true
+                    && (lastProductionDate == null || l.Invoice.InvoiceDate > lastProductionDate.Value))
+                .SumAsync(l => (decimal?)l.Quantity) ?? 0m;
+
+            var totalCostAmount = purchaseNet + salesReturnOfRawMaterialNet;
+            var totalCostQuantity = purchaseQty + salesReturnOfRawMaterialQty;
+            var unitPrice = totalCostQuantity != 0
+                ? Math.Round(totalCostAmount / totalCostQuantity, 10, MidpointRounding.AwayFromZero)
+                : 0m;
+
+            lines.Add(new AppProductionVoucherLineEditViewModel
+            {
+                LineNo = lineNo++,
+                RawMaterialStockId = def.RawMaterialStockId,
+                RawMaterialQuantity = rawMaterialQuantity,
+                RawMaterialUnitPrice = unitPrice,
+                RawMaterialNetAmount = Math.Round(rawMaterialQuantity * unitPrice, 10, MidpointRounding.AwayFromZero),
+                WasteRate = 0,
+                ProductQuantity = productQuantity,
+                ProductUnitPrice = unitPrice,
+                ProductNetAmount = Math.Round(productQuantity * unitPrice, 10, MidpointRounding.AwayFromZero),
+                ProductStockId = def.ProductStockId
+            });
+        }
+
+        return lines;
+    }
+
     private async Task<IActionResult?> EnsureAdmin()
     {
         var action = AppScreenRights.ResolveAction(ControllerContext.ActionDescriptor.ActionName);
@@ -393,6 +552,19 @@ public class AppProductionVouchersController : Controller
             {
                 ModelState.AddModelError($"Lines[{i}].WasteRate", "Fire oranı 0-100 arasında olmalıdır.");
             }
+
+            if (line.RawMaterialUnitPrice < 0)
+            {
+                ModelState.AddModelError($"Lines[{i}].RawMaterialUnitPrice", "Hammadde birim fiyatı negatif olamaz.");
+            }
+
+            if (line.ProductUnitPrice < 0)
+            {
+                ModelState.AddModelError($"Lines[{i}].ProductUnitPrice", "Mamül birim fiyatı negatif olamaz.");
+            }
+
+            line.RawMaterialNetAmount = Math.Round(line.RawMaterialQuantity * line.RawMaterialUnitPrice, 10, MidpointRounding.AwayFromZero);
+            line.ProductNetAmount = Math.Round(line.ProductQuantity * line.ProductUnitPrice, 10, MidpointRounding.AwayFromZero);
         }
     }
 
@@ -415,8 +587,12 @@ public class AppProductionVouchersController : Controller
                     LineNo = x.LineNo,
                     RawMaterialStockId = x.RawMaterialStockId,
                     RawMaterialQuantity = x.RawMaterialQuantity,
+                    RawMaterialUnitPrice = x.RawMaterialUnitPrice,
+                    RawMaterialNetAmount = x.RawMaterialNetAmount,
                     WasteRate = x.WasteRate,
                     ProductQuantity = x.ProductQuantity,
+                    ProductUnitPrice = x.ProductUnitPrice,
+                    ProductNetAmount = x.ProductNetAmount,
                     ProductStockId = x.ProductStockId
                 })
                 .ToList()
@@ -442,8 +618,12 @@ public class AppProductionVouchersController : Controller
                 LineNo = line.LineNo,
                 RawMaterialStockId = line.RawMaterialStockId,
                 RawMaterialQuantity = line.RawMaterialQuantity,
+                RawMaterialUnitPrice = line.RawMaterialUnitPrice,
+                RawMaterialNetAmount = line.RawMaterialNetAmount,
                 WasteRate = line.WasteRate,
                 ProductQuantity = line.ProductQuantity,
+                ProductUnitPrice = line.ProductUnitPrice,
+                ProductNetAmount = line.ProductNetAmount,
                 ProductStockId = line.ProductStockId,
                 CreatedDate = DateTime.UtcNow
             });

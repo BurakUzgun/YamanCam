@@ -50,7 +50,10 @@ public class AppSettingService : IAppSettingService
             var map = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
             foreach (var row in rows)
             {
-                map[row.Explanation.Trim()] = row.Value;
+                if (int.TryParse(row.Value?.Trim(), out var decimals))
+                {
+                    map[row.Explanation.Trim()] = decimals;
+                }
             }
 
             _cache = map;

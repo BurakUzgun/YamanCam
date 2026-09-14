@@ -4,7 +4,7 @@
     var allowedScreenCodes = await UserRightService.GetAllowedScreenCodesAsync(User);
     bool Allowed(string code) => allowedScreenCodes.Contains(code);
     var showTanimlar = Allowed("AppCompanies") || Allowed("AppWorkPlaces") || Allowed("AppVatDefinitions") || Allowed("AppVatWithholdingDefinitions");
-    var showFaturalar = Allowed("AppPurchaseInvoices") || Allowed("AppSalesInvoices") || Allowed("AppCustomsFreightInvoices");
+    var showFaturalar = Allowed("AppPurchaseInvoices") || Allowed("AppPurchaseReturnInvoices") || Allowed("AppSalesInvoices") || Allowed("AppSalesReturnInvoices") || Allowed("AppCustomsFreightInvoices");
     var showMuhasebeIslemleri = Allowed("AppPaymentVouchers") || Allowed("AppReceiptVouchers") || Allowed("AppJournalVouchers");
     var showMuhasebe = Allowed("AppAccountPlans") || showFaturalar || showMuhasebeIslemleri;
 }
@@ -147,9 +147,17 @@
             {
               <li><a class="app-menu-link" asp-controller="AppPurchaseInvoices" asp-action="Index">Alis Faturalari</a></li>
             }
+            @if (Allowed("AppPurchaseReturnInvoices"))
+            {
+              <li><a class="app-menu-link" asp-controller="AppPurchaseReturnInvoices" asp-action="Index">Alis Iade Faturalari</a></li>
+            }
             @if (Allowed("AppSalesInvoices"))
             {
               <li><a class="app-menu-link" asp-controller="AppSalesInvoices" asp-action="Index">Satis Faturalari</a></li>
+            }
+            @if (Allowed("AppSalesReturnInvoices"))
+            {
+              <li><a class="app-menu-link" asp-controller="AppSalesReturnInvoices" asp-action="Index">Satis Iade Faturalari</a></li>
             }
             @if (Allowed("AppCustomsFreightInvoices"))
             {

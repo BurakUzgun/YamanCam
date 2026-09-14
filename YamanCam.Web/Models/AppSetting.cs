@@ -15,7 +15,8 @@ public class AppSetting
     [StringLength(200)]
     public string Explanation { get; set; } = string.Empty;
 
-    public int Value { get; set; }
+    [StringLength(200)]
+    public string Value { get; set; } = string.Empty;
 
     public bool? IsActive { get; set; }
 

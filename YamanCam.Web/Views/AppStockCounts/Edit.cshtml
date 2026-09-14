@@ -69,7 +69,7 @@
                                         }
                                     </select>
                                 </td>
-                                <td><input type="number" step="@NumberFormatHelper.Step(countDec)" min="0" name="Lines[@i].CountQuantity" class="form-control form-control-sm text-end line-count" value="@Model.Lines[i].CountQuantity.ToString(CultureInfo.InvariantCulture)" /></td>
+                                <td><input type="number" step="any" min="0" name="Lines[@i].CountQuantity" class="form-control form-control-sm text-end line-count" value="@Model.Lines[i].CountQuantity.ToString("F" + countDec, CultureInfo.InvariantCulture)" /></td>
                                 <td class="text-center">
                                     <button type="button" class="btn btn-sm btn-outline-danger line-remove">&times;</button>
                                 </td>
@@ -115,7 +115,7 @@
             var loadStocksBtn = document.getElementById('loadStocksBtn');
             var clearLinesBtn = document.getElementById('clearLinesBtn');
             var stockOptions = @Html.Raw(stockOptionsJson);
-            var countStep = '@NumberFormatHelper.Step(countDec)';
+            var countStep = 'any';
 
             function buildStockOptionsHtml() {
                 var html = '<option value="0">Seçiniz</option>';

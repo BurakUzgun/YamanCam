@@ -3,7 +3,7 @@
 @using YamanCam.Web.Services
 @{
     var isNew = Model.RecId == 0;
-    ViewData["Title"] = isNew ? "Yeni Alış Faturası" : "Alış Faturası Düzenle";
+    ViewData["Title"] = isNew ? "Yeni Alış İade Faturası" : "Alış İade Faturası Düzenle";
     var stockOptionsJson = System.Text.Json.JsonSerializer.Serialize(
         Model.StockOptions.Select(o => new { value = o.Value, text = o.Text }));
     var stockVatRates = ViewData["StockVatRates"] as Dictionary<string, decimal> ?? new Dictionary<string, decimal>();
@@ -31,7 +31,7 @@
 
 <div class="card border-0 shadow-sm">
     <div class="card-body">
-        <form asp-action="@(isNew ? "Create" : "Edit")" method="post" id="purchaseInvoiceForm">
+        <form asp-action="@(isNew ? "Create" : "Edit")" method="post" id="purchaseReturnInvoiceForm">
             @Html.AntiForgeryToken()
             <input asp-for="RecId" type="hidden" />
 

@@ -44,8 +44,6 @@ public class AppProductionVoucher
 public static class AppProductionVoucherTransactionTypes
 {
     public const string Uretim = "Üretim";
-    public const string FasonUretim = "Fason Üretim";
-    public const string Diger = "Diğer";
 
-    public static readonly string[] All = { Uretim, FasonUretim, Diger };
+    public static readonly string[] All = { Uretim };
 }

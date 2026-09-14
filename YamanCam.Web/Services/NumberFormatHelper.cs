@@ -6,8 +6,16 @@ namespace YamanCam.Web.Services;
 /// </summary>
 public static class NumberFormatHelper
 {
+    /// <summary>
+    /// Küsürat ayarları artık serbest metin olarak girilebildiğinden (bkz. App_Setting.Value),
+    /// dönen hane sayısı veritabanındaki azami ondalık hassasiyetle (10 hane) sınırlanır.
+    /// Bu sayede Math.Round(deger, hane) gibi çağrılar geçersiz/aşırı bir değerle patlamaz.
+    /// </summary>
     public static int Get(IReadOnlyDictionary<string, int>? map, string explanation, int defaultValue = 2)
-        => map is not null && map.TryGetValue(explanation, out var value) ? value : defaultValue;
+    {
+        var value = map is not null && map.TryGetValue(explanation, out var found) ? found : defaultValue;
+        return Math.Clamp(value, 0, 10);
+    }
 
     public static string Format(int decimals) => "N" + Math.Max(0, decimals);
 

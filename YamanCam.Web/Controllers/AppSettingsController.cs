@@ -225,6 +225,7 @@ public class AppSettingsController : Controller
     {
         vm.SettingGroup = vm.SettingGroup.Trim();
         vm.Explanation = vm.Explanation.Trim();
+        vm.Value = vm.Value.Trim();
     }
 
     private static AppSettingEditViewModel MapToViewModel(AppSetting entity)
