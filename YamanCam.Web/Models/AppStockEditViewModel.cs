@@ -40,12 +40,16 @@ public class AppStockEditViewModel
     [Display(Name = "Üretim Ağırlığı")]
     public decimal? ProductionWeight { get; set; }
 
+    [Display(Name = "Birleştirme Kodu")]
+    public int? MergeStockId { get; set; }
+
     [Display(Name = "Aktif")]
     public bool IsActive { get; set; } = true;
 
     public IReadOnlyList<SelectListItem> StockGroupOptions { get; set; } = Array.Empty<SelectListItem>();
     public IReadOnlyList<SelectListItem> StockUnitOptions { get; set; } = Array.Empty<SelectListItem>();
     public IReadOnlyList<SelectListItem> VatOptions { get; set; } = Array.Empty<SelectListItem>();
+    public IReadOnlyList<SelectListItem> MergeStockOptions { get; set; } = Array.Empty<SelectListItem>();
 }
 
 public class AppStockListItemViewModel

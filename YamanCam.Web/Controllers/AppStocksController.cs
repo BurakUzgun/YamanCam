@@ -14,12 +14,18 @@ public class AppStocksController : Controller
     private readonly ApplicationDbContext _context;
     private readonly IAppLogService _appLogService;
     private readonly IUserRightService _userRightService;
+    private readonly IAppSettingService _appSettingService;
 
-    public AppStocksController(ApplicationDbContext context, IAppLogService appLogService, IUserRightService userRightService)
+    public AppStocksController(
+        ApplicationDbContext context,
+        IAppLogService appLogService,
+        IUserRightService userRightService,
+        IAppSettingService appSettingService)
     {
         _context = context;
         _appLogService = appLogService;
         _userRightService = userRightService;
+        _appSettingService = appSettingService;
     }
 
     [HttpGet]
@@ -300,6 +306,7 @@ public class AppStocksController : Controller
             {
                 new(AppStockMovementTypes.Opening, AppStockMovementTypes.Opening),
                 new(AppStockMovementTypes.Purchase, AppStockMovementTypes.Purchase),
+                new(AppStockMovementTypes.FreightCost, AppStockMovementTypes.FreightCost),
                 new(AppStockMovementTypes.SalesReturn, AppStockMovementTypes.SalesReturn),
                 new(AppStockMovementTypes.TransferIn, AppStockMovementTypes.TransferIn),
                 new(AppStockMovementTypes.ProductionIn, AppStockMovementTypes.ProductionIn),
@@ -313,15 +320,15 @@ public class AppStocksController : Controller
             BranchGroups = branchGroups
         };
 
+        ViewData["Kusurat"] = await _appSettingService.GetKusuratMapAsync();
+
         return View(vm);
     }
 
     /// <summary>
     /// Stok hareketlerini Açılış Fişi, Alış Faturası, Alış İade Faturası, Satış Faturası,
     /// Satış İade Faturası, Stok Çıkış Fişi, Şubeler Arası Transfer Fişi ve Stok Ürün
-    /// Üretim Fişi satırlarından hesaplar. Alış satırlarına, ilgili faturaya bağlı Gümrük
-    /// Nakliye faturalarının (varsa) net tutarı, fatura satırlarının net tutar payı
-    /// oranında dağıtılarak maliyete eklenir. Satış, Alış İade ve Çıkış Fişi satırları
+    /// Üretim Fişi satırlarından hesaplar. Satış, Alış İade ve Çıkış Fişi satırları
     /// stoktan çıkışı ifade ettiği için miktar ve tutar negatif tutulur. Satış İade
     /// Faturası stoğa geri giriş olduğu için Alış ile aynı mantıkla (pozitif
     /// miktar/tutar), Alış İade Faturası ise stoktan çıkış olduğu için Satış ile aynı
@@ -329,6 +336,23 @@ public class AppStocksController : Controller
     /// giren şubede pozitif olmak üzere iki ayrı hareket üretir. Üretim Fişi satırları da
     /// benzer şekilde iki ayrı hareket üretir: tüketilen hammadde negatif (Çıkış Fişi
     /// mantığı), üretilen mamül pozitif (Alış mantığı).
+    ///
+    /// Gümrük Nakliye Faturası maliyet dağıtımı iki ayrı mekanizmayla çalışır:
+    /// (1) Geriye dönük uyumluluk: eski kayıtlarda LinkedPurchaseInvoiceId ile bir alış
+    /// faturasına bağlanmış nakliye faturalarının net tutarı, o alış faturasının
+    /// satırlarına net tutar payı oranında dağıtılıp Alış satırının birim fiyatına/net
+    /// tutarına dahil edilir (bkz. "Alış" bloğu). (2) Güncel akış: nakliye faturası artık
+    /// doğrudan malzeme (App_CustomsFreightInvoiceMaterial: Stok + Miktar) seçimiyle
+    /// girilir; bu durumda faturanın net tutarı, faturadaki malzemelerin miktar payı
+    /// oranında ilgili stoklara dağıtılır ve miktarı değiştirmeyen (Quantity = 0), yalnızca
+    /// maliyet havuzunu artıran ayrı bir "Nakliye Maliyeti" hareketi olarak eklenir (bkz.
+    /// ComputeRunningTotals). Bir fatura pratikte ya eski alanı ya da yeni malzeme
+    /// listesini kullanacağından iki mekanizma aynı faturada çakışmaz.
+    ///
+    /// Fatura kaynaklı satırların (Alış, Alış İade, Satış, Satış İade, Nakliye Maliyeti)
+    /// hareket tarihi olarak faturanın üzerinde yazan Fatura Tarihi (InvoiceDate) değil,
+    /// ayrı girilen İşlem Tarihi (TransactionDate) kullanılır; yürüyen ortalama maliyet
+    /// hesabı (ComputeRunningTotals) bu tarihe göre sıralanır.
     /// </summary>
     private async Task<List<AppStockDetailLineViewModel>> BuildStockMovementsAsync(int stockId)
     {
@@ -401,7 +425,7 @@ public class AppStocksController : Controller
             {
                 WorkPlaceId = invoice.WorkPlaceId ?? 0,
                 WorkPlaceName = invoice.WorkPlace?.WorkPlaceName ?? "-",
-                TransactionDate = invoice.InvoiceDate,
+                TransactionDate = invoice.TransactionDate,
                 DocumentNo = invoice.InvoiceNo,
                 TransactionType = AppStockMovementTypes.Purchase,
                 AccountName = invoice.Account?.AccountName,
@@ -414,6 +438,56 @@ public class AppStocksController : Controller
                 CurrencyNetAmount = invoice.ExchangeRate != 0 ? effectiveNetAmount / invoice.ExchangeRate : effectiveNetAmount,
                 SourceRecId = invoice.RecId
             });
+        }
+
+        var materialFreightRows = await _context.AppCustomsFreightInvoiceMaterials
+            .AsNoTracking()
+            .Include(m => m.Invoice).ThenInclude(i => i!.WorkPlace)
+            .Where(m => m.StockId == stockId && m.Invoice != null && m.Invoice.IsActive != false)
+            .ToListAsync();
+
+        if (materialFreightRows.Count > 0)
+        {
+            var freightInvoiceIds = materialFreightRows.Select(m => m.InvoiceId).Distinct().ToList();
+
+            var freightInvoiceTotalQuantities = await _context.AppCustomsFreightInvoiceMaterials
+                .AsNoTracking()
+                .Where(m => freightInvoiceIds.Contains(m.InvoiceId))
+                .GroupBy(m => m.InvoiceId)
+                .Select(g => new { InvoiceId = g.Key, TotalQuantity = g.Sum(x => x.Quantity) })
+                .ToDictionaryAsync(x => x.InvoiceId, x => x.TotalQuantity);
+
+            foreach (var material in materialFreightRows)
+            {
+                var invoice = material.Invoice!;
+                var invoiceTotalQuantity = freightInvoiceTotalQuantities.TryGetValue(material.InvoiceId, out var totalQty) ? totalQty : 0m;
+                var allocatedFreight = invoiceTotalQuantity != 0
+                    ? Math.Round(material.Quantity / invoiceTotalQuantity * invoice.NetAmount, 10)
+                    : 0m;
+
+                if (allocatedFreight == 0m)
+                {
+                    continue;
+                }
+
+                movements.Add(new AppStockDetailLineViewModel
+                {
+                    WorkPlaceId = invoice.WorkPlaceId ?? 0,
+                    WorkPlaceName = invoice.WorkPlace?.WorkPlaceName ?? "-",
+                    TransactionDate = invoice.TransactionDate,
+                    DocumentNo = invoice.InvoiceNo,
+                    TransactionType = AppStockMovementTypes.FreightCost,
+                    AccountName = invoice.InvoiceKind,
+                    Quantity = 0m,
+                    UnitPrice = 0m,
+                    NetAmount = allocatedFreight,
+                    CurrencyCode = invoice.CurrencyCode,
+                    ExchangeRate = invoice.ExchangeRate,
+                    CurrencyUnitPrice = 0m,
+                    CurrencyNetAmount = invoice.ExchangeRate != 0 ? allocatedFreight / invoice.ExchangeRate : allocatedFreight,
+                    SourceRecId = invoice.RecId
+                });
+            }
         }
 
         /* Alış İade Faturası: stoktan çıkış olduğu için Satış ile aynı mantıkla
@@ -434,7 +508,7 @@ public class AppStocksController : Controller
             {
                 WorkPlaceId = invoice.WorkPlaceId ?? 0,
                 WorkPlaceName = invoice.WorkPlace?.WorkPlaceName ?? "-",
-                TransactionDate = invoice.InvoiceDate,
+                TransactionDate = invoice.TransactionDate,
                 DocumentNo = invoice.InvoiceNo,
                 TransactionType = AppStockMovementTypes.PurchaseReturn,
                 AccountName = invoice.Account?.AccountName,
@@ -464,7 +538,7 @@ public class AppStocksController : Controller
             {
                 WorkPlaceId = invoice.WorkPlaceId ?? 0,
                 WorkPlaceName = invoice.WorkPlace?.WorkPlaceName ?? "-",
-                TransactionDate = invoice.InvoiceDate,
+                TransactionDate = invoice.TransactionDate,
                 DocumentNo = invoice.InvoiceNo,
                 TransactionType = AppStockMovementTypes.Sales,
                 AccountName = invoice.Account?.AccountName,
@@ -497,7 +571,7 @@ public class AppStocksController : Controller
             {
                 WorkPlaceId = invoice.WorkPlaceId ?? 0,
                 WorkPlaceName = invoice.WorkPlace?.WorkPlaceName ?? "-",
-                TransactionDate = invoice.InvoiceDate,
+                TransactionDate = invoice.TransactionDate,
                 DocumentNo = invoice.InvoiceNo,
                 TransactionType = AppStockMovementTypes.SalesReturn,
                 AccountName = invoice.Account?.AccountName,
@@ -660,7 +734,9 @@ public class AppStocksController : Controller
     /// satırlarında (Açılış, Alış, Transfer Giriş) satırın kendi net tutarı maliyete
     /// eklenir; çıkış satırlarında (Satış, Çıkış Fişi, Transfer Çıkış) çıkan miktar, o ana
     /// kadarki hareketli ağırlıklı ortalama birim maliyet üzerinden düşülür (satış fiyatı
-    /// maliyeti etkilemez).
+    /// maliyeti etkilemez). Miktarı sıfır olan satırlar (ör. Nakliye Maliyeti) miktarı
+    /// değiştirmeden net tutarını doğrudan maliyet havuzuna ekler; böylece bakiye adet
+    /// aynı kalır, yürüyen ortalama birim maliyet artar.
     /// </summary>
     private static void ComputeRunningTotals(List<AppStockDetailLineViewModel> lines)
     {
@@ -679,6 +755,10 @@ public class AppStocksController : Controller
                 var unitCostBefore = runningQuantity != 0 ? runningCostValue / runningQuantity : 0m;
                 runningCostValue += line.Quantity * unitCostBefore;
                 runningQuantity += line.Quantity;
+            }
+            else
+            {
+                runningCostValue += line.NetAmount;
             }
 
             line.BalanceQuantity = runningQuantity;
@@ -731,6 +811,16 @@ public class AppStocksController : Controller
                 $"{x.VatCode} - {x.VatName} (%{x.VatRate.ToString("0.##", CultureInfo.InvariantCulture)})",
                 x.RecId.ToString(CultureInfo.InvariantCulture)))
             .ToList();
+
+        var mergeStocks = await _context.AppStocks.AsNoTracking()
+            .Where(x => x.IsActive != false && x.RecId != vm.RecId)
+            .OrderBy(x => x.StockCode)
+            .Select(x => new { x.RecId, x.StockCode, x.StockName })
+            .ToListAsync();
+
+        vm.MergeStockOptions = mergeStocks
+            .Select(x => new SelectListItem($"{x.StockCode} - {x.StockName}", x.RecId.ToString(CultureInfo.InvariantCulture)))
+            .ToList();
     }
 
     private async Task ValidateStockAsync(AppStockEditViewModel vm)
@@ -773,6 +863,18 @@ public class AppStocksController : Controller
         {
             ModelState.AddModelError(nameof(vm.ProductionWeight), "Üretim ağırlığı negatif olamaz.");
         }
+
+        if (vm.MergeStockId.HasValue)
+        {
+            if (vm.MergeStockId.Value == vm.RecId)
+            {
+                ModelState.AddModelError(nameof(vm.MergeStockId), "Bir stok, birleştirme kodu olarak kendisini seçemez.");
+            }
+            else if (!await _context.AppStocks.AnyAsync(x => x.RecId == vm.MergeStockId.Value))
+            {
+                ModelState.AddModelError(nameof(vm.MergeStockId), "Geçersiz birleştirme kodu seçildi.");
+            }
+        }
     }
 
     private static AppStockEditViewModel MapToViewModel(AppStock entity)
@@ -789,6 +891,7 @@ public class AppStocksController : Controller
             Barcode = entity.Barcode,
             StockType = entity.StockType,
             ProductionWeight = entity.ProductionWeight,
+            MergeStockId = entity.MergeStockId,
             IsActive = entity.IsActive != false
         };
     }
@@ -811,6 +914,7 @@ public class AppStocksController : Controller
         entity.Barcode = string.IsNullOrWhiteSpace(vm.Barcode) ? null : vm.Barcode.Trim();
         entity.StockType = string.IsNullOrWhiteSpace(vm.StockType) ? null : vm.StockType.Trim();
         entity.ProductionWeight = vm.ProductionWeight;
+        entity.MergeStockId = vm.MergeStockId;
         entity.IsActive = vm.IsActive;
     }
 
@@ -822,6 +926,7 @@ public class AppStocksController : Controller
         sb.Append($", PurchaseVatId={entity.PurchaseVatId}, SalesVatId={entity.SalesVatId}");
         sb.Append($", Barcode={entity.Barcode}, Type={entity.StockType}");
         sb.Append($", ProductionWeight={entity.ProductionWeight}");
+        sb.Append($", MergeStockId={entity.MergeStockId}");
         sb.Append($", IsActive={entity.IsActive == true}");
         return sb.ToString();
     }

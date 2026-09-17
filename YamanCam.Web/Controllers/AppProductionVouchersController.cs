@@ -315,7 +315,9 @@ public class AppProductionVouchersController : Controller
     /// miktarı bu miktarın Üretim Tanımı'ndaki dönüşüm oranıyla çarpımıdır. Hammadde birim
     /// fiyatı, aynı tarih aralığındaki Alış Faturaları + Satış İade Faturaları net
     /// tutar/miktar toplamlarının ağırlıklı ortalamasıdır; bu fiyat hem hammadde hem mamül
-    /// birim fiyatı olarak kullanılır.
+    /// birim fiyatı olarak kullanılır. Tüm tarih aralığı kontrolleri faturanın üzerinde
+    /// yazan Fatura Tarihi (InvoiceDate) yerine ayrı girilen İşlem Tarihi
+    /// (TransactionDate) baz alınarak yapılır.
     /// </summary>
     private async Task<List<AppProductionVoucherLineEditViewModel>> BuildGeneratedLinesAsync(int workPlaceId)
     {
@@ -346,7 +348,7 @@ public class AppProductionVouchersController : Controller
                     && l.Invoice.WorkPlaceId == workPlaceId
                     && l.Invoice.IsActive != false
                     && l.Invoice.IsReturn != true
-                    && (lastProductionDate == null || l.Invoice.InvoiceDate > lastProductionDate.Value))
+                    && (lastProductionDate == null || l.Invoice.TransactionDate > lastProductionDate.Value))
                 .SumAsync(l => (decimal?)l.Quantity) ?? 0m;
 
             var returnedQty = await _context.AppSalesInvoiceLines
@@ -356,7 +358,7 @@ public class AppProductionVouchersController : Controller
                     && l.Invoice.WorkPlaceId == workPlaceId
                     && l.Invoice.IsActive != false
                     && l.Invoice.IsReturn == true
-                    && (lastProductionDate == null || l.Invoice.InvoiceDate > lastProductionDate.Value))
+                    && (lastProductionDate == null || l.Invoice.TransactionDate > lastProductionDate.Value))
                 .SumAsync(l => (decimal?)l.Quantity) ?? 0m;
 
             var productQuantity = soldQty - returnedQty;
@@ -374,7 +376,7 @@ public class AppProductionVouchersController : Controller
                     && l.Invoice.WorkPlaceId == workPlaceId
                     && l.Invoice.IsActive != false
                     && l.Invoice.IsReturn != true
-                    && (lastProductionDate == null || l.Invoice.InvoiceDate > lastProductionDate.Value))
+                    && (lastProductionDate == null || l.Invoice.TransactionDate > lastProductionDate.Value))
                 .SumAsync(l => (decimal?)l.NetAmount) ?? 0m;
 
             var purchaseQty = await _context.AppPurchaseInvoiceLines
@@ -384,7 +386,7 @@ public class AppProductionVouchersController : Controller
                     && l.Invoice.WorkPlaceId == workPlaceId
                     && l.Invoice.IsActive != false
                     && l.Invoice.IsReturn != true
-                    && (lastProductionDate == null || l.Invoice.InvoiceDate > lastProductionDate.Value))
+                    && (lastProductionDate == null || l.Invoice.TransactionDate > lastProductionDate.Value))
                 .SumAsync(l => (decimal?)l.Quantity) ?? 0m;
 
             var salesReturnOfRawMaterialNet = await _context.AppSalesInvoiceLines
@@ -394,7 +396,7 @@ public class AppProductionVouchersController : Controller
                     && l.Invoice.WorkPlaceId == workPlaceId
                     && l.Invoice.IsActive != false
                     && l.Invoice.IsReturn == true
-                    && (lastProductionDate == null || l.Invoice.InvoiceDate > lastProductionDate.Value))
+                    && (lastProductionDate == null || l.Invoice.TransactionDate > lastProductionDate.Value))
                 .SumAsync(l => (decimal?)l.NetAmount) ?? 0m;
 
             var salesReturnOfRawMaterialQty = await _context.AppSalesInvoiceLines
@@ -404,7 +406,7 @@ public class AppProductionVouchersController : Controller
                     && l.Invoice.WorkPlaceId == workPlaceId
                     && l.Invoice.IsActive != false
                     && l.Invoice.IsReturn == true
-                    && (lastProductionDate == null || l.Invoice.InvoiceDate > lastProductionDate.Value))
+                    && (lastProductionDate == null || l.Invoice.TransactionDate > lastProductionDate.Value))
                 .SumAsync(l => (decimal?)l.Quantity) ?? 0m;
 
             var totalCostAmount = purchaseNet + salesReturnOfRawMaterialNet;

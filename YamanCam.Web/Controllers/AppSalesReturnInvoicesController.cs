@@ -59,13 +59,14 @@ public class AppSalesReturnInvoicesController : Controller
             : query.Where(x => x.IsActive != false);
 
         var items = await query
-            .OrderByDescending(x => x.InvoiceDate)
+            .OrderByDescending(x => x.TransactionDate)
             .ThenByDescending(x => x.RecId)
             .Select(x => new AppSalesInvoiceListItemViewModel
             {
                 RecId = x.RecId,
                 InvoiceNo = x.InvoiceNo,
                 InvoiceDate = x.InvoiceDate,
+                TransactionDate = x.TransactionDate,
                 CompanyName = x.Company != null ? x.Company.CompanyName : null,
                 WorkPlaceName = x.WorkPlace != null ? x.WorkPlace.WorkPlaceName : null,
                 AccountName = x.Account != null ? x.Account.AccountName : null,
@@ -479,6 +480,7 @@ public class AppSalesReturnInvoicesController : Controller
             RecId = entity.RecId,
             InvoiceNo = entity.InvoiceNo,
             InvoiceDate = entity.InvoiceDate,
+            TransactionDate = entity.TransactionDate,
             CompanyId = entity.CompanyId,
             WorkPlaceId = entity.WorkPlaceId,
             AccountId = entity.AccountId,
@@ -522,6 +524,7 @@ public class AppSalesReturnInvoicesController : Controller
     {
         entity.InvoiceNo = vm.InvoiceNo.Trim().ToUpperInvariant();
         entity.InvoiceDate = vm.InvoiceDate;
+        entity.TransactionDate = vm.TransactionDate;
         entity.CompanyId = vm.CompanyId;
         entity.WorkPlaceId = vm.WorkPlaceId;
         entity.AccountId = vm.AccountId;
@@ -567,7 +570,7 @@ public class AppSalesReturnInvoicesController : Controller
     private static string BuildAuditValue(AppSalesInvoice entity)
     {
         var sb = new StringBuilder();
-        sb.Append($"No={entity.InvoiceNo}, Tarih={entity.InvoiceDate:yyyy-MM-dd}");
+        sb.Append($"No={entity.InvoiceNo}, Tarih={entity.InvoiceDate:yyyy-MM-dd}, IslemTarihi={entity.TransactionDate:yyyy-MM-dd}");
         sb.Append($", CariId={entity.AccountId}, SubeId={entity.WorkPlaceId}");
         sb.Append($", Doviz={entity.CurrencyCode}, Kur={entity.ExchangeRate}");
         sb.Append($", Tevkifat={entity.WithholdingAmount}");

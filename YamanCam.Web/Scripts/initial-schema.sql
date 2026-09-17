@@ -3435,3 +3435,149 @@ BEGIN
     VALUES (32, N'YamanCam.Core', N'App_ProductionVoucherLine.RawMaterialUnitPrice/NetAmount, ProductUnitPrice/NetAmount alanlari eklendi', SYSUTCDATETIME());
 END
 GO
+
+/* ------------------------------------------------------------------ */
+/* Surum 33 - App_CustomsFreightInvoiceMaterial (Gumruk Nakliye        */
+/*            Faturasina birden fazla malzeme + miktar secimi;        */
+/*            "Stok Fat No" (LinkedPurchaseInvoiceId) alaninin yerini  */
+/*            alir; o kolon geriye donuk uyumluluk icin DB'de kalir    */
+/*            ama artik kullanilmaz)                                   */
+/* ------------------------------------------------------------------ */
+IF OBJECT_ID(N'dbo.App_CustomsFreightInvoiceMaterial', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[App_CustomsFreightInvoiceMaterial](
+        [RecId]              [int] IDENTITY(1,1) NOT NULL,
+        [InvoiceId]          [int] NOT NULL,
+        [LineNo]             [int] NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoiceMaterial_LineNo] DEFAULT (1),
+        [StockId]            [int] NOT NULL,
+        [Quantity]           [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoiceMaterial_Quantity] DEFAULT (0),
+        [CreatedDate]        [datetime2](0) NULL CONSTRAINT [DF_App_CustomsFreightInvoiceMaterial_CreatedDate] DEFAULT (SYSUTCDATETIME()),
+        CONSTRAINT [PK_App_CustomsFreightInvoiceMaterial] PRIMARY KEY CLUSTERED ([RecId] ASC)
+    ) ON [PRIMARY];
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_CustomsFreightInvoiceMaterial', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_CustomsFreightInvoiceMaterial', 'InvoiceId') IS NULL
+    ALTER TABLE [dbo].[App_CustomsFreightInvoiceMaterial] ADD [InvoiceId] [int] NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoiceMaterial_InvoiceId] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_CustomsFreightInvoiceMaterial', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_CustomsFreightInvoiceMaterial', 'LineNo') IS NULL
+    ALTER TABLE [dbo].[App_CustomsFreightInvoiceMaterial] ADD [LineNo] [int] NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoiceMaterial_LineNo_Alt] DEFAULT (1);
+GO
+IF OBJECT_ID(N'dbo.App_CustomsFreightInvoiceMaterial', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_CustomsFreightInvoiceMaterial', 'StockId') IS NULL
+    ALTER TABLE [dbo].[App_CustomsFreightInvoiceMaterial] ADD [StockId] [int] NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoiceMaterial_StockId] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_CustomsFreightInvoiceMaterial', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_CustomsFreightInvoiceMaterial', 'Quantity') IS NULL
+    ALTER TABLE [dbo].[App_CustomsFreightInvoiceMaterial] ADD [Quantity] [decimal](28, 10) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoiceMaterial_Quantity_Alt] DEFAULT (0);
+GO
+IF OBJECT_ID(N'dbo.App_CustomsFreightInvoiceMaterial', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_CustomsFreightInvoiceMaterial', 'CreatedDate') IS NULL
+    ALTER TABLE [dbo].[App_CustomsFreightInvoiceMaterial] ADD [CreatedDate] [datetime2](0) NULL CONSTRAINT [DF_App_CustomsFreightInvoiceMaterial_CreatedDate_Alt] DEFAULT (SYSUTCDATETIME());
+GO
+
+IF OBJECT_ID(N'dbo.App_CustomsFreightInvoiceMaterial', N'U') IS NOT NULL
+   AND OBJECT_ID(N'dbo.App_CustomsFreightInvoice', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_App_CustomsFreightInvoiceMaterial_App_CustomsFreightInvoice')
+BEGIN
+    ALTER TABLE [dbo].[App_CustomsFreightInvoiceMaterial] WITH CHECK
+    ADD CONSTRAINT [FK_App_CustomsFreightInvoiceMaterial_App_CustomsFreightInvoice]
+    FOREIGN KEY([InvoiceId]) REFERENCES [dbo].[App_CustomsFreightInvoice]([RecId])
+    ON DELETE CASCADE;
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_CustomsFreightInvoiceMaterial', N'U') IS NOT NULL
+   AND OBJECT_ID(N'dbo.App_Stock', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_App_CustomsFreightInvoiceMaterial_App_Stock')
+BEGIN
+    ALTER TABLE [dbo].[App_CustomsFreightInvoiceMaterial] WITH CHECK
+    ADD CONSTRAINT [FK_App_CustomsFreightInvoiceMaterial_App_Stock]
+    FOREIGN KEY([StockId]) REFERENCES [dbo].[App_Stock]([RecId]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_CustomsFreightInvoiceMaterial', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_App_CustomsFreightInvoiceMaterial_InvoiceId' AND object_id = OBJECT_ID(N'dbo.App_CustomsFreightInvoiceMaterial'))
+BEGIN
+    CREATE NONCLUSTERED INDEX [IX_App_CustomsFreightInvoiceMaterial_InvoiceId]
+    ON [dbo].[App_CustomsFreightInvoiceMaterial]([InvoiceId]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_SchemaVersion', N'U') IS NOT NULL
+   AND NOT EXISTS (
+       SELECT 1 FROM [dbo].[App_SchemaVersion]
+       WHERE [ScriptName] = N'YamanCam.Core' AND [VersionNo] = 33
+   )
+BEGIN
+    INSERT INTO [dbo].[App_SchemaVersion] ([VersionNo], [ScriptName], [Description], [AppliedUtc])
+    VALUES (33, N'YamanCam.Core', N'App_CustomsFreightInvoiceMaterial eklendi (coklu malzeme + miktar secimi, Stok Fat No baglantisinin yerine)', SYSUTCDATETIME());
+END
+GO
+
+/* ------------------------------------------------------------------ */
+/* Surum 34 - Tum fatura tablolarina (Alis, Satis, Gumruk Nakliye)     */
+/*            "Islem Tarihi" (TransactionDate) alani eklendi. Fatura   */
+/*            uzerinde yazan tarihten (InvoiceDate) ayri, isleme       */
+/*            ozgu ikinci bir tarih alanidir. Alis Iade ve Satis Iade  */
+/*            ekranlari sirasiyla App_PurchaseInvoice / App_SalesInvoice*/
+/*            tablolarini paylastigindan ayrica bir islem gerekmez.    */
+/* ------------------------------------------------------------------ */
+IF OBJECT_ID(N'dbo.App_PurchaseInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_PurchaseInvoice', 'TransactionDate') IS NULL
+    ALTER TABLE [dbo].[App_PurchaseInvoice] ADD [TransactionDate] [datetime2](0) NOT NULL CONSTRAINT [DF_App_PurchaseInvoice_TransactionDate] DEFAULT (SYSUTCDATETIME());
+GO
+
+IF OBJECT_ID(N'dbo.App_SalesInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_SalesInvoice', 'TransactionDate') IS NULL
+    ALTER TABLE [dbo].[App_SalesInvoice] ADD [TransactionDate] [datetime2](0) NOT NULL CONSTRAINT [DF_App_SalesInvoice_TransactionDate] DEFAULT (SYSUTCDATETIME());
+GO
+
+IF OBJECT_ID(N'dbo.App_CustomsFreightInvoice', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_CustomsFreightInvoice', 'TransactionDate') IS NULL
+    ALTER TABLE [dbo].[App_CustomsFreightInvoice] ADD [TransactionDate] [datetime2](0) NOT NULL CONSTRAINT [DF_App_CustomsFreightInvoice_TransactionDate] DEFAULT (SYSUTCDATETIME());
+GO
+
+IF OBJECT_ID(N'dbo.App_SchemaVersion', N'U') IS NOT NULL
+   AND NOT EXISTS (
+       SELECT 1 FROM [dbo].[App_SchemaVersion]
+       WHERE [ScriptName] = N'YamanCam.Core' AND [VersionNo] = 34
+   )
+BEGIN
+    INSERT INTO [dbo].[App_SchemaVersion] ([VersionNo], [ScriptName], [Description], [AppliedUtc])
+    VALUES (34, N'YamanCam.Core', N'App_PurchaseInvoice / App_SalesInvoice / App_CustomsFreightInvoice tablolarina TransactionDate (Islem Tarihi) alani eklendi', SYSUTCDATETIME());
+END
+GO
+
+/* ------------------------------------------------------------------ */
+/* Surum 35 - App_Stock.MergeStockId (Birlestirme Kodu) alani eklendi  */
+/*            Bir stok kartinin birlestirilecegi baska bir stok        */
+/*            kartina isaret eden kendine referansli (self-referencing)*/
+/*            isteğe bagli alandir.                                    */
+/* ------------------------------------------------------------------ */
+IF OBJECT_ID(N'dbo.App_Stock', N'U') IS NOT NULL AND COL_LENGTH('dbo.App_Stock', 'MergeStockId') IS NULL
+    ALTER TABLE [dbo].[App_Stock] ADD [MergeStockId] [int] NULL;
+GO
+
+IF OBJECT_ID(N'dbo.App_Stock', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_App_Stock_MergeStock')
+BEGIN
+    ALTER TABLE [dbo].[App_Stock] WITH CHECK
+    ADD CONSTRAINT [FK_App_Stock_MergeStock]
+    FOREIGN KEY([MergeStockId]) REFERENCES [dbo].[App_Stock]([RecId]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_Stock', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_App_Stock_MergeStockId' AND object_id = OBJECT_ID(N'dbo.App_Stock'))
+BEGIN
+    CREATE NONCLUSTERED INDEX [IX_App_Stock_MergeStockId]
+    ON [dbo].[App_Stock]([MergeStockId]);
+END
+GO
+
+IF OBJECT_ID(N'dbo.App_SchemaVersion', N'U') IS NOT NULL
+   AND NOT EXISTS (
+       SELECT 1 FROM [dbo].[App_SchemaVersion]
+       WHERE [ScriptName] = N'YamanCam.Core' AND [VersionNo] = 35
+   )
+BEGIN
+    INSERT INTO [dbo].[App_SchemaVersion] ([VersionNo], [ScriptName], [Description], [AppliedUtc])
+    VALUES (35, N'YamanCam.Core', N'App_Stock.MergeStockId (Birlestirme Kodu) alani eklendi', SYSUTCDATETIME());
+END
+GO

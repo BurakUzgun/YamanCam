@@ -6,6 +6,7 @@
     ViewData["Title"] = isNew ? "Yeni Gümrük Nakliye Faturası" : "Gümrük Nakliye Faturası Düzenle";
     var expenseAccountMetaJson = System.Text.Json.JsonSerializer.Serialize(ViewData["ExpenseAccountMeta"]);
     var withholdingDefinitionMetaJson = System.Text.Json.JsonSerializer.Serialize(ViewData["WithholdingDefinitionMeta"]);
+    var stockMetaJson = System.Text.Json.JsonSerializer.Serialize(ViewData["StockMeta"]);
     var initialLinesJson = System.Text.Json.JsonSerializer.Serialize(
         Model.Lines.Select(l => new
         {
@@ -15,6 +16,13 @@
             vatRate = l.VatRate,
             withholdingDefinitionId = l.WithholdingDefinitionId,
             withholdingRate = l.WithholdingRate
+        }));
+    var initialMaterialsJson = System.Text.Json.JsonSerializer.Serialize(
+        Model.Materials.Select(m => new
+        {
+            recId = m.RecId,
+            stockId = m.StockId,
+            quantity = m.Quantity
         }));
 
     var kusurat = ViewData["Kusurat"] as IReadOnlyDictionary<string, int>;
@@ -56,6 +64,11 @@
                             <span asp-validation-for="InvoiceDate" class="text-danger"></span>
                         </div>
                         <div class="col-12">
+                            <label asp-for="TransactionDate" class="form-label"></label>
+                            <input asp-for="TransactionDate" type="date" class="form-control" asp-format="{0:yyyy-MM-dd}" />
+                            <span asp-validation-for="TransactionDate" class="text-danger"></span>
+                        </div>
+                        <div class="col-12">
                             <label asp-for="WorkPlaceId" class="form-label"></label>
                             <select asp-for="WorkPlaceId" asp-items="Model.WorkPlaceOptions" class="form-select">
                                 <option value="">Seçiniz</option>
@@ -85,15 +98,6 @@
                             <input asp-for="SpecialCode" class="form-control" />
                             <span asp-validation-for="SpecialCode" class="text-danger"></span>
                         </div>
-                        <div class="col-12">
-                            <label asp-for="LinkedPurchaseInvoiceId" class="form-label"></label>
-                            <select asp-for="LinkedPurchaseInvoiceId" asp-items="Model.PurchaseInvoiceOptions" class="form-select">
-                                <option value="">Bağlı değil</option>
-                            </select>
-                            <span asp-validation-for="LinkedPurchaseInvoiceId" class="text-danger"></span>
-                            <div class="form-text">Bu gideri ilişkilendireceğiniz alış faturasını seçin.</div>
-                        </div>
-
                         <div class="col-12"><hr class="my-2" /></div>
 
                         <div class="col-12">
@@ -208,6 +212,42 @@
                         </table>
                     </div>
                     <div id="hiddenLineInputs"></div>
+
+                    <h2 class="h6 text-muted mb-3 mt-4">Malzeme Seç</h2>
+                    <div class="row g-2 align-items-end">
+                        <div class="col-md-6">
+                            <label class="form-label">Malzeme</label>
+                            <select id="materialStockSelect" class="form-select form-select-sm">
+                                <option value="">Seçiniz</option>
+                                @foreach (var opt in Model.StockOptions)
+                                {
+                                    <option value="@opt.Value">@opt.Text</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Miktar</label>
+                            <input id="materialQuantityInput" type="number" step="any" min="0" class="form-control form-control-sm text-end" value="0" />
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2 mt-2 mb-3">
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="addMaterialBtn">Satır Ekle</button>
+                        <button type="button" class="btn btn-sm btn-outline-danger" id="removeMaterialBtn" disabled>Satır Sil</button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover align-middle" id="freightMaterialsTable">
+                            <thead>
+                                <tr>
+                                    <th>Malzeme Kodu</th>
+                                    <th>Malzeme Adı</th>
+                                    <th class="text-end">Miktar</th>
+                                </tr>
+                            </thead>
+                            <tbody id="freightMaterialsBody"></tbody>
+                        </table>
+                    </div>
+                    <div id="hiddenMaterialInputs"></div>
                 </div>
             </div>
         </form>
@@ -238,8 +278,22 @@
             var withholdingMetaById = {};
             withholdingDefinitionMeta.forEach(function (w) { withholdingMetaById[w.id] = w; });
 
+            var stockMeta = @Html.Raw(stockMetaJson);
+            var stockMetaById = {};
+            stockMeta.forEach(function (s) { stockMetaById[s.id] = s; });
+
             var linesData = @Html.Raw(initialLinesJson);
             var selectedLineIndex = -1;
+
+            var materialsData = @Html.Raw(initialMaterialsJson);
+            var selectedMaterialIndex = -1;
+
+            var materialStockSelect = document.getElementById('materialStockSelect');
+            var materialQuantityInput = document.getElementById('materialQuantityInput');
+            var addMaterialBtn = document.getElementById('addMaterialBtn');
+            var removeMaterialBtn = document.getElementById('removeMaterialBtn');
+            var materialsBody = document.getElementById('freightMaterialsBody');
+            var hiddenMaterialInputsContainer = document.getElementById('hiddenMaterialInputs');
 
             var accountSelect = document.getElementById('lineAccountSelect');
             var accountNameDisplay = document.getElementById('lineAccountNameDisplay');
@@ -281,12 +335,12 @@
                 return { vatAmount: vatAmount, withholdingAmount: withholdingAmount, netVatAmount: netVatAmount, totalAmount: totalAmount };
             }
 
-            function appendHidden(name, value) {
+            function appendHidden(container, name, value) {
                 var input = document.createElement('input');
                 input.type = 'hidden';
                 input.name = name;
                 input.value = value;
-                hiddenInputsContainer.appendChild(input);
+                container.appendChild(input);
             }
 
             function renderLines() {
@@ -323,12 +377,12 @@
                     tr.addEventListener('click', function () { selectLine(idx); });
                     linesBody.appendChild(tr);
 
-                    appendHidden('Lines[' + idx + '].RecId', line.recId || 0);
-                    appendHidden('Lines[' + idx + '].AccountId', line.accountId);
-                    appendHidden('Lines[' + idx + '].Amount', line.amount);
-                    appendHidden('Lines[' + idx + '].VatRate', line.vatRate);
-                    appendHidden('Lines[' + idx + '].WithholdingDefinitionId', line.withholdingDefinitionId || '');
-                    appendHidden('Lines[' + idx + '].WithholdingRate', line.withholdingRate);
+                    appendHidden(hiddenInputsContainer, 'Lines[' + idx + '].RecId', line.recId || 0);
+                    appendHidden(hiddenInputsContainer, 'Lines[' + idx + '].AccountId', line.accountId);
+                    appendHidden(hiddenInputsContainer, 'Lines[' + idx + '].Amount', line.amount);
+                    appendHidden(hiddenInputsContainer, 'Lines[' + idx + '].VatRate', line.vatRate);
+                    appendHidden(hiddenInputsContainer, 'Lines[' + idx + '].WithholdingDefinitionId', line.withholdingDefinitionId || '');
+                    appendHidden(hiddenInputsContainer, 'Lines[' + idx + '].WithholdingRate', line.withholdingRate);
                 });
 
                 if (linesData.length === 0) {
@@ -354,6 +408,70 @@
                 selectedLineIndex = (selectedLineIndex === idx) ? -1 : idx;
                 renderLines();
             }
+
+            function renderMaterials() {
+                materialsBody.innerHTML = '';
+                hiddenMaterialInputsContainer.innerHTML = '';
+
+                materialsData.forEach(function (material, idx) {
+                    var meta = stockMetaById[material.stockId] || { code: '', name: '' };
+
+                    var tr = document.createElement('tr');
+                    tr.className = 'material-row' + (idx === selectedMaterialIndex ? ' table-active' : '');
+                    tr.style.cursor = 'pointer';
+                    tr.innerHTML =
+                        '<td>' + meta.code + '</td>' +
+                        '<td>' + meta.name + '</td>' +
+                        '<td class="text-end">' + material.quantity + '</td>';
+                    tr.addEventListener('click', function () { selectMaterial(idx); });
+                    materialsBody.appendChild(tr);
+
+                    appendHidden(hiddenMaterialInputsContainer, 'Materials[' + idx + '].RecId', material.recId || 0);
+                    appendHidden(hiddenMaterialInputsContainer, 'Materials[' + idx + '].StockId', material.stockId);
+                    appendHidden(hiddenMaterialInputsContainer, 'Materials[' + idx + '].Quantity', material.quantity);
+                });
+
+                if (materialsData.length === 0) {
+                    var emptyRow = document.createElement('tr');
+                    emptyRow.innerHTML = '<td colspan="3" class="text-center text-muted">Malzeme eklenmedi.</td>';
+                    materialsBody.appendChild(emptyRow);
+                }
+
+                removeMaterialBtn.disabled = selectedMaterialIndex < 0;
+            }
+
+            function selectMaterial(idx) {
+                selectedMaterialIndex = (selectedMaterialIndex === idx) ? -1 : idx;
+                renderMaterials();
+            }
+
+            addMaterialBtn.addEventListener('click', function () {
+                var stockId = parseInt(materialStockSelect.value, 10) || 0;
+                var quantity = parseFloat(materialQuantityInput.value) || 0;
+
+                if (!stockId) {
+                    alert('Malzeme seçiniz.');
+                    return;
+                }
+                if (quantity <= 0) {
+                    alert('Miktar sıfırdan büyük olmalıdır.');
+                    return;
+                }
+
+                materialsData.push({ recId: 0, stockId: stockId, quantity: quantity });
+
+                materialStockSelect.value = '';
+                materialQuantityInput.value = '0';
+
+                renderMaterials();
+            });
+
+            removeMaterialBtn.addEventListener('click', function () {
+                if (selectedMaterialIndex < 0) return;
+                materialsData.splice(selectedMaterialIndex, 1);
+                selectedMaterialIndex = -1;
+                renderMaterials();
+            });
 
             function syncAccountName() {
                 var meta = accountMetaById[accountSelect.value];
@@ -417,6 +535,7 @@
 
             syncCurrency();
             renderLines();
+            renderMaterials();
         })();
     </script>
 }

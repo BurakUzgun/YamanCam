@@ -32,6 +32,8 @@ public class AppStock
     [Column(TypeName = "decimal(28,10)")]
     public decimal? ProductionWeight { get; set; }
 
+    public int? MergeStockId { get; set; }
+
     public bool? IsActive { get; set; }
 
     public DateTime? CreatedDate { get; set; }
@@ -47,4 +49,7 @@ public class AppStock
 
     [ForeignKey(nameof(SalesVatId))]
     public AppVatDefinition? SalesVat { get; set; }
+
+    [ForeignKey(nameof(MergeStockId))]
+    public AppStock? MergeStock { get; set; }
 }

@@ -5,6 +5,7 @@ public class AppSalesInvoiceListItemViewModel
     public int RecId { get; set; }
     public string InvoiceNo { get; set; } = string.Empty;
     public DateTime InvoiceDate { get; set; }
+    public DateTime TransactionDate { get; set; }
     public string? CompanyName { get; set; }
     public string? WorkPlaceName { get; set; }
     public string? AccountName { get; set; }

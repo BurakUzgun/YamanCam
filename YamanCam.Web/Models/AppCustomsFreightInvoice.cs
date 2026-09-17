@@ -11,6 +11,8 @@ public class AppCustomsFreightInvoice
 
     public DateTime InvoiceDate { get; set; }
 
+    public DateTime TransactionDate { get; set; }
+
     public int? WorkPlaceId { get; set; }
 
     [StringLength(30)]
@@ -64,4 +66,6 @@ public class AppCustomsFreightInvoice
     public AppPurchaseInvoice? LinkedPurchaseInvoice { get; set; }
 
     public List<AppCustomsFreightInvoiceLine> Lines { get; set; } = new();
+
+    public List<AppCustomsFreightInvoiceMaterial> Materials { get; set; } = new();
 }

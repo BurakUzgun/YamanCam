@@ -14,6 +14,8 @@ public class AppPurchaseInvoice
 
     public DateTime InvoiceDate { get; set; }
 
+    public DateTime TransactionDate { get; set; }
+
     public int? CompanyId { get; set; }
 
     public int? WorkPlaceId { get; set; }

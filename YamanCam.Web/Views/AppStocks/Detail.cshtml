@@ -1,7 +1,16 @@
 @using System.Globalization
+@using YamanCam.Web.Services
 @model YamanCam.Web.Models.AppStockDetailViewModel
 @{
     ViewData["Title"] = "Stok Detay";
+    var kusurat = ViewData["Kusurat"] as IReadOnlyDictionary<string, int>;
+    int Dec(string key, int defaultValue) => NumberFormatHelper.Get(kusurat, key, defaultValue);
+    var miktarFormat = NumberFormatHelper.Format(Dec("Stok Detay Miktar", 4));
+    var birimFiyatFormat = NumberFormatHelper.Format(Dec("Stok Detay Birim Fiyat", 4));
+    var netTutarFormat = NumberFormatHelper.Format(Dec("Stok Detay Net Tutar", 2));
+    var yuruyenMaliyetFormat = NumberFormatHelper.Format(Dec("Stok Detay Yürüyen Maliyet", 4));
+    var dovizKuruFormat = NumberFormatHelper.Format(Dec("Stok Detay Döviz Kuru", 4));
+    var dovizTutarFormat = NumberFormatHelper.Format(Dec("Stok Detay Döviz Tutar", 2));
 }
 
 <div class="card border-0 shadow-sm mb-3">
@@ -9,7 +18,7 @@
         <div class="d-flex justify-content-between align-items-start mb-3">
             <div>
                 <h1 class="h4 mb-1">Stok Detay</h1>
-                <p class="text-muted mb-0">Stoğun açılış, alış, alış iade, satış, satış iade, çıkış ve şubeler arası transfer fişi/faturalarından hesaplanan hareketleri.</p>
+                <p class="text-muted mb-0">Stoğun açılış, alış, nakliye maliyeti, alış iade, satış, satış iade, çıkış ve şubeler arası transfer fişi/faturalarından hesaplanan hareketleri.</p>
             </div>
             <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Listeye Dön</a>
         </div>
@@ -69,9 +78,9 @@
                         {
                             <tr>
                                 <td>@branch.WorkPlaceName</td>
-                                <td class="text-end">@branch.TotalIn.ToString("N4", CultureInfo.InvariantCulture)</td>
-                                <td class="text-end">@branch.TotalOut.ToString("N4", CultureInfo.InvariantCulture)</td>
-                                <td class="text-end fw-semibold">@branch.Balance.ToString("N4", CultureInfo.InvariantCulture)</td>
+                                <td class="text-end">@branch.TotalIn.ToString(miktarFormat, CultureInfo.InvariantCulture)</td>
+                                <td class="text-end">@branch.TotalOut.ToString(miktarFormat, CultureInfo.InvariantCulture)</td>
+                                <td class="text-end fw-semibold">@branch.Balance.ToString(miktarFormat, CultureInfo.InvariantCulture)</td>
                             </tr>
                         }
                     }
@@ -122,7 +131,7 @@
                             <th class="text-end">Net Tutar</th>
                             <th class="text-end">Bakiye Adet</th>
                             <th class="text-end">Yürüyen Maliyet</th>
-                            <th>Döviz</th>
+                            <th class="sd-col-currency">Döviz</th>
                             <th class="text-end">Döviz Kuru</th>
                             <th class="text-end">Döviz Tutar</th>
                         </tr>
@@ -137,7 +146,7 @@
                             <th></th>
                             <th></th>
                             <th></th>
-                            <th><input type="text" class="form-control form-control-sm column-filter" data-col="10" placeholder="Ara..." /></th>
+                            <th class="sd-col-currency"><input type="text" class="form-control form-control-sm column-filter" data-col="10" placeholder="Ara..." /></th>
                             <th></th>
                             <th></th>
                         </tr>
@@ -157,7 +166,7 @@
                                 <tr class="branch-group-header table-secondary" data-group="@g">
                                     <td colspan="13">
                                         <strong>@group.WorkPlaceName</strong>
-                                        <span class="text-muted small">(@group.Lines.Count hareket, Miktar Toplamı: @group.TotalQuantity.ToString("N4", CultureInfo.InvariantCulture))</span>
+                                        <span class="text-muted small">(@group.Lines.Count hareket, Miktar Toplamı: @group.TotalQuantity.ToString(miktarFormat, CultureInfo.InvariantCulture))</span>
                                     </td>
                                 </tr>
                                 foreach (var line in group.Lines)
@@ -168,23 +177,23 @@
                                         <td>@line.DocumentNo</td>
                                         <td>@line.TransactionType</td>
                                         <td>@(line.AccountName ?? "-")</td>
-                                        <td class="text-end">@line.Quantity.ToString("N4", CultureInfo.InvariantCulture)</td>
-                                        <td class="text-end">@line.UnitPrice.ToString("N4", CultureInfo.InvariantCulture)</td>
-                                        <td class="text-end">@line.NetAmount.ToString("N2", CultureInfo.InvariantCulture)</td>
-                                        <td class="text-end">@line.BalanceQuantity.ToString("N4", CultureInfo.InvariantCulture)</td>
-                                        <td class="text-end">@line.RunningUnitCost.ToString("N4", CultureInfo.InvariantCulture)</td>
+                                        <td class="text-end">@line.Quantity.ToString(miktarFormat, CultureInfo.InvariantCulture)</td>
+                                        <td class="text-end">@line.UnitPrice.ToString(birimFiyatFormat, CultureInfo.InvariantCulture)</td>
+                                        <td class="text-end">@line.NetAmount.ToString(netTutarFormat, CultureInfo.InvariantCulture)</td>
+                                        <td class="text-end">@line.BalanceQuantity.ToString(miktarFormat, CultureInfo.InvariantCulture)</td>
+                                        <td class="text-end">@line.RunningUnitCost.ToString(yuruyenMaliyetFormat, CultureInfo.InvariantCulture)</td>
                                         <td>@line.CurrencyCode</td>
-                                        <td class="text-end">@line.ExchangeRate.ToString("N4", CultureInfo.InvariantCulture)</td>
-                                        <td class="text-end">@line.CurrencyNetAmount.ToString("N2", CultureInfo.InvariantCulture)</td>
+                                        <td class="text-end">@line.ExchangeRate.ToString(dovizKuruFormat, CultureInfo.InvariantCulture)</td>
+                                        <td class="text-end">@line.CurrencyNetAmount.ToString(dovizTutarFormat, CultureInfo.InvariantCulture)</td>
                                     </tr>
                                 }
                                 <tr class="branch-group-subtotal table-light fw-semibold" data-group="@g">
                                     <td colspan="5" class="text-end">@group.WorkPlaceName Ara Toplam</td>
-                                    <td class="text-end">@group.TotalQuantity.ToString("N4", CultureInfo.InvariantCulture)</td>
+                                    <td class="text-end">@group.TotalQuantity.ToString(miktarFormat, CultureInfo.InvariantCulture)</td>
                                     <td></td>
-                                    <td class="text-end">@group.TotalNetAmount.ToString("N2", CultureInfo.InvariantCulture)</td>
-                                    <td class="text-end">@(group.Lines.Count > 0 ? group.Lines[^1].BalanceQuantity.ToString("N4", CultureInfo.InvariantCulture) : "-")</td>
-                                    <td class="text-end">@(group.Lines.Count > 0 ? group.Lines[^1].RunningUnitCost.ToString("N4", CultureInfo.InvariantCulture) : "-")</td>
+                                    <td class="text-end">@group.TotalNetAmount.ToString(netTutarFormat, CultureInfo.InvariantCulture)</td>
+                                    <td class="text-end">@(group.Lines.Count > 0 ? group.Lines[^1].BalanceQuantity.ToString(miktarFormat, CultureInfo.InvariantCulture) : "-")</td>
+                                    <td class="text-end">@(group.Lines.Count > 0 ? group.Lines[^1].RunningUnitCost.ToString(yuruyenMaliyetFormat, CultureInfo.InvariantCulture) : "-")</td>
                                     <td colspan="3"></td>
                                 </tr>
                             }
@@ -198,9 +207,9 @@
                         <tfoot>
                             <tr class="table-light fw-semibold">
                                 <td colspan="5" class="text-end">Toplam</td>
-                                <td class="text-end">@Model.TotalQuantity.ToString("N4", CultureInfo.InvariantCulture)</td>
+                                <td class="text-end">@Model.TotalQuantity.ToString(miktarFormat, CultureInfo.InvariantCulture)</td>
                                 <td></td>
-                                <td class="text-end">@Model.TotalNetAmount.ToString("N2", CultureInfo.InvariantCulture)</td>
+                                <td class="text-end">@Model.TotalNetAmount.ToString(netTutarFormat, CultureInfo.InvariantCulture)</td>
                                 <td colspan="5"></td>
                             </tr>
                         </tfoot>
@@ -210,6 +219,18 @@
         </div>
     </div>
 </div>
+
+<style>
+    #stockDetailGrid .sd-col-currency {
+        width: 70px;
+        min-width: 70px;
+        max-width: 70px;
+    }
+
+    #stockDetailGrid .sd-col-currency input {
+        min-width: 0;
+    }
+</style>
 
 @section Scripts {
     <script>

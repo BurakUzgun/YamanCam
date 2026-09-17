@@ -5,9 +5,10 @@ public class AppCustomsFreightInvoiceListItemViewModel
     public int RecId { get; set; }
     public string InvoiceNo { get; set; } = string.Empty;
     public DateTime InvoiceDate { get; set; }
+    public DateTime TransactionDate { get; set; }
     public string? WorkPlaceName { get; set; }
     public string? AccountName { get; set; }
-    public string? LinkedPurchaseInvoiceNo { get; set; }
+    public int MaterialCount { get; set; }
     public decimal NetAmount { get; set; }
     public decimal VatAmount { get; set; }
     public decimal WithholdingAmount { get; set; }

@@ -12,6 +12,11 @@ public class AppCustomsFreightInvoiceEditViewModel
     [DataType(DataType.Date)]
     public DateTime InvoiceDate { get; set; } = DateTime.Today;
 
+    [Required(ErrorMessage = "İşlem tarihi zorunludur.")]
+    [Display(Name = "İşlem Tarihi")]
+    [DataType(DataType.Date)]
+    public DateTime TransactionDate { get; set; } = DateTime.Today;
+
     [Required(ErrorMessage = "Şube seçilmelidir.")]
     [Display(Name = "Şube")]
     public int? WorkPlaceId { get; set; }
@@ -32,9 +37,6 @@ public class AppCustomsFreightInvoiceEditViewModel
     [StringLength(50)]
     [Display(Name = "Özel Kod")]
     public string? SpecialCode { get; set; }
-
-    [Display(Name = "Stok Fat No")]
-    public int? LinkedPurchaseInvoiceId { get; set; }
 
     [Display(Name = "Matrah")]
     public decimal NetAmount { get; set; }
@@ -63,10 +65,12 @@ public class AppCustomsFreightInvoiceEditViewModel
 
     public List<AppCustomsFreightInvoiceLineEditViewModel> Lines { get; set; } = new();
 
+    public List<AppCustomsFreightInvoiceMaterialEditViewModel> Materials { get; set; } = new();
+
     public IReadOnlyList<SelectListItem> WorkPlaceOptions { get; set; } = Array.Empty<SelectListItem>();
     public IReadOnlyList<SelectListItem> CariAccountOptions { get; set; } = Array.Empty<SelectListItem>();
     public IReadOnlyList<SelectListItem> ExpenseAccountOptions { get; set; } = Array.Empty<SelectListItem>();
-    public IReadOnlyList<SelectListItem> PurchaseInvoiceOptions { get; set; } = Array.Empty<SelectListItem>();
+    public IReadOnlyList<SelectListItem> StockOptions { get; set; } = Array.Empty<SelectListItem>();
     public IReadOnlyList<SelectListItem> WithholdingDefinitionOptions { get; set; } = Array.Empty<SelectListItem>();
 }
 
@@ -95,4 +99,17 @@ public class AppCustomsFreightInvoiceLineEditViewModel
     public decimal WithholdingAmount { get; set; }
     public decimal NetVatAmount { get; set; }
     public decimal TotalAmount { get; set; }
+}
+
+public class AppCustomsFreightInvoiceMaterialEditViewModel
+{
+    public int RecId { get; set; }
+
+    public int LineNo { get; set; }
+
+    [Display(Name = "Malzeme")]
+    public int StockId { get; set; }
+
+    [Display(Name = "Miktar")]
+    public decimal Quantity { get; set; }
 }

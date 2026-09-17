@@ -6,6 +6,7 @@ public static class AppStockMovementTypes
 {
     public const string Opening = "Açılış";
     public const string Purchase = "Alış";
+    public const string FreightCost = "Nakliye Maliyeti";
     public const string SalesReturn = "Satış İade";
     public const string TransferIn = "Transfer Giriş";
     public const string ProductionIn = "Üretim Giriş";
@@ -17,19 +18,21 @@ public static class AppStockMovementTypes
 
     /// <summary>
     /// Aynı tarihteki işlemler arasındaki sıralama önceliği: önce şubeye giren
-    /// işlemler (Açılış, Alış, Satış İade, Transfer Giriş, Üretim Giriş), sonra
-    /// şubeden çıkan işlemler (Transfer Çıkış, Alış İade, Satış, Üretim Çıkış,
-    /// Çıkış Fişi). Tarih sırasını bozmaz, yalnızca aynı güne denk gelen işlemleri
-    /// sıralar. Satış İade stoğa geri giriş olduğu için Alış ile aynı mantıkla
-    /// (miktar/maliyet artışı), Alış İade ise stoktan çıkış olduğu için Satış ile
-    /// aynı mantıkla (miktar/maliyet azalışı) ele alınır. Üretim Fişi'nde hammadde
-    /// tüketimi (Üretim Çıkış) Çıkış Fişi ile, üretilen mamül (Üretim Giriş) ise
-    /// Alış ile aynı mantıkla ele alınır.
+    /// işlemler (Açılış, Alış, Nakliye Maliyeti, Satış İade, Transfer Giriş, Üretim
+    /// Giriş), sonra şubeden çıkan işlemler (Transfer Çıkış, Alış İade, Satış, Üretim
+    /// Çıkış, Çıkış Fişi). Tarih sırasını bozmaz, yalnızca aynı güne denk gelen
+    /// işlemleri sıralar. Satış İade stoğa geri giriş olduğu için Alış ile aynı
+    /// mantıkla (miktar/maliyet artışı), Alış İade ise stoktan çıkış olduğu için
+    /// Satış ile aynı mantıkla (miktar/maliyet azalışı) ele alınır. Üretim Fişi'nde
+    /// hammadde tüketimi (Üretim Çıkış) Çıkış Fişi ile, üretilen mamül (Üretim Giriş)
+    /// ise Alış ile aynı mantıkla ele alınır. Nakliye Maliyeti, miktarı değiştirmeyen
+    /// (Quantity = 0) bir maliyet düzeltmesi olduğundan Alış ile aynı öncelikte yer alır.
     /// </summary>
     public static int GetSortOrder(string transactionType) => transactionType switch
     {
         Opening => 0,
         Purchase => 1,
+        FreightCost => 1,
         SalesReturn => 2,
         TransferIn => 3,
         ProductionIn => 4,

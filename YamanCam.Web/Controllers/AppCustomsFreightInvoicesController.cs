@@ -13,9 +13,9 @@ namespace YamanCam.Web.Controllers;
 /// Gümrük Nakliye Faturası giriş ekranı. Fatura carisi App_AccountPlan'da AccountType = "Cari"
 /// olan hesaplardan, satırlardaki gider hesapları ise tüm aktif detay hesaplardan seçilir.
 /// Her satır kendi KDV oranı + tevkifat (KDV indirim) oranıyla Matrah/KDV/Net KDV/Toplam
-/// hesaplar. "Stok Fat No" alanı App_PurchaseInvoice ile isteğe bağlı bağlantı kurar; bu
-/// bağlantı ileride malzeme maliyet hesabında nakliye/gümrük giderini malzeme değerine
-/// eklemek için kullanılacaktır.
+/// hesaplar. Faturaya isteğe bağlı olarak birden fazla malzeme (App_Stock) ve miktarı
+/// eklenebilir; bu seçim ileride malzeme maliyet hesabında nakliye/gümrük giderini
+/// malzeme değerine eklemek için kullanılacaktır.
 /// </summary>
 public class AppCustomsFreightInvoicesController : Controller
 {
@@ -55,16 +55,17 @@ public class AppCustomsFreightInvoicesController : Controller
             : query.Where(x => x.IsActive != false);
 
         var items = await query
-            .OrderByDescending(x => x.InvoiceDate)
+            .OrderByDescending(x => x.TransactionDate)
             .ThenByDescending(x => x.RecId)
             .Select(x => new AppCustomsFreightInvoiceListItemViewModel
             {
                 RecId = x.RecId,
                 InvoiceNo = x.InvoiceNo,
                 InvoiceDate = x.InvoiceDate,
+                TransactionDate = x.TransactionDate,
                 WorkPlaceName = x.WorkPlace != null ? x.WorkPlace.WorkPlaceName : null,
                 AccountName = x.Account != null ? x.Account.AccountName : null,
-                LinkedPurchaseInvoiceNo = x.LinkedPurchaseInvoice != null ? x.LinkedPurchaseInvoice.InvoiceNo : null,
+                MaterialCount = x.Materials.Count,
                 NetAmount = x.NetAmount,
                 VatAmount = x.VatAmount,
                 WithholdingAmount = x.WithholdingAmount,
@@ -124,6 +125,7 @@ public class AppCustomsFreightInvoicesController : Controller
         ApplyViewModel(entity, vm);
         entity.CreatedDate = DateTime.UtcNow;
         ApplyLines(entity, vm);
+        ApplyMaterials(entity, vm);
 
         _context.AppCustomsFreightInvoices.Add(entity);
         await _context.SaveChangesAsync();
@@ -150,6 +152,7 @@ public class AppCustomsFreightInvoicesController : Controller
         var entity = await _context.AppCustomsFreightInvoices
             .AsNoTracking()
             .Include(x => x.Lines)
+            .Include(x => x.Materials)
             .FirstOrDefaultAsync(x => x.RecId == id);
 
         if (entity is null)
@@ -180,6 +183,7 @@ public class AppCustomsFreightInvoicesController : Controller
 
         var entity = await _context.AppCustomsFreightInvoices
             .Include(x => x.Lines)
+            .Include(x => x.Materials)
             .FirstOrDefaultAsync(x => x.RecId == id);
 
         if (entity is null)
@@ -201,6 +205,9 @@ public class AppCustomsFreightInvoicesController : Controller
         _context.AppCustomsFreightInvoiceLines.RemoveRange(entity.Lines);
         entity.Lines.Clear();
         ApplyLines(entity, vm);
+        _context.AppCustomsFreightInvoiceMaterials.RemoveRange(entity.Materials);
+        entity.Materials.Clear();
+        ApplyMaterials(entity, vm);
 
         await _context.SaveChangesAsync();
 
@@ -227,6 +234,7 @@ public class AppCustomsFreightInvoicesController : Controller
 
         var entity = await _context.AppCustomsFreightInvoices
             .Include(x => x.Lines)
+            .Include(x => x.Materials)
             .FirstOrDefaultAsync(x => x.RecId == id);
 
         if (entity is null)
@@ -261,6 +269,7 @@ public class AppCustomsFreightInvoicesController : Controller
 
         var entity = await _context.AppCustomsFreightInvoices
             .Include(x => x.Lines)
+            .Include(x => x.Materials)
             .FirstOrDefaultAsync(x => x.RecId == id);
 
         if (entity is null)
@@ -322,14 +331,18 @@ public class AppCustomsFreightInvoicesController : Controller
             .Select(x => new SelectListItem($"{x.AccountCode} - {x.AccountName}", x.RecId.ToString(CultureInfo.InvariantCulture)))
             .ToList();
 
-        var purchaseInvoices = await _context.AppPurchaseInvoices.AsNoTracking()
+        var stocks = await _context.AppStocks.AsNoTracking()
             .Where(x => x.IsActive != false)
-            .OrderByDescending(x => x.InvoiceDate)
-            .Select(x => new { x.RecId, x.InvoiceNo, x.InvoiceDate })
+            .OrderBy(x => x.StockCode)
+            .Select(x => new { x.RecId, x.StockCode, x.StockName })
             .ToListAsync();
 
-        vm.PurchaseInvoiceOptions = purchaseInvoices
-            .Select(x => new SelectListItem($"{x.InvoiceNo} ({x.InvoiceDate:dd.MM.yyyy})", x.RecId.ToString(CultureInfo.InvariantCulture)))
+        vm.StockOptions = stocks
+            .Select(x => new SelectListItem($"{x.StockCode} - {x.StockName}", x.RecId.ToString(CultureInfo.InvariantCulture)))
+            .ToList();
+
+        ViewData["StockMeta"] = stocks
+            .Select(x => new { id = x.RecId, code = x.StockCode, name = x.StockName })
             .ToList();
 
         ViewData["ExpenseAccountMeta"] = expenseAccounts
@@ -391,12 +404,6 @@ public class AppCustomsFreightInvoicesController : Controller
             ModelState.AddModelError(nameof(vm.AccountId), "Geçerli bir cari hesap seçilmelidir.");
         }
 
-        if (vm.LinkedPurchaseInvoiceId.HasValue &&
-            !await _context.AppPurchaseInvoices.AnyAsync(x => x.RecId == vm.LinkedPurchaseInvoiceId.Value))
-        {
-            ModelState.AddModelError(nameof(vm.LinkedPurchaseInvoiceId), "Geçersiz alış faturası (Stok Fat No) seçildi.");
-        }
-
         vm.Lines = vm.Lines
             .Where(x => x.AccountId > 0 || x.Amount != 0)
             .ToList();
@@ -443,6 +450,26 @@ public class AppCustomsFreightInvoicesController : Controller
             line.TotalAmount = line.Amount + line.NetVatAmount;
         }
 
+        vm.Materials = vm.Materials
+            .Where(x => x.StockId > 0 || x.Quantity != 0)
+            .ToList();
+
+        for (var i = 0; i < vm.Materials.Count; i++)
+        {
+            var material = vm.Materials[i];
+            material.LineNo = i + 1;
+
+            if (material.StockId <= 0 || !await _context.AppStocks.AnyAsync(x => x.RecId == material.StockId))
+            {
+                ModelState.AddModelError($"Materials[{i}].StockId", "Geçerli bir malzeme seçilmelidir.");
+            }
+
+            if (material.Quantity <= 0)
+            {
+                ModelState.AddModelError($"Materials[{i}].Quantity", "Miktar sıfırdan büyük olmalıdır.");
+            }
+        }
+
         vm.NetAmount = vm.Lines.Sum(x => x.Amount);
         vm.VatAmount = vm.Lines.Sum(x => x.VatAmount);
         vm.WithholdingAmount = vm.Lines.Sum(x => x.WithholdingAmount);
@@ -464,12 +491,12 @@ public class AppCustomsFreightInvoicesController : Controller
         {
             RecId = entity.RecId,
             InvoiceDate = entity.InvoiceDate,
+            TransactionDate = entity.TransactionDate,
             WorkPlaceId = entity.WorkPlaceId,
             InvoiceKind = entity.InvoiceKind,
             AccountId = entity.AccountId,
             InvoiceNo = entity.InvoiceNo,
             SpecialCode = entity.SpecialCode,
-            LinkedPurchaseInvoiceId = entity.LinkedPurchaseInvoiceId,
             NetAmount = entity.NetAmount,
             VatAmount = entity.VatAmount,
             WithholdingAmount = entity.WithholdingAmount,
@@ -494,6 +521,16 @@ public class AppCustomsFreightInvoicesController : Controller
                     NetVatAmount = x.NetVatAmount,
                     TotalAmount = x.TotalAmount
                 })
+                .ToList(),
+            Materials = entity.Materials
+                .OrderBy(x => x.LineNo)
+                .Select(x => new AppCustomsFreightInvoiceMaterialEditViewModel
+                {
+                    RecId = x.RecId,
+                    LineNo = x.LineNo,
+                    StockId = x.StockId,
+                    Quantity = x.Quantity
+                })
                 .ToList()
         };
     }
@@ -501,12 +538,12 @@ public class AppCustomsFreightInvoicesController : Controller
     private static void ApplyViewModel(AppCustomsFreightInvoice entity, AppCustomsFreightInvoiceEditViewModel vm)
     {
         entity.InvoiceDate = vm.InvoiceDate;
+        entity.TransactionDate = vm.TransactionDate;
         entity.WorkPlaceId = vm.WorkPlaceId;
         entity.InvoiceKind = vm.InvoiceKind;
         entity.AccountId = vm.AccountId;
         entity.InvoiceNo = vm.InvoiceNo.Trim().ToUpperInvariant();
         entity.SpecialCode = vm.SpecialCode;
-        entity.LinkedPurchaseInvoiceId = vm.LinkedPurchaseInvoiceId;
         entity.NetAmount = vm.NetAmount;
         entity.VatAmount = vm.VatAmount;
         entity.WithholdingAmount = vm.WithholdingAmount;
@@ -538,12 +575,26 @@ public class AppCustomsFreightInvoicesController : Controller
         }
     }
 
+    private static void ApplyMaterials(AppCustomsFreightInvoice entity, AppCustomsFreightInvoiceEditViewModel vm)
+    {
+        foreach (var material in vm.Materials)
+        {
+            entity.Materials.Add(new AppCustomsFreightInvoiceMaterial
+            {
+                LineNo = material.LineNo,
+                StockId = material.StockId,
+                Quantity = material.Quantity,
+                CreatedDate = DateTime.UtcNow
+            });
+        }
+    }
+
     private static string BuildAuditValue(AppCustomsFreightInvoice entity)
     {
         var sb = new StringBuilder();
-        sb.Append($"No={entity.InvoiceNo}, Tarih={entity.InvoiceDate:yyyy-MM-dd}");
+        sb.Append($"No={entity.InvoiceNo}, Tarih={entity.InvoiceDate:yyyy-MM-dd}, IslemTarihi={entity.TransactionDate:yyyy-MM-dd}");
         sb.Append($", CariId={entity.AccountId}, SubeId={entity.WorkPlaceId}");
-        sb.Append($", StokFatId={entity.LinkedPurchaseInvoiceId}");
+        sb.Append($", MalzemeSayisi={entity.Materials.Count}");
         sb.Append($", Matrah={entity.NetAmount}, KDV={entity.VatAmount}, Tevkifat={entity.WithholdingAmount}");
         sb.Append($", GenelTutar={entity.TotalAmount}, DovizTutar={entity.CurrencyAmount} {entity.CurrencyCode}");
         sb.Append($", SatirSayisi={entity.Lines.Count}");

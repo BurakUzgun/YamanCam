@@ -17,6 +17,11 @@ public class AppSalesInvoiceEditViewModel
     [DataType(DataType.Date)]
     public DateTime InvoiceDate { get; set; } = DateTime.Today;
 
+    [Required(ErrorMessage = "İşlem tarihi zorunludur.")]
+    [Display(Name = "İşlem Tarihi")]
+    [DataType(DataType.Date)]
+    public DateTime TransactionDate { get; set; } = DateTime.Today;
+
     [Display(Name = "Şirket")]
     public int? CompanyId { get; set; }
 

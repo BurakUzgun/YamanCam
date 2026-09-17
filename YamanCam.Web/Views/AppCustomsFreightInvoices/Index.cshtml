@@ -49,9 +49,10 @@
                         <tr>
                             <th class="fi-col-no">Fatura No</th>
                             <th class="fi-col-date">Tarih</th>
+                            <th class="fi-col-date">İşlem Tarihi</th>
                             <th>Şube</th>
                             <th>Cari Ünvanı</th>
-                            <th>Stok Fat No</th>
+                            <th>Malzeme</th>
                             <th class="text-end">Matrah</th>
                             <th class="text-end">KDV Tutar</th>
                             <th class="text-end">Tevkifat</th>
@@ -66,12 +67,13 @@
                             <th><input type="text" class="form-control form-control-sm column-filter" data-col="2" placeholder="Ara..." /></th>
                             <th><input type="text" class="form-control form-control-sm column-filter" data-col="3" placeholder="Ara..." /></th>
                             <th><input type="text" class="form-control form-control-sm column-filter" data-col="4" placeholder="Ara..." /></th>
+                            <th><input type="text" class="form-control form-control-sm column-filter" data-col="5" placeholder="Ara..." /></th>
                             <th></th>
                             <th></th>
                             <th></th>
                             <th></th>
                             <th></th>
-                            <th><input type="text" class="form-control form-control-sm column-filter" data-col="10" placeholder="Ara..." /></th>
+                            <th><input type="text" class="form-control form-control-sm column-filter" data-col="11" placeholder="Ara..." /></th>
                             <th></th>
                         </tr>
                     </thead>
@@ -79,7 +81,7 @@
                         @if (Model.Items.Count == 0)
                         {
                             <tr class="empty-data-row">
-                                <td colspan="12" class="text-center text-muted">Kayıt bulunamadı.</td>
+                                <td colspan="13" class="text-center text-muted">Kayıt bulunamadı.</td>
                             </tr>
                         }
                         else
@@ -89,9 +91,10 @@
                                 <tr class="data-row">
                                     <td class="fi-col-no">@item.InvoiceNo</td>
                                     <td class="fi-col-date">@item.InvoiceDate.ToString("dd.MM.yyyy")</td>
+                                    <td class="fi-col-date">@item.TransactionDate.ToString("dd.MM.yyyy")</td>
                                     <td>@(item.WorkPlaceName ?? "-")</td>
                                     <td>@(item.AccountName ?? "-")</td>
-                                    <td>@(item.LinkedPurchaseInvoiceNo ?? "-")</td>
+                                    <td>@(item.MaterialCount > 0 ? $"{item.MaterialCount} kalem" : "-")</td>
                                     <td class="text-end">@item.NetAmount.ToString(NumberFormatHelper.Format(Dec("Yeni Gümrük Nakliye Faturası Matrah")))</td>
                                     <td class="text-end">@item.VatAmount.ToString(NumberFormatHelper.Format(Dec("Yeni Gümrük Nakliye Faturası KDV Tutar")))</td>
                                     <td class="text-end">@item.WithholdingAmount.ToString(NumberFormatHelper.Format(Dec("Yeni Gümrük Nakliye Faturası Tevkifat")))</td>
@@ -126,7 +129,7 @@
                                 </tr>
                             }
                             <tr id="freightInvoiceNoFilterResults" class="d-none">
-                                <td colspan="12" class="text-center text-muted">Filtreye uygun kayıt bulunamadı.</td>
+                                <td colspan="13" class="text-center text-muted">Filtreye uygun kayıt bulunamadı.</td>
                             </tr>
                         }
                     </tbody>
