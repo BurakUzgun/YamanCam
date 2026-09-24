@@ -10,7 +10,7 @@ public class CenterLicenseConnectionService : ICenterLicenseConnectionService
 {
     private const string ModuleName = "CntMaliyet";
     private const string EncryptionKey = "Bg1711..Aa";
-    private const string DefaultPassword = "..Center3540**";
+    private const string DefaultPassword = "..Center3580**";
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
     private readonly string _settingsPath;
     private readonly string _statePath;
