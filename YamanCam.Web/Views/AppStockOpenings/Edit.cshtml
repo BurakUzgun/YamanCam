@@ -17,6 +17,7 @@
     var priceDec = Dec("Yeni Stok Açılış Fişi Birim Fiyat");
     var totalDec = Dec("Yeni Stok Açılış Fişi Toplam Fiyat");
     var genelToplamDec = Dec("Yeni Stok Açılış Fişi Genel Toplam");
+    var trCulture = CultureInfo.GetCultureInfo("tr-TR");
 }
 
 <div class="card border-0 shadow-sm">
@@ -98,9 +99,9 @@
                                         }
                                     </select>
                                 </td>
-                                <td><input type="number" step="any" min="0" name="Lines[@i].Quantity" class="form-control form-control-sm text-end line-qty" value="@Model.Lines[i].Quantity.ToString("F" + qtyDec, CultureInfo.InvariantCulture)" /></td>
-                                <td><input type="number" step="any" min="0" name="Lines[@i].UnitPrice" class="form-control form-control-sm text-end line-price" value="@Model.Lines[i].UnitPrice.ToString("F" + priceDec, CultureInfo.InvariantCulture)" /></td>
-                                <td><input type="number" step="any" min="0" name="Lines[@i].TotalPrice" class="form-control form-control-sm text-end line-total" value="@Model.Lines[i].TotalPrice.ToString("F" + totalDec, CultureInfo.InvariantCulture)" /></td>
+                                <td><input type="text" inputmode="decimal" autocomplete="off" name="Lines[@i].Quantity" class="form-control form-control-sm text-end num-input line-qty" value="@Model.Lines[i].Quantity.ToString("N" + qtyDec, trCulture)" /></td>
+                                <td><input type="text" inputmode="decimal" autocomplete="off" name="Lines[@i].UnitPrice" class="form-control form-control-sm text-end num-input line-price" value="@Model.Lines[i].UnitPrice.ToString("N" + priceDec, trCulture)" /></td>
+                                <td><input type="text" inputmode="decimal" autocomplete="off" name="Lines[@i].TotalPrice" class="form-control form-control-sm text-end num-input line-total" value="@Model.Lines[i].TotalPrice.ToString("N" + totalDec, trCulture)" /></td>
                                 <td class="text-center">
                                     <button type="button" class="btn btn-sm btn-outline-danger line-remove">&times;</button>
                                 </td>
@@ -118,7 +119,8 @@
             <div class="row g-3">
                 <div class="col-md-6">
                     <div class="border rounded p-3">
-                        <div class="d-flex justify-content-between fw-bold"><span>Genel Toplam</span><span id="totalAmount">0,00</span></div>
+                        <div class="d-flex justify-content-between mb-2"><span>Miktar Toplamı</span><span id="totalQuantity">0</span></div>
+                        <div class="d-flex justify-content-between fw-bold border-top pt-2"><span>Genel Toplam</span><span id="totalAmount">0,00</span></div>
                     </div>
                 </div>
             </div>
@@ -154,9 +156,7 @@
             var stockUnitOptions = @Html.Raw(stockUnitOptionsJson);
             var stockUnits = @Html.Raw(stockUnitsJson);
 
-            var qtyStep = 'any';
-            var priceStep = 'any';
-            var totalStep = 'any';
+            var qtyDec = @qtyDec;
             var priceDec = @priceDec;
             var totalDec = @totalDec;
             var genelToplamDec = @genelToplamDec;
@@ -191,35 +191,54 @@
                 });
             }
 
-            function roundValue(value, decimals) {
-                var d = (decimals === undefined || decimals === null) ? 4 : decimals;
-                return value.toFixed(d);
+            // Türkçe biçim: "." binlik ayırıcı, "," ondalık ayırıcı
+            function parseNumber(text) {
+                var s = (text || '').toString().trim().replace(/\s/g, '');
+                if (!s) return 0;
+                s = s.replace(/\./g, '').replace(',', '.');
+                var n = parseFloat(s);
+                return isNaN(n) ? 0 : n;
+            }
+
+            function decimalsFor(el) {
+                if (el.classList.contains('line-qty')) return qtyDec;
+                if (el.classList.contains('line-price')) return priceDec;
+                return totalDec;
+            }
+
+            function getNum(row, selector) {
+                return parseNumber(row.querySelector(selector).value);
+            }
+
+            function setNum(row, selector, value, decimals) {
+                row.querySelector(selector).value = formatAmount(value, decimals);
             }
 
             function recalcRow(row) {
-                var qty = parseFloat(row.querySelector('.line-qty').value) || 0;
-                var price = parseFloat(row.querySelector('.line-price').value) || 0;
-                var total = qty * price;
-                row.querySelector('.line-total').value = roundValue(total, totalDec);
+                var total = getNum(row, '.line-qty') * getNum(row, '.line-price');
+                setNum(row, '.line-total', total, totalDec);
                 return total;
             }
 
             function recalcRowFromTotal(row) {
-                var total = parseFloat(row.querySelector('.line-total').value) || 0;
-                var qty = parseFloat(row.querySelector('.line-qty').value) || 0;
+                var total = getNum(row, '.line-total');
+                var qty = getNum(row, '.line-qty');
 
                 if (qty) {
-                    row.querySelector('.line-price').value = roundValue(total / qty, priceDec);
+                    setNum(row, '.line-price', total / qty, priceDec);
                 }
             }
 
             function updateSummary() {
                 var totalAmount = 0;
+                var totalQuantity = 0;
 
                 linesBody.querySelectorAll('tr.line-row').forEach(function (row) {
-                    totalAmount += parseFloat(row.querySelector('.line-total').value) || 0;
+                    totalQuantity += getNum(row, '.line-qty');
+                    totalAmount += getNum(row, '.line-total');
                 });
 
+                document.getElementById('totalQuantity').textContent = formatAmount(totalQuantity, qtyDec);
                 document.getElementById('totalAmount').textContent = formatAmount(totalAmount, genelToplamDec);
             }
 
@@ -229,6 +248,13 @@
             }
 
             function bindRowEvents(row) {
+                row.querySelectorAll('.num-input').forEach(function (el) {
+                    el.addEventListener('focus', function () { el.select(); });
+                    el.addEventListener('blur', function () {
+                        el.value = formatAmount(parseNumber(el.value), decimalsFor(el));
+                    });
+                });
+
                 row.querySelectorAll('.line-qty, .line-price').forEach(function (el) {
                     el.addEventListener('input', function () {
                         recalcRow(row);
@@ -264,9 +290,9 @@
                     '<td><input type="hidden" name="Lines[' + idx + '].RecId" value="0" />' +
                     '<select name="Lines[' + idx + '].StockId" class="form-select form-select-sm line-stock">' + buildStockOptionsHtml() + '</select></td>' +
                     '<td><select name="Lines[' + idx + '].StockUnitId" class="form-select form-select-sm line-unit">' + buildStockUnitOptionsHtml() + '</select></td>' +
-                    '<td><input type="number" step="' + qtyStep + '" min="0" name="Lines[' + idx + '].Quantity" class="form-control form-control-sm text-end line-qty" value="0" /></td>' +
-                    '<td><input type="number" step="' + priceStep + '" min="0" name="Lines[' + idx + '].UnitPrice" class="form-control form-control-sm text-end line-price" value="0" /></td>' +
-                    '<td><input type="number" step="' + totalStep + '" min="0" name="Lines[' + idx + '].TotalPrice" class="form-control form-control-sm text-end line-total" value="0" /></td>' +
+                    '<td><input type="text" inputmode="decimal" autocomplete="off" name="Lines[' + idx + '].Quantity" class="form-control form-control-sm text-end num-input line-qty" value="0" /></td>' +
+                    '<td><input type="text" inputmode="decimal" autocomplete="off" name="Lines[' + idx + '].UnitPrice" class="form-control form-control-sm text-end num-input line-price" value="0" /></td>' +
+                    '<td><input type="text" inputmode="decimal" autocomplete="off" name="Lines[' + idx + '].TotalPrice" class="form-control form-control-sm text-end num-input line-total" value="0" /></td>' +
                     '<td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger line-remove">&times;</button></td>';
                 linesBody.appendChild(tr);
                 bindRowEvents(tr);
@@ -281,6 +307,15 @@
                 rows[rows.length - 1].remove();
                 reindex();
                 updateSummary();
+            });
+
+            // Kaydederken sayıları sunucunun beklediği "." ondalık biçimine çevir
+            document.getElementById('stockOpeningForm').addEventListener('submit', function (e) {
+                if (e.defaultPrevented) return;
+                if (window.jQuery && jQuery.fn.valid && !jQuery(this).valid()) return;
+                linesBody.querySelectorAll('.num-input').forEach(function (el) {
+                    el.value = parseNumber(el.value).toFixed(decimalsFor(el));
+                });
             });
 
             recalcAll();
