@@ -82,7 +82,7 @@
                             <tr class="line-row">
                                 <td>
                                     <input type="hidden" name="Lines[@i].RecId" value="@Model.Lines[i].RecId" />
-                                    <select name="Lines[@i].StockId" class="form-select form-select-sm line-stock">
+                                    <select name="Lines[@i].StockId" class="form-select form-select-sm line-stock searchable-select">
                                         <option value="0">Seçiniz</option>
                                         @foreach (var opt in Model.StockOptions)
                                         {
@@ -288,7 +288,7 @@
                 tr.className = 'line-row';
                 tr.innerHTML =
                     '<td><input type="hidden" name="Lines[' + idx + '].RecId" value="0" />' +
-                    '<select name="Lines[' + idx + '].StockId" class="form-select form-select-sm line-stock">' + buildStockOptionsHtml() + '</select></td>' +
+                    '<select name="Lines[' + idx + '].StockId" class="form-select form-select-sm line-stock searchable-select">' + buildStockOptionsHtml() + '</select></td>' +
                     '<td><select name="Lines[' + idx + '].StockUnitId" class="form-select form-select-sm line-unit">' + buildStockUnitOptionsHtml() + '</select></td>' +
                     '<td><input type="text" inputmode="decimal" autocomplete="off" name="Lines[' + idx + '].Quantity" class="form-control form-control-sm text-end num-input line-qty" value="0" /></td>' +
                     '<td><input type="text" inputmode="decimal" autocomplete="off" name="Lines[' + idx + '].UnitPrice" class="form-control form-control-sm text-end num-input line-price" value="0" /></td>' +

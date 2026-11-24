@@ -90,7 +90,7 @@
                             <tr class="line-row">
                                 <td>
                                     <input type="hidden" name="Lines[@i].RecId" value="@Model.Lines[i].RecId" />
-                                    <select name="Lines[@i].OutStockId" class="form-select form-select-sm line-out-stock">
+                                    <select name="Lines[@i].OutStockId" class="form-select form-select-sm line-out-stock searchable-select">
                                         <option value="0">Seçiniz</option>
                                         @foreach (var opt in Model.StockOptions)
                                         {
@@ -99,7 +99,7 @@
                                     </select>
                                 </td>
                                 <td>
-                                    <select name="Lines[@i].InStockId" class="form-select form-select-sm line-in-stock">
+                                    <select name="Lines[@i].InStockId" class="form-select form-select-sm line-in-stock searchable-select">
                                         <option value="0">Seçiniz</option>
                                         @foreach (var opt in Model.ProductStockOptions)
                                         {
@@ -273,8 +273,8 @@
                 tr.className = 'line-row';
                 tr.innerHTML =
                     '<td><input type="hidden" name="Lines[' + idx + '].RecId" value="0" />' +
-                    '<select name="Lines[' + idx + '].OutStockId" class="form-select form-select-sm line-out-stock">' + buildOptionsHtml(outStockOptions, '0') + '</select></td>' +
-                    '<td><select name="Lines[' + idx + '].InStockId" class="form-select form-select-sm line-in-stock">' + buildOptionsHtml(productStockOptions, '0') + '</select></td>' +
+                    '<select name="Lines[' + idx + '].OutStockId" class="form-select form-select-sm line-out-stock searchable-select">' + buildOptionsHtml(outStockOptions, '0') + '</select></td>' +
+                    '<td><select name="Lines[' + idx + '].InStockId" class="form-select form-select-sm line-in-stock searchable-select">' + buildOptionsHtml(productStockOptions, '0') + '</select></td>' +
                     '<td><select name="Lines[' + idx + '].StockUnitId" class="form-select form-select-sm line-unit">' + buildOptionsHtml(stockUnitOptions, '') + '</select></td>' +
                     '<td><input type="number" step="' + qtyStep + '" min="0" name="Lines[' + idx + '].Quantity" class="form-control form-control-sm text-end line-qty" value="0" /></td>' +
                     '<td><input type="number" step="' + priceStep + '" min="0" name="Lines[' + idx + '].UnitPrice" class="form-control form-control-sm text-end line-price" value="0" /></td>' +

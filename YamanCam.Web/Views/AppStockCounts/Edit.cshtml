@@ -61,7 +61,7 @@
                             <tr class="line-row">
                                 <td>
                                     <input type="hidden" name="Lines[@i].RecId" value="@Model.Lines[i].RecId" />
-                                    <select name="Lines[@i].StockId" class="form-select form-select-sm line-stock">
+                                    <select name="Lines[@i].StockId" class="form-select form-select-sm line-stock searchable-select">
                                         <option value="0">Seçiniz</option>
                                         @foreach (var opt in Model.StockOptions)
                                         {
@@ -147,7 +147,7 @@
                 tr.className = 'line-row';
                 tr.innerHTML =
                     '<td><input type="hidden" name="Lines[' + idx + '].RecId" value="0" />' +
-                    '<select name="Lines[' + idx + '].StockId" class="form-select form-select-sm line-stock">' + buildStockOptionsHtml() + '</select></td>' +
+                    '<select name="Lines[' + idx + '].StockId" class="form-select form-select-sm line-stock searchable-select">' + buildStockOptionsHtml() + '</select></td>' +
                     '<td><input type="number" step="' + countStep + '" min="0" name="Lines[' + idx + '].CountQuantity" class="form-control form-control-sm text-end line-count" value="' + (countValue || 0) + '" /></td>' +
                     '<td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger line-remove">&times;</button></td>';
                 linesBody.appendChild(tr);

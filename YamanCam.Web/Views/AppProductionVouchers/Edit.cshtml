@@ -95,7 +95,7 @@
                             <tr class="line-row">
                                 <td>
                                     <input type="hidden" name="Lines[@i].RecId" value="@Model.Lines[i].RecId" />
-                                    <select name="Lines[@i].RawMaterialStockId" class="form-select form-select-sm line-raw">
+                                    <select name="Lines[@i].RawMaterialStockId" class="form-select form-select-sm line-raw searchable-select">
                                         <option value="0">Seçiniz</option>
                                         @foreach (var opt in Model.StockOptions)
                                         {
@@ -111,7 +111,7 @@
                                 <td><input type="number" step="any" min="0" name="Lines[@i].ProductUnitPrice" class="form-control form-control-sm text-end line-prod-price" value="@Model.Lines[i].ProductUnitPrice.ToString("F" + prodPriceDec, CultureInfo.InvariantCulture)" /></td>
                                 <td><input type="number" step="any" min="0" name="Lines[@i].ProductNetAmount" class="form-control form-control-sm text-end line-prod-amount" value="@Model.Lines[i].ProductNetAmount.ToString("F" + prodAmountDec, CultureInfo.InvariantCulture)" /></td>
                                 <td>
-                                    <select name="Lines[@i].ProductStockId" class="form-select form-select-sm line-product">
+                                    <select name="Lines[@i].ProductStockId" class="form-select form-select-sm line-product searchable-select">
                                         <option value="0">Seçiniz</option>
                                         @foreach (var opt in Model.StockOptions)
                                         {
