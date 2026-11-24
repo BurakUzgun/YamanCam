@@ -479,3 +479,25 @@ select.ss-hidden {
   padding: 0.4rem 0.75rem;
   color: #6c757d;
 }
+
+/* Fatura listeleri (Alis / Satis) icin ortak sabit kolon duzeni:
+   kolon genislikleri veriye gore degismez, iki ekran ayni gorunur. */
+.invoice-list-grid {
+  table-layout: fixed;
+}
+
+.invoice-list-grid th,
+.invoice-list-grid td {
+  overflow-wrap: anywhere;
+}
+
+.invoice-list-grid .ilg-no { width: 185px; }
+.invoice-list-grid .ilg-date { width: 100px; }
+.invoice-list-grid .ilg-company { width: 105px; }
+.invoice-list-grid .ilg-workplace { width: 105px; }
+.invoice-list-grid .ilg-account { width: 180px; }
+.invoice-list-grid .ilg-currency { width: 60px; }
+.invoice-list-grid .ilg-rate { width: 55px; }
+.invoice-list-grid .ilg-amount { width: 115px; }
+.invoice-list-grid .ilg-desc { width: 110px; }
+.invoice-list-grid .ilg-actions { width: 140px; }

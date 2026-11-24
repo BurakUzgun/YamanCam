@@ -44,21 +44,21 @@
             </div>
 
             <div class="table-responsive">
-                <table class="table table-sm table-hover align-middle mb-0" id="salesInvoiceGrid">
+                <table class="table table-sm table-hover align-middle mb-0 invoice-list-grid" id="salesInvoiceGrid">
                     <thead>
                         <tr>
-                            <th class="si-col-no">Fatura No</th>
-                            <th class="si-col-date">Fatura Tarihi</th>
-                            <th class="si-col-date">İşlem Tarihi</th>
-                            <th>Şirket</th>
-                            <th>Şube</th>
-                            <th>Fatura Carisi</th>
-                            <th>Döviz</th>
-                            <th class="text-end">Kur</th>
-                            <th class="text-end">Toplam (Döviz)</th>
-                            <th class="text-end">Toplam (TL)</th>
-                            <th class="si-col-desc">Açıklama</th>
-                            <th></th>
+                            <th class="si-col-no ilg-no">Fatura No</th>
+                            <th class="si-col-date ilg-date">Fatura Tarihi</th>
+                            <th class="si-col-date ilg-date">İşlem Tarihi</th>
+                            <th class="ilg-company">Şirket</th>
+                            <th class="ilg-workplace">Şube</th>
+                            <th class="ilg-account">Fatura Carisi</th>
+                            <th class="ilg-currency">Döviz</th>
+                            <th class="text-end ilg-rate">Kur</th>
+                            <th class="text-end ilg-amount">Toplam (Döviz)</th>
+                            <th class="text-end ilg-amount">Toplam (TL)</th>
+                            <th class="si-col-desc ilg-desc">Açıklama</th>
+                            <th class="ilg-actions"></th>
                         </tr>
                         <tr class="table-light">
                             <th><input type="text" class="form-control form-control-sm column-filter" data-col="0" placeholder="Ara..." /></th>
@@ -135,23 +135,6 @@
         </div>
     </div>
 </div>
-
-<style>
-    #salesInvoiceGrid .si-col-no {
-        min-width: 120px;
-        width: 12%;
-    }
-
-    #salesInvoiceGrid .si-col-date {
-        min-width: 110px;
-        width: 10%;
-    }
-
-    #salesInvoiceGrid .si-col-desc {
-        min-width: 200px;
-        width: 18%;
-    }
-</style>
 
 @section Scripts {
     <script>
